@@ -1,0 +1,61 @@
+[package]
+name = "workflow-ux"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+workflow-core = { path = "../workflow-core" }
+# workflow-core-macros = { path = "../workflow-core/macros" }
+workflow-i18n = { path = "../workflow-i18n" }
+workflow-log = { path = "../workflow-log" }
+workflow-html = { path = "../workflow-html" }
+workflow-wasm = { path = "../workflow-wasm" }
+workflow-ux-macros = { path = "macros" }
+
+wasm-bindgen = { version = "0.2.79", features = ["serde-serialize"] }
+wasm-bindgen-futures = "0.4.31"
+js-sys = "0.3.56"
+async-std = "1.11.0"
+# wasm-bindgen-futures = "0.4.31"
+async-trait = "0.1.56"
+convert_case = "0.5.0"
+markdown = "0.3.0"
+downcast = "0.11.0"
+thiserror = "1.0"
+ahash = "0.7.6"
+rand = "0.7.3"
+bs58 = "0.4.0"
+derivative = "2.2.0"
+console_error_panic_hook = "0.1.7"
+ritehash = "0.2.0"
+
+
+[dependencies.web-sys]
+version = "0.3.56"
+features = [
+    'console',
+    'Document',
+    'Element',
+    'HtmlElement',
+    'HtmlLinkElement',
+    'HtmlImageElement',
+    'HtmlInputElement',
+    'HtmlHrElement',
+    'Node',
+    'NodeList',
+    'Window',
+    'InputEvent',
+    'MouseEvent',
+    'ErrorEvent',
+    'KeyEvent',
+    'CustomEvent',
+    'HtmlCollection',
+    'DomTokenList',
+    'SvgPathElement',
+    'SvgPoint',
+    'DomRect',
+    'TransitionEvent',
+    'MutationObserver',
+    'MutationObserverInit',
+    'MutationRecord',
+]

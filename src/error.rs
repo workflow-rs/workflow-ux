@@ -1,0 +1,130 @@
+use wasm_bindgen::JsValue;
+//, convert::{WasmAbi, IntoWasmAbi, FromWasmAbi}};
+use std::sync::PoisonError;
+use workflow_i18n::Error as i18nError;
+use thiserror::Error;
+
+#[macro_export]
+macro_rules! error {
+    ($($t:tt)*) => ( workflow_ux::error::Error::String(format_args!($($t)*).to_string()) )
+}
+pub use error; 
+
+#[allow(non_camel_case_types)]
+#[derive(Debug, Error)]
+pub enum Error {
+
+    #[error("{0}")]
+    String(String),
+
+    #[error("JsValue: {0:?}")]
+    JsValue(JsValue),
+
+    #[error("Module {0} registration failure: {1}")]
+    ModuleRegistrationFailure(String, String),
+
+    #[error("WebElement: {0:?}")]
+    WebElement(web_sys::Element),
+
+    #[error("PoisonError: {0:?}")]
+    PoisonError(String),
+
+    #[error("Parent element not found {0:?}")]
+    ParentNotFound(web_sys::Element),
+
+    #[error("Layout<{0}>: the supplied HTML contains bindings that are not used: {1}")]
+    MissingLayoutBindings(String,String),
+
+    #[error("[{0}]: Unable to locate element with id {1}")]
+    MissingElement(String, String),
+
+    #[error("[{0}]: Unable to locate parent element with id {1}")]
+    MissingParent(String, String),
+
+    #[error("Menu: icon-box element is missing")]
+    MissingIconBox,
+
+    #[error("Application global is not initialized")]
+    ApplicationGlobalNotInitialized,
+
+    #[error("{0}")]
+    i18nError(#[from] i18nError),
+
+    
+    #[error("data_types_to_modules map is missing; ensure modules::seal() is invoked after module registration")]
+    DataTypesToModuleMapMissing,
+
+    #[error("Unable to obtain document body")]
+    UnableToGetBody,
+
+    #[error("Timer error: {0}")]
+    TimerError(#[from] workflow_wasm::timers::Error)
+}
+
+impl From<JsValue> for Error {
+    fn from(val: JsValue) -> Self {
+        Self::JsValue(val)
+    }
+}
+
+impl From<Error> for JsValue {
+    fn from(error: Error) -> JsValue {
+        JsValue::from(format!("{:?}", error))
+    }
+}
+
+// impl Into<JsValue> for Error {
+//     fn into(self) -> Self {
+//         JsValue::from(format!("{}",self).to_string())
+//     }
+// }
+
+impl<T> From<PoisonError<T>> for Error {
+    fn from(err: PoisonError<T>) -> Self {
+        Self::PoisonError(format!("{:?}",err).to_string())
+    }
+}
+
+impl From<&str> for Error {
+    fn from(val: &str) -> Self {
+        Self::String(val.to_string())
+    }
+}
+
+impl From<String> for Error {
+    fn from(val: String) -> Self {
+        Self::String(val)
+    }
+}
+
+impl From<web_sys::Element> for Error {
+    fn from(el: web_sys::Element) -> Self {
+        Self::WebElement(el)
+    }
+}
+
+
+
+
+// impl WasmAbi for Error {}
+
+// impl IntoWasmAbi for u128 {
+//     type Abi = Wasm128;
+
+//     #[inline]
+//     fn into_abi(self) -> Wasm128 {
+//         Wasm128 {
+//             low: (self as u64).into_abi(),
+//             high: ((self >> 64) as u64).into_abi(),
+//         }
+//     }
+// }
+
+// impl FromWasmAbi for u128 {
+//     type Abi = Wasm128;
+
+//     #[inline]
+//     unsafe fn from_abi(js: Wasm128) -> u128 {
+//         u128::from(u64::from_abi(js.low)) | (u128::from(u64::from_abi(js.high)) << 64)
+//     }
+// }
