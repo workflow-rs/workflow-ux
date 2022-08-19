@@ -119,7 +119,7 @@ fn menu_impl(
             workflow_ux::menu::#menu_type::new(&#parent,#title.into(),#icon)?
             .with_callback(Box::new(move |target|{
                 let target = target.clone();
-                workflow_core::task::wasm::spawn(async move {
+                workflow_core::sync::task::wasm::spawn(async move {
                     #module_type::get().#module_handler_fn().await.map_err(|e| { log_error!("{}",e); }).ok();
                     workflow_log::log_trace!("selecting target element: {:?}", target);
                     target.select().ok();
