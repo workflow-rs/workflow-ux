@@ -1,8 +1,8 @@
 
-use std::collections::BTreeMap;
+//use std::collections::BTreeMap;
 use std::sync::Mutex;
 use workflow_ux::prelude::*;
-use workflow_html::ElementResult;
+//use workflow_html::ElementResult;
 use workflow_ux::result::Result;
 // use workflow_log::*;
 
@@ -80,17 +80,16 @@ impl Image {
 
 }
 
-
-
+/*
+ 
 impl workflow_html::Render for Image {
     fn render<W:std::fmt::Write>(&self, _w:&mut W) -> std::fmt::Result {
         Ok(())
     }
 
-    fn render_node(self, parent:&mut Element, _map:&mut BTreeMap<String, Element>)->ElementResult<()>{
+    fn render_node(&self, parent:&mut Element, _map:&mut BTreeMap<String, Element>)->ElementResult<()>{
         parent.append_child(&self.element)?;
         Ok(())
     }
-
-
 }
+*/

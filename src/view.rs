@@ -115,7 +115,7 @@ pub trait View : Sync + Send {
 
 pub struct Default {
     element : Element,
-    module : Arc<dyn ModuleInterface>, 
+    module : Arc<dyn ModuleInterface>
 }
 
 unsafe impl Send for Default { }
@@ -305,25 +305,28 @@ impl<F,D> Drop for Layout<F,D>
 
 pub struct Html {
     element : Element,
-    module : Arc<dyn ModuleInterface>, 
+    module : Arc<dyn ModuleInterface>,
+    _html: workflow_html::Html
 }
 
 impl Html {
     pub fn try_new(
         module : Arc<dyn ModuleInterface>,
-        html : &workflow_html::Html, //&(Vec<Element>, BTreeMap<String, Element>),
+        html : workflow_html::Html, //&(Vec<Element>, BTreeMap<String, Element>),
     ) -> Result<Arc<dyn View>> {
         
         let element = document().create_element("workspace-view")?;
         html.inject_into(&element)?;
+
         // let (roots, _) = html;
         // for el in roots.iter() {
         //     element.append_child(el)?;
         // }
 
-        let view = Default { 
+        let view = Html { 
             element,
-            module
+            module,
+            _html:html
         };
 
         Ok(Arc::new(view))

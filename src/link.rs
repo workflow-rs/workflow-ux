@@ -1,25 +1,35 @@
-use core::fmt::Write;
-use std::collections::BTreeMap;
 #[allow(unused_imports)]
 use std::sync::Mutex;
-use workflow_html::ElementResult;
+use workflow_html::{ElementResult, Renderables, Hooks};
 use workflow_ux::result::Result;
 use workflow_log::*;
 use workflow_ux::prelude::*;
 
 #[derive(Clone, Debug)]
-enum Kind {
+pub enum Kind {
     Module,
     External,
 }
 
 #[derive(Debug, Clone)]
 pub struct Link {
-    element : Element,
-    kind : Kind,
-    text : String,
-    href : Option<String>,
-    _onclick : Arc<Mutex<Option<Closure::<dyn FnMut(web_sys::MouseEvent)>>>>
+    pub element : Element,
+    pub kind : Kind,
+    pub text : String,
+    pub href : Option<String>,
+    pub _onclick : Arc<Mutex<Option<Closure::<dyn FnMut(web_sys::MouseEvent)>>>>
+}
+
+impl std::default::Default for Link{
+    fn default() -> Self {
+        Self{
+            element:document().create_element("a").expect("Could not create Link Element"),
+            kind:Kind::Module,
+            text:"Click Me".to_string(),
+            href:None,
+            _onclick:Arc::new(Mutex::new(None))
+        }
+    }
 }
 
 impl crate::dom::Element for Link {
@@ -119,8 +129,8 @@ impl Link {
         }));
         // self.element().set_onclick(Some(onclick.as_ref().unchecked_ref()));
         self.element.add_event_listener_with_callback("click", onclick.as_ref().unchecked_ref())?;
-        onclick.forget();
-        // *self.onclick.lock().unwrap() = Some(onclick);
+        //onclick.forget();
+        *self._onclick.lock().unwrap() = Some(onclick);
 
 
         Ok(self)
@@ -128,15 +138,15 @@ impl Link {
 }
 
 impl workflow_html::Render for Link {
-    fn render<W:Write>(&self, w:&mut W) -> core::fmt::Result {
+    fn render(&self, w:&mut Vec<String>) -> workflow_html::ElementResult<()> {
         match self.kind {
             Kind::Module => {
-                write!(w, "<a href=\"javascript:void(0)\">{}</a>",self.text)?;
+                w.push(format!("<a href=\"javascript:void(0)\">{}</a>", self.text));
                 log_error!("Error: unsupported link to text conversion for internal link: {}",self.text);
             },
             Kind::External => {
                 if let Some(href) = &self.href {
-                    write!(w, "<a href=\"{}\">{}</a>",href,self.text)?;
+                    w.push(format!("<a href=\"{}\">{}</a>",href,self.text));
                 } else {
                     panic!("Link is missing href property: {}",self.text);
                 }
@@ -146,8 +156,18 @@ impl workflow_html::Render for Link {
         Ok(())
     }
 
-    fn render_node(self, parent:&mut Element, _map:&mut BTreeMap<String, Element>)->ElementResult<()>{
+    fn render_node(
+        self,
+        parent:&mut Element,
+        _map:&mut Hooks,
+        renderables:&mut Renderables
+    )->ElementResult<()>{
+        if let Some(href) = &self.href {
+            self.element.set_attribute("href", href)?;
+        }
+        self.element.set_inner_html(&self.text);
         parent.append_child(&self.element)?;
+        renderables.push(Arc::new(self));
         Ok(())
     }
 
