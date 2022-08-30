@@ -71,6 +71,8 @@ impl Container {
             let el = previous.element();
             self.element.remove_child(&el)?;
         }
+        
+        bottom_menu::update_menus(incoming.bottom_menus())?;
 
         self.element.append_child(&incoming.element())?;
         Ok(())
@@ -110,6 +112,10 @@ pub trait View : Sync + Send {
     // fn cleanup(&self) -> Result<()> { Ok(()) }
 
     fn drop(&self) { }
+
+    fn bottom_menus(&self)->Option<Vec<bottom_menu::BottomMenuItem>>{
+        None
+    }
 
     // fn drop(&self) -> Result<()> { Ok(()) }
     //  {
@@ -312,7 +318,8 @@ impl<F,D> Drop for Layout<F,D>
 pub struct Html {
     element : Element,
     module : Arc<dyn ModuleInterface>,
-    _html: workflow_html::Html
+    _html: workflow_html::Html,
+    menus:Option<Vec<bottom_menu::BottomMenuItem>>
 }
 
 impl Html {
@@ -320,23 +327,37 @@ impl Html {
         module : Arc<dyn ModuleInterface>,
         html : workflow_html::Html, //&(Vec<Element>, BTreeMap<String, Element>),
     ) -> Result<Arc<dyn View>> {
-        
+        let view = Self::create(module, html, None)?;
+        Ok(Arc::new(view))
+    }
+
+    pub fn try_new_with_menus(
+        module : Arc<dyn ModuleInterface>,
+        html : workflow_html::Html,
+        menus:Vec<bottom_menu::BottomMenuItem>
+    )-> Result<Arc<dyn View>> {
+        let view = Self::create(module, html, Some(menus))?;
+        Ok(Arc::new(view))
+    }
+
+    pub fn create(
+        module : Arc<dyn ModuleInterface>,
+        html : workflow_html::Html,
+        menus:Option<Vec<bottom_menu::BottomMenuItem>>
+    )-> Result<Html> {
         let element = document().create_element("workspace-view")?;
         html.inject_into(&element)?;
-
-        // let (roots, _) = html;
-        // for el in roots.iter() {
-        //     element.append_child(el)?;
-        // }
 
         let view = Html { 
             element,
             module,
-            _html:html
+            _html:html,
+            menus
         };
 
-        Ok(Arc::new(view))
+        Ok(view)
     }
+
 }
 
 unsafe impl Send for Html { }
@@ -353,5 +374,9 @@ impl View for Html {
 
     fn typeid(&self) -> TypeId {
         TypeId::of::<Self>()
+    }
+
+    fn bottom_menus(&self)->Option<Vec<bottom_menu::BottomMenuItem>>{
+        self.menus.clone()
     }
 }
