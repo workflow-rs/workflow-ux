@@ -21,10 +21,10 @@ pub fn get_bottom_menu()-> Result<Arc<Mutex<BottomMenu>>>{
             let mut menu = menu_arc.lock().expect("Unable to lock BottomMenu");
             log_trace!("creating bottom menu: {:?}", menu.element);
 
-            menu.add_default_item("D:1:Settings", Icon::svg("settings"))?;
-            menu.add_default_item("D:2:Work", Icon::svg("work"))?;
-            menu.add_default_item("D:4:Ban", Icon::svg("ban"))?;
-            menu.add_default_item("D:5:Clock", Icon::svg("clock"))?;
+            menu.add_default_item("Settings", Icon::svg("settings"))?;
+            menu.add_default_item("Work", Icon::svg("work"))?;
+            menu.add_default_item("Ban", Icon::svg("ban"))?;
+            menu.add_default_item("Clock", Icon::svg("clock"))?;
 
             menu_arc_clone
         }
