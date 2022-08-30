@@ -31,6 +31,12 @@ impl Container {
         self.element.clone()
     }
 
+    pub async fn swap(self : &Arc<Self>, incoming : Arc<dyn View>) -> Result<Option<Arc<dyn View>>> {
+        let from = self.swap_from().await?;
+        self.swap_to(incoming).await?;
+        Ok(from)
+    }
+
     /// Initiates view swap.  Must be called before creating any objects for
     /// the next view.  This function checks if the current view can be
     /// safely evicted allowing the owning module to query user for confirmation
