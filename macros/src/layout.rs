@@ -841,7 +841,7 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
         _ => quote! {
 
 
-            pub fn try_create_default_view(module : std::sync::Arc<dyn workflow_ux::module::ModuleInterface>) -> workflow_ux::result::Result<#struct_name #struct_params> {
+            pub fn try_create_default_view(module : Option<std::sync::Arc<dyn workflow_ux::module::ModuleInterface>>) -> workflow_ux::result::Result<#struct_name #struct_params> {
                 let view : std::sync::Arc<dyn workflow_ux::view::View> = workflow_ux::view::Default::try_new(module)?;
                 Ok(#struct_name::try_inject(&view.element())?)
             }

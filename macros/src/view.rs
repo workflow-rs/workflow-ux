@@ -117,7 +117,7 @@ pub fn view(attr: TokenStream, item: TokenStream) -> TokenStream {
 
                     let punctuated_fields: Punctuated<ParsableNamedField, Token![,]> = parse_quote! {
                         element : web_sys::Element,
-                        module : std::sync::Arc<dyn workflow_ux::module::ModuleInterface>,
+                        module : Option<std::sync::Arc<dyn workflow_ux::module::ModuleInterface>>,
                     };
                 
                     fields
@@ -165,7 +165,7 @@ pub fn view(attr: TokenStream, item: TokenStream) -> TokenStream {
             fn element(&self) -> web_sys::Element {
                 self.element.clone()
             }
-            fn module(&self) -> std::sync::Arc<dyn workflow_ux::module::ModuleInterface> {
+            fn module(&self) -> Option<std::sync::Arc<dyn workflow_ux::module::ModuleInterface>> {
                 self.module.clone()
             }
             fn typeid(&self) -> std::any::TypeId {

@@ -31,9 +31,21 @@ impl Container {
         self.element.clone()
     }
 
-    pub async fn swap(self : &Arc<Self>, incoming : Arc<dyn View>) -> Result<Option<Arc<dyn View>>> {
+    pub async fn load_view(self : &Arc<Self>, incoming : Arc<dyn View>) -> Result<Option<Arc<dyn View>>> {
         let from = self.swap_from().await?;
         self.swap_to(incoming).await?;
+        Ok(from)
+    }
+
+    pub async fn load_html(
+        self : &Arc<Self>,
+        // module : Arc<dyn ModuleInterface>,
+        html : workflow_html::Html,
+    ) -> Result<Option<Arc<dyn View>>> {
+        // let view = view::Html::try_new(module.clone(), html)?;
+        let view = view::Html::try_new(None, html)?;
+        let from = self.swap_from().await?;
+        self.swap_to(view).await?;
         Ok(from)
     }
 
@@ -45,16 +57,20 @@ impl Container {
         let previous = self.view.read().await.clone();
         match &previous {
             None => { 
-                log_trace!("swap_from(): there is no previous view");
+                // log_trace!("swap_from(): there is no previous view");
                 Ok(None) 
             },
             Some(previous) => {
-                let module = previous.module();
-                // TODO query module for view eviction etc.
-                module.evict(self, previous.clone()).await?;
-                previous.clone().evict().await?;
-                log_trace!("swap_from(): finishing...");
-                Ok(Some(previous.clone()))
+                // let module = previous.module();
+                if let Some(module) = previous.module() {
+                    // TODO query module for view eviction etc.
+                    module.evict(self, previous.clone()).await?;
+                    previous.clone().evict().await?;
+                    log_trace!("swap_from(): finishing...");
+                    Ok(Some(previous.clone()))
+                } else {
+                    Ok(None)
+                }
             }
         }
     }
@@ -101,7 +117,7 @@ pub trait View : Sync + Send {
     //     self.element.clone()
     // }
 
-    fn module(&self) -> Arc<dyn ModuleInterface>;
+    fn module(&self) -> Option<Arc<dyn ModuleInterface>>;
 
     fn typeid(&self) -> TypeId;
 
@@ -127,14 +143,14 @@ pub trait View : Sync + Send {
 
 pub struct Default {
     element : Element,
-    module : Arc<dyn ModuleInterface>
+    module : Option<Arc<dyn ModuleInterface>>
 }
 
 unsafe impl Send for Default { }
 unsafe impl Sync for Default { }
 
 impl Default {
-    pub fn try_new(module : Arc<dyn ModuleInterface>) -> Result<Arc<dyn View>> {
+    pub fn try_new(module : Option<Arc<dyn ModuleInterface>>) -> Result<Arc<dyn View>> {
         let view = Default { 
             element : document().create_element("workspace-view")?,
             module
@@ -148,7 +164,7 @@ impl View for Default {
         self.element.clone()
     }
 
-    fn module(&self) -> Arc<dyn ModuleInterface> {
+    fn module(&self) -> Option<Arc<dyn ModuleInterface>> {
         self.module.clone()
     }
 
@@ -161,12 +177,12 @@ impl View for Default {
 pub struct Data<D> {
     data : Arc<Mutex<D>>,
     element : Element,
-    module : Arc<dyn ModuleInterface>, 
+    module : Option<Arc<dyn ModuleInterface>>, 
 }
 
 impl<D> Data<D> {
     // pub fn try_new(module : Arc<dyn ModuleInterface>) -> Result<Arc<dyn View>> {
-    pub fn try_new(module : Arc<dyn ModuleInterface>, data : D) -> Result<Arc<Data<D>>> {
+    pub fn try_new(module : Option<Arc<dyn ModuleInterface>>, data : D) -> Result<Arc<Data<D>>> {
         let view = Data::<D> { 
             element : document().create_element("workspace-view")?,
             module,
@@ -190,7 +206,7 @@ where D : 'static
         self.element.clone()
     }
 
-    fn module(&self) -> Arc<dyn ModuleInterface> {
+    fn module(&self) -> Option<Arc<dyn ModuleInterface>> {
         self.module.clone()
     }
 
@@ -213,7 +229,7 @@ pub struct Layout<F,D> {
     evict : Arc<Mutex<Option<EvictFn>>>,
     drop : Arc<Mutex<Option<DropFn>>>,
     element : Element,
-    module : Arc<dyn ModuleInterface>, 
+    module : Option<Arc<dyn ModuleInterface>>, 
 }
 
 impl<F,D> Layout<F,D> 
@@ -222,7 +238,7 @@ where
     D : 'static
 {
     // pub fn try_new(module : Arc<dyn ModuleInterface>) -> Result<Arc<dyn View>> {
-    pub fn try_new(module : Arc<dyn ModuleInterface>, layout : F, data : Option<D>) -> Result<Arc<Layout<F,D>>> {
+    pub fn try_new(module : Option<Arc<dyn ModuleInterface>>, layout : F, data : Option<D>) -> Result<Arc<Layout<F,D>>> {
 
         let element = document().create_element("workspace-view")?;
         element.append_child(&layout.element())?;
@@ -277,7 +293,7 @@ where
         self.element.clone()
     }
 
-    fn module(&self) -> Arc<dyn ModuleInterface> {
+    fn module(&self) -> Option<Arc<dyn ModuleInterface>> {
         self.module.clone()
     }
 
@@ -317,14 +333,14 @@ impl<F,D> Drop for Layout<F,D>
 
 pub struct Html {
     element : Element,
-    module : Arc<dyn ModuleInterface>,
+    module : Option<Arc<dyn ModuleInterface>>,
     _html: workflow_html::Html,
     menus:Option<Vec<bottom_menu::BottomMenuItem>>
 }
 
 impl Html {
     pub fn try_new(
-        module : Arc<dyn ModuleInterface>,
+        module : Option<Arc<dyn ModuleInterface>>,
         html : workflow_html::Html, //&(Vec<Element>, BTreeMap<String, Element>),
     ) -> Result<Arc<dyn View>> {
         let view = Self::create(module, html, None)?;
@@ -332,7 +348,7 @@ impl Html {
     }
 
     pub fn try_new_with_menus(
-        module : Arc<dyn ModuleInterface>,
+        module : Option<Arc<dyn ModuleInterface>>,
         html : workflow_html::Html,
         menus:Vec<bottom_menu::BottomMenuItem>
     )-> Result<Arc<dyn View>> {
@@ -341,7 +357,7 @@ impl Html {
     }
 
     pub fn create(
-        module : Arc<dyn ModuleInterface>,
+        module : Option<Arc<dyn ModuleInterface>>,
         html : workflow_html::Html,
         menus:Option<Vec<bottom_menu::BottomMenuItem>>
     )-> Result<Html> {
@@ -368,7 +384,7 @@ impl View for Html {
         self.element.clone()
     }
 
-    fn module(&self) -> Arc<dyn ModuleInterface> {
+    fn module(&self) -> Option<Arc<dyn ModuleInterface>> {
         self.module.clone()
     }
 
