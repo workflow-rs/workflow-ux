@@ -4,6 +4,7 @@ use crate::{prelude::*, icon::Icon};
 use web_sys::{SvgPathElement, SvgElement};
 use workflow_ux::result::Result;
 use std::sync::Mutex;
+use crate::controls::svg::SvgNode;
 
 #[wasm_bindgen]
 #[derive(Debug)]
@@ -17,40 +18,37 @@ pub struct ElPosition{
 pub struct MenuItem{
     pub id:u8,
     pub text:String,
-    pub element : Element,
-    pub text_el : Element,
-    pub circle_el : Element,
-    pub icon_el: Element
+    pub element : SvgElement,
+    pub text_el : SvgElement,
+    pub circle_el : SvgElement,
+    pub icon_el: SvgElement
 }
 
 impl MenuItem{
     fn new<I: Into<Icon>>(text:String, icon:I)->Result<Self>{
         let icon_:Icon = icon.into();
-        let circle_el = create_svg_element("circle")?;
-        circle_el.set_attribute("r", "42")?;
-        circle_el.set_attribute("cx", "0")?;
-        circle_el.set_attribute("cy", "0")?;
 
-        let icon_el = create_svg_element("image")?;
-        icon_el.set_attribute("href", &icon_.to_string())?;
-        icon_el.set_attribute("x", "-17")?;
-        icon_el.set_attribute("y", "-25")?;
-        icon_el.set_attribute("width", "35")?;
-        icon_el.set_attribute("height", "35")?;
-        icon_el.set_attribute("preserveAspectRatio", "xMidYMid meet")?;
+        let circle_el = SvgElement::new("circle").expect("MenuItem: Unable to create circle")
+            .set_radius("42")
+            .set_cpos("0", "0");
 
-        let text_el = create_svg_element("text")?;
+        let icon_el = SvgElement::new("image").expect("MenuItem: Unable to create image")
+            .set_href(&icon_.to_string())
+            .set_pos("-17", "-25")
+            .set_size("35", "35")
+            .set_aspect_ratio("xMidYMid meet");
+
         let text:String = text.into();
-        text_el.set_inner_html(&text);
-        text_el.set_attribute("text-anchor", "middle")?;
-        text_el.set_attribute("x", "0")?;
-        text_el.set_attribute("y", "22")?;
+        let text_el = SvgElement::new("text").expect("MenuItem: Unable to create text")
+            .set_html(&text)
+            .set_text_anchor("middle")
+            .set_pos("0", "22");
 
-        let element = create_svg_element("g")?;
-        element.set_attribute("class", "menu")?;
-        element.append_child(&circle_el)?;
-        element.append_child(&icon_el)?;
-        element.append_child(&text_el)?;
+        let element = SvgElement::new("g").expect("MenuItem: Unable to create root")
+            .set_cls("menu")
+            .add_child(&circle_el)
+            .add_child(&icon_el)
+            .add_child(&text_el);
 
         Ok(Self{
             id:Self::get_id(),
@@ -62,14 +60,6 @@ impl MenuItem{
         })
     }
     pub fn set_position(&self, x:f32, y:f32)->Result<()>{
-        /*
-        let x_ = format!("{}", x);
-        let y_ = format!("{}", y);
-        self.circle_el.set_attribute("cx", &x_)?;
-        self.circle_el.set_attribute("cy", &y_)?;
-        self.text_el.set_attribute("x", &x_)?;
-        self.text_el.set_attribute("y", &y_)?;
-        */
         self.element.set_attribute("style", &format!("transform: translate({x}px, {y}px);"))?;
         Ok(())
     }
@@ -85,7 +75,7 @@ impl MenuItem{
 #[derive(Clone)]
 pub struct D3Menu {
     pub element : Element,
-    svg: Element,
+    svg: SvgElement,
     circle_el:SvgPathElement,
     circle_proxy_el:SvgElement,
     items: BTreeMap<u8, MenuItem>,
@@ -96,13 +86,53 @@ pub struct D3Menu {
     closed:bool
 }
 
-pub fn create_svg_element(name:&str)->std::result::Result<Element, JsValue>{
-    document().create_element_ns(Some("http://www.w3.org/2000/svg"), name)
+static mut MENU : Option<Arc<Mutex<D3Menu>>> = None;
+pub fn get_menu()->Result<Arc<Mutex<D3Menu>>>{
+    let menu_arc = match unsafe {&MENU}{
+        Some(menu)=>{
+            menu.clone()
+        }
+        None=>{
+            let body = document().body().unwrap();
+            let menu_arc = D3Menu::create_in(&body, None)?;
+            
+            let menu_arc_clone = menu_arc.clone();
+            unsafe { MENU = Some(menu_arc.clone()); }
+
+            let mut menu = menu_arc.lock().expect("Unable to lock D3Menu");
+            log_trace!("creating menu: {:?}", menu.element);
+            
+            menu.add_item("Settings", Icon::IconRootSVG("settings".to_string()))?;
+            menu.add_item("Work", Icon::IconRootSVG("work".to_string()))?;
+            menu.add_item("Ban", Icon::IconRootSVG("ban".to_string()))?;
+            
+            menu.add_item("Campfire", Icon::IconRootSVG("campfire".to_string()))?;
+            menu.add_item("Dao", Icon::IconRootSVG("dao".to_string()))?;
+            /*menu.add_item("Classroom", Icon::Classroom)?;
+            menu.add_item("CloudUnavailable", Icon::CloudUnavailable)?;
+            menu.add_item("Certificate", Icon::Certificate)?;
+            menu.add_item("Connected", Icon::Connected)?;
+            menu.add_item("Clock", Icon::Clock)?;
+            menu.add_item("Funding", Icon::Funding)?;
+            */
+
+            menu_arc_clone
+        }
+    };
+
+    Ok(menu_arc)
 }
 
+pub fn show_menu()->Result<()>{
+    let m = get_menu()?;
+    let mut menu = m.lock().expect("Unable to lock D3Menu");
+    let _ = menu.open();
+    Ok(())
+}
 
 impl D3Menu {
-    
+
+
     pub fn element(&self) -> Element {
         self.element.clone()
     }
@@ -142,15 +172,14 @@ impl D3Menu {
         let size = -1;
         element.set_attribute("class", "d3-menu")?;
         element.set_attribute("hide", "true")?;
-        let svg = create_svg_element("svg")?;
         let view_box = format!("0,0,{width},{height}");
-        svg.set_attribute("viewBox", &view_box)?;
-        svg.set_attribute("width", "100%")?;
-        svg.set_attribute("height", "100%")?;
-        svg.set_attribute("preserveAspectRatio", "xMidYMid meet")?;
+        let svg = SvgElement::new("svg")?
+            .set_view_box(&view_box)
+            .set_size("100%", "100%")
+            .set_aspect_ratio("xMidYMid meet");
         element.append_child(&svg)?;
 
-        let circle_el = create_svg_element("path")?
+        let circle_el = SvgElement::new("path")?
             .dyn_into::<SvgPathElement>()
             .expect("Unable to cast element to SvgPathElement");
         
@@ -160,13 +189,10 @@ impl D3Menu {
         circle_el.set_attribute("class", "close-btn")?;
         svg.append_child(&circle_el)?;
 
-        let circle_proxy_el = create_svg_element("circle")?
-            .dyn_into::<SvgElement>()
-            .expect("Unable to cast element to SvgElement");
-        circle_proxy_el.set_attribute("class", "proxy")?;
-        circle_proxy_el.set_attribute("cx", "0")?;
-        circle_proxy_el.set_attribute("cy", "-1000")?;
-        circle_proxy_el.set_attribute("r", "10")?;
+        let circle_proxy_el = SvgElement::new("circle")?
+            .set_cls("proxy")
+            .set_cpos("0", "-1000")
+            .set_radius("10");
         svg.append_child(&circle_proxy_el)?;
 
         if let Some(attributes) = attributes{
@@ -215,14 +241,14 @@ impl D3Menu {
         let node_count = self.items.len() as f32;
 
         let circumference = self.circle_el.get_total_length();
-        //trace!("circumference: {circumference}, node_count:{node_count}");
+        //log_trace!("circumference: {circumference}, node_count:{node_count}");
         let section_length = circumference/node_count;
-        //trace!("size: {}, section_length: {}", size, section_length);
+        //log_trace!("size: {}, section_length: {}", size, section_length);
 
         for (_id, item) in self.items.iter(){
             let position = section_length*index+section_length/ (2 as f32);
             let p = self.circle_el.get_point_at_length(circumference-position)?;
-            //trace!("p.y(): {}", p.y());
+            //log_trace!("p.y(): {}", p.y());
             item.set_position(p.x(), p.y())?;
             index = index+(1 as f32);
         }

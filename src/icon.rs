@@ -28,6 +28,18 @@ pub enum Icon {
     IconRootSVG(String),
 }
 
+impl Icon{
+    pub fn svg<T:Into<String>>(icon:T)->Icon{
+        Self::IconRootSVG(icon.into())
+    }
+    pub fn url<T:Into<String>>(icon:T)->Icon{
+        Self::Url(icon.into())
+    }
+    pub fn custom<T:Into<String>>(icon:T)->Icon{
+        Self::IconRootCustom(icon.into())
+    }
+}
+
 fn custom(name:&str) -> String {
     format!("{}/{}",icon_folder(),name).to_string()
 }
