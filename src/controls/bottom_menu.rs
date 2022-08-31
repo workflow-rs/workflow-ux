@@ -70,6 +70,12 @@ pub fn update_menus(menus:Option<Vec<BottomMenuItem>>)->Result<()>{
 pub fn create_item<T:Into<String>, I: Into<Icon>>(text:T, icon:I)->Result<BottomMenuItem>{
     Ok(BottomMenuItem::new(text.into(), icon)?)
 }
+pub fn new_item<T:Into<String>, I: Into<Icon>, F>(text:T, icon:I, t:F)->Result<BottomMenuItem>
+where F: FnMut(web_sys::MouseEvent) + 'static{
+    let mut item = BottomMenuItem::new(text.into(), icon)?;
+    item.on_click(t)?;
+    Ok(item)
+}
 
 #[derive(Clone)]
 pub struct BottomMenuItem{
@@ -134,6 +140,17 @@ impl BottomMenuItem{
             ID = ID+1;
             ID
         }
+    }
+    pub fn on_click<F>(&mut self, t:F) ->Result<()>
+    where
+        F: FnMut(web_sys::MouseEvent) + 'static
+    {
+        let callback = Listener::new(t);
+        self.element.add_event_listener_with_callback("click", callback.into_js())?;
+        //self_.home_item.element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
+        //closure.forget();
+        self.click_listener = Some(callback);
+        Ok(())
     }
 }
 
@@ -314,8 +331,7 @@ impl BottomMenu {
 
     fn init_event(self)->Result<Arc<Mutex<Self>>>{
         let this = Arc::new(Mutex::new(self));
-        let this_clone = this.clone();
-        let mut self_ = this_clone.lock().expect("Unable to lock BottomMenu for click event");
+        let mut self_ = this.lock().expect("Unable to lock BottomMenu for click event");
         {
             let _this = this.clone();
             /*
@@ -327,6 +343,7 @@ impl BottomMenu {
 
             }) as Box<dyn FnMut(web_sys::MouseEvent)>);
             */
+            /*
             let callback = Listener::new(move |_event| {
                 let mut m = _this.lock().expect("Unable to lock BottomMenu for click event");
                 let _r = m.on_home_menu_click();
@@ -336,6 +353,13 @@ impl BottomMenu {
             //self_.home_item.element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
             //closure.forget();
             self_.home_item.click_listener = Some(callback);
+            */
+
+            self_.home_item.on_click(move |_event| {
+                let mut m = _this.lock().expect("Unable to lock BottomMenu for click event");
+                let _r = m.on_home_menu_click();
+                //log_trace!("##### home menu click");
+            })?;
         }
         /*{
             let _this = this.clone();
