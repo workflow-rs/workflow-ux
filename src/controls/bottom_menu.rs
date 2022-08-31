@@ -1,4 +1,5 @@
 use crate::{prelude::*, icon::Icon};
+use wasm_bindgen::convert::FromWasmAbi;
 use web_sys::SvgElement;
 use workflow_ux::result::Result;
 use std::sync::Mutex;
@@ -77,7 +78,8 @@ pub struct BottomMenuItem{
     pub element : SvgElement,
     pub text_el : SvgElement,
     pub circle_el : SvgElement,
-    pub icon_el: SvgElement
+    pub icon_el: SvgElement,
+    pub click_listener:Option<Listener<web_sys::MouseEvent>>
 }
 
 impl BottomMenuItem{
@@ -115,7 +117,8 @@ impl BottomMenuItem{
             element,
             text_el,
             circle_el,
-            icon_el
+            icon_el,
+            click_listener:None
         })
     }
     pub fn set_active(&self){
@@ -143,6 +146,30 @@ pub struct BottomMenu {
     width:f64,
     value : Rc<RefCell<String>>,
     home_item: BottomMenuItem
+}
+
+
+pub struct Listener<T>{
+    closure:Arc<Closure<dyn FnMut(T)>>
+}
+
+impl<T> Clone for Listener<T>{
+    fn clone(&self) -> Self {
+        Self { closure: self.closure.clone() }
+     }
+}
+
+impl<T> Listener<T>
+where T: Sized + FromWasmAbi + 'static
+{
+    pub fn new<F>(t:F)->Listener<T> where F: FnMut(T) + 'static{
+        Listener{
+            closure: Arc::new(Closure::new(t))
+        }
+    }
+    pub fn into_js<J>(&self) -> &J where J: JsCast{
+        (*self.closure).as_ref().unchecked_ref()
+    }
 }
 
 impl BottomMenu {
@@ -288,18 +315,27 @@ impl BottomMenu {
     fn init_event(self)->Result<Arc<Mutex<Self>>>{
         let this = Arc::new(Mutex::new(self));
         let this_clone = this.clone();
-        let self_ = this_clone.lock().expect("Unable to lock BottomMenu for click event");
+        let mut self_ = this_clone.lock().expect("Unable to lock BottomMenu for click event");
         {
             let _this = this.clone();
+            /*
             let closure = Closure::wrap(
                 Box::new(move |_event| {
+                    let mut m = _this.lock().expect("Unable to lock BottomMenu for click event");
+                    let _r = m.on_home_menu_click();
+                    //log_trace!("##### home menu click");
+
+            }) as Box<dyn FnMut(web_sys::MouseEvent)>);
+            */
+            let callback = Listener::new(move |_event| {
                 let mut m = _this.lock().expect("Unable to lock BottomMenu for click event");
                 let _r = m.on_home_menu_click();
                 //log_trace!("##### home menu click");
-
-            }) as Box<dyn FnMut(web_sys::MouseEvent)>);
-            self_.home_item.element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
-            closure.forget();
+            });
+            self_.home_item.element.add_event_listener_with_callback("click", callback.into_js())?;
+            //self_.home_item.element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
+            //closure.forget();
+            self_.home_item.click_listener = Some(callback);
         }
         /*{
             let _this = this.clone();
