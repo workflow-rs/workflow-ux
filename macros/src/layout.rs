@@ -23,7 +23,7 @@ use syn::{
     punctuated::Punctuated,
     Token,
 };
-use workflow_macro::attributes::*;
+use workflow_macro_tools::attributes::*;
 
 
 
