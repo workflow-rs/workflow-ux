@@ -87,6 +87,7 @@ pub struct D3Menu {
 }
 
 static mut MENU : Option<Arc<Mutex<D3Menu>>> = None;
+
 pub fn get_menu()->Result<Arc<Mutex<D3Menu>>>{
     let menu_arc = match unsafe {&MENU}{
         Some(menu)=>{

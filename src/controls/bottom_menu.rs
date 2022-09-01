@@ -1,9 +1,9 @@
 use crate::{prelude::*, icon::Icon};
-use wasm_bindgen::convert::FromWasmAbi;
 use web_sys::SvgElement;
 use workflow_ux::result::Result;
 use std::sync::Mutex;
 use crate::controls::svg::SvgNode;
+use crate::controls::listener::Listener;
 
 static mut BOTTOM_MENU : Option<Arc<Mutex<BottomMenu>>> = None;
 
@@ -57,7 +57,7 @@ pub fn update_menus(menus:Option<Vec<BottomMenuItem>>)->Result<()>{
 
     menu.items.clear();
     for item in update_list{
-        log_trace!("BottomMenu: new bottom item: => {:?} : {}", item.text, item.id);
+        //log_trace!("BottomMenu: new bottom item: => {:?} : {}", item.text, item.id);
         menu.items.push(item);
     }
 
@@ -165,30 +165,6 @@ pub struct BottomMenu {
     home_item: BottomMenuItem
 }
 
-
-pub struct Listener<T>{
-    closure:Arc<Closure<dyn FnMut(T)>>
-}
-
-impl<T> Clone for Listener<T>{
-    fn clone(&self) -> Self {
-        Self { closure: self.closure.clone() }
-     }
-}
-
-impl<T> Listener<T>
-where T: Sized + FromWasmAbi + 'static
-{
-    pub fn new<F>(t:F)->Listener<T> where F: FnMut(T) + 'static{
-        Listener{
-            closure: Arc::new(Closure::new(t))
-        }
-    }
-    pub fn into_js<J>(&self) -> &J where J: JsCast{
-        (*self.closure).as_ref().unchecked_ref()
-    }
-}
-
 impl BottomMenu {
     
     pub fn element(&self) -> Element {
@@ -280,11 +256,11 @@ impl BottomMenu {
         let offset = size/2.0;
         let half_index = self.items.len() as f64 / 2.0;
         let mut home_item_added = false;
-        log_trace!("BottomMenu: update ========>\n\n");
+        //log_trace!("BottomMenu: update ========>\n\n");
         for item in &self.items{
             let x = offset + index * size;
             item.set_position(x, 1.0)?;
-            log_trace!("BottomMenu: item.text:{}", item.text);
+            //log_trace!("BottomMenu: item.text:{}", item.text);
             self.svg.append_child(&item.element)?;
             index = index+1.0;
             if !home_item_added && index >= half_index{
