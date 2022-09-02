@@ -158,6 +158,13 @@ impl ElementLayout {
         // FIXME use <flow-layout> instead  of <div>
         let element = document().create_element("workflow-layout")?;
         // let id = generate_random_pubkey().to_string();
+        if let Some(title) = attributes.get("title") {
+            let title_el = document().create_element("h2")?;
+            title_el.set_attribute("class", "layout-title")?;
+            title_el.set_inner_html(title);
+            element.append_child(&title_el)?;
+        }
+
         let id = Id::new();
         element.set_id(&id.to_string());
         element.set_class_name(&format!("{}-container", layout_style.get_type()));
