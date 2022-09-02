@@ -1,6 +1,4 @@
 use crate::prelude::*;
-use crate::controls::Callback;
-// use workflow_ux::error::Error;
 use workflow_ux::result::Result;
 
 #[derive(Clone)]
@@ -69,11 +67,8 @@ impl TokenSelect{
             let current_value = el.value();
             let mut value = value.borrow_mut();
             *value = current_value.clone();
-            match &mut*cb_opt.borrow_mut(){
-                Some(cb)=>{
-                    cb(current_value)
-                },
-                None=>{}
+            if let Some(cb) = &mut*cb_opt.borrow_mut(){
+                cb(current_value);
             };
 
         }) as Box<dyn FnMut(_)>);

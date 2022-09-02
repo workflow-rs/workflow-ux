@@ -1,9 +1,10 @@
-pub use std::sync::Arc;
+pub use std::sync::{Arc, Mutex};
 pub use async_std::sync::RwLock;
 pub use std::cell::RefCell;
 pub use std::rc::Rc;
 pub use std::fmt::{Display, Debug};
 pub use std::collections::HashMap;
+pub use std::marker::PhantomData;
 // pub use workflow_allocator::prelude::*;
 // pub use workflow_allocator::utils::generate_random_pubkey;
 pub use wasm_bindgen::prelude::*;
@@ -18,6 +19,7 @@ pub use crate::control::{Control,ElementBindingContext};
 
 // TODO review and namespace all controls
 pub use crate::controls::*;
+pub use element_wrapper::ElementWrapper;
 
 pub use crate::controls::form::{FormControl, FormControlBase};
 // pub use crate::controls::terminal::Terminal;
@@ -61,3 +63,8 @@ pub use workflow_ux_macros::Module;
 pub use workflow_ux_macros::declare_module;
 
 pub use workflow_ux::id::Id;
+
+pub type Callback<E> = Box<dyn FnMut(E)->crate::result::Result<()>>;
+pub type CallbackNoArgs = Box<dyn FnMut()->crate::result::Result<()>>;
+pub type OptionalCallback<T> = Rc<RefCell<Option<Callback<T>>>>;
+pub type OptionalCallbackNoArgs = Rc<RefCell<Option<CallbackNoArgs>>>;

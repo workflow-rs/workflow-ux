@@ -1,5 +1,4 @@
 use crate::prelude::*;
-use crate::controls::Callback;
 use std::{convert::Into, marker::PhantomData};
 use js_sys::Array;
 use workflow_ux::result::Result;
@@ -108,11 +107,8 @@ where E: EnumTrait<E>
             let mut values = values.borrow_mut();
             *values = items.clone();
 
-            match &mut*cb_opt.borrow_mut(){
-                Some(cb)=>{
-                    cb(items)
-                },
-                None=>{}
+            if let Some(cb) = &mut*cb_opt.borrow_mut(){
+                cb(items);
             };
 
         }) as Box<dyn FnMut(_)>);

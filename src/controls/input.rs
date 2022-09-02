@@ -1,7 +1,6 @@
 use crate::prelude::*;
 use crate::layout::ElementLayout;
 use std::convert::Into;
-use web_sys::{EventTarget, Node, Element};
 use workflow_ux::result::Result;
 use workflow_ux::error::Error;
 
@@ -24,7 +23,7 @@ extern "C" {
 #[derive(Clone)]
 pub struct Input {
     pub layout : ElementLayout,
-    pub element : FlowInputBase,
+    pub element_wrapper : ElementWrapper,
     value : Rc<RefCell<String>>,
 }
 
@@ -32,7 +31,7 @@ pub struct Input {
 impl Input {
     
     pub fn element(&self) -> FlowInputBase {
-        self.element.clone().dyn_into::<FlowInputBase>().expect("Unable to cast element to FlowInputBase")
+        self.element_wrapper.element.clone().dyn_into::<FlowInputBase>().expect("Unable to cast element to FlowInputBase")
     }
 
     pub fn new(
@@ -41,9 +40,9 @@ impl Input {
         docs : &Docs
     ) -> Result<Input> {
         let element = document()
-            .create_element("flow-input")?
-            .dyn_into::<FlowInputBase>()
-            .expect("Unabel to cast Input into FlowInputBase");
+            .create_element("flow-input")?;
+            //.dyn_into::<FlowInputBase>()
+            //.expect("Unabel to cast Input into FlowInputBase");
 
         let pane_inner = layout.inner().ok_or(JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
@@ -51,7 +50,7 @@ impl Input {
         Ok(Self::create(element, layout.clone(), attributes, docs, String::from(""))?)
     }
     fn create(
-        element: FlowInputBase,
+        element: Element,
         layout : ElementLayout,
         attributes: &Attributes,
         _docs : &Docs,
@@ -65,23 +64,42 @@ impl Input {
         for (k,v) in attributes.iter() {
             element.set_attribute(k,v)?;
         }
-
-
         let value = Rc::new(RefCell::new(init_value));
-        
+
+        let mut input = Input { 
+            layout,
+            element_wrapper: ElementWrapper::new(element),
+            value,
+        };
+
+        input.init()?;
+
+        Ok(input)
+    }
+
+    pub fn value(&self) -> String {
+        self.value.borrow().clone()
+    }
+    pub fn set_value(&self, value: String) -> Result<()>{
+        self.element_wrapper.element.set_attribute("value", &value)?;
+        (*self.value.borrow_mut()) = value;
+        Ok(())
+    }
+
+    pub fn init(&mut self)-> Result<()>{
+        let element = self.element();
         // ~~~
         {
             let el = element.clone();
-            let value = value.clone();
+            let value = self.value.clone();
             let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
 
                 log_trace!("received changed event: {:?}", event);
-                let current_element_value = el.value();
-                log_trace!("#####current value: {:?}", current_element_value);
+                let new_value = el.value();
+                log_trace!("new_value: {:?}", new_value);
                 let mut value = value.borrow_mut();
-                log_trace!("current value: {:?}", current_element_value);
 
-                *value = current_element_value;
+                *value = new_value;
 
             }) as Box<dyn FnMut(_)>);
             element.add_event_listener_with_callback("changed", closure.as_ref().unchecked_ref())?;
@@ -91,16 +109,15 @@ impl Input {
         // ~~~
         {
             let el = element.clone();
-            let value = value.clone();
+            let value = self.value.clone();
             let closure = Closure::wrap(Box::new(move |event: web_sys::KeyEvent| {
 
                 log_trace!("received key event: {:#?}", event);
-                let current_element_value = el.value();
-                log_trace!("current value: {:?}", current_element_value);
+                let new_value = el.value();
+                log_trace!("new_value: {:?}", new_value);
                 let mut value = value.borrow_mut();
-                log_trace!("current value: {:?}", current_element_value);
 
-                *value = current_element_value;
+                *value = new_value;
 
             }) as Box<dyn FnMut(_)>);
             element.add_event_listener_with_callback("keyup", closure.as_ref().unchecked_ref())?;
@@ -108,21 +125,6 @@ impl Input {
             closure.forget();
         }
 
-        // ~~~
-
-        Ok(Input { 
-            layout,
-            element,
-            value,
-        })
-    }
-
-    pub fn value(&self) -> String {
-        self.value.borrow().clone()
-    }
-    pub fn set_value(&self, value: String) -> Result<()>{
-        self.element.set_attribute("value", &value)?;
-        (*self.value.borrow_mut()) = value;
         Ok(())
     }
 }
@@ -133,7 +135,7 @@ impl<'refs> TryFrom<ElementBindingContext<'refs>> for Input {
 
     fn try_from(ctx : ElementBindingContext<'refs>) -> Result<Self> {
         Ok(Self::create(
-            ctx.element.clone().dyn_into::<FlowInputBase>()?,
+            ctx.element.clone(),
             ctx.layout.clone(),
             &ctx.attributes,
             &ctx.docs,

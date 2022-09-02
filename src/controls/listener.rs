@@ -1,9 +1,10 @@
 use wasm_bindgen::{JsCast, closure::Closure, convert::FromWasmAbi};
 use std::sync::Arc;
+use crate::result::Result;
 
 #[derive(Debug)]
 pub struct Listener<T>{
-    closure:Arc<Closure<dyn FnMut(T)>>
+    closure:Arc<Closure<dyn FnMut(T)->Result<()>>>
 }
 
 impl<T> Clone for Listener<T>{
@@ -15,7 +16,7 @@ impl<T> Clone for Listener<T>{
 impl<T> Listener<T>
 where T: Sized + FromWasmAbi + 'static
 {
-    pub fn new<F>(t:F)->Listener<T> where F: FnMut(T) + 'static{
+    pub fn new<F>(t:F)->Listener<T> where F: FnMut(T) ->Result<()> + 'static{
         Listener{
             closure: Arc::new(Closure::new(t))
         }

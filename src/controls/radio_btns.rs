@@ -16,8 +16,6 @@ extern "C" {
     pub fn value(this: &FlowRadioBtnsBase) -> String;
 }
 
-pub type Callback<E> = Box<dyn FnMut(E)>;
-
 #[derive(Clone)]
 pub struct RadioBtns<E> {
     pub element : Element,
@@ -93,11 +91,8 @@ where E: EnumTrait<E>+'static+Display
 
                 *value = current_element_value;
 
-                match &mut*cb_opt.borrow_mut(){
-                    Some(cb)=>{
-                        cb(variant)
-                    },
-                    None=>{}
+                if let Some(cb) =  &mut*cb_opt.borrow_mut(){
+                    cb(variant);
                 };
             }
         }) as Box<dyn FnMut(_)>);

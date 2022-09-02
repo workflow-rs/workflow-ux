@@ -71,7 +71,8 @@ pub fn create_item<T:Into<String>, I: Into<Icon>>(text:T, icon:I)->Result<Bottom
     Ok(BottomMenuItem::new(text.into(), icon)?)
 }
 pub fn new_item<T:Into<String>, I: Into<Icon>, F>(text:T, icon:I, t:F)->Result<BottomMenuItem>
-where F: FnMut(web_sys::MouseEvent) + 'static{
+where F: FnMut(web_sys::MouseEvent) ->Result<()> + 'static
+{
     let mut item = BottomMenuItem::new(text.into(), icon)?;
     item.on_click(t)?;
     Ok(item)
@@ -143,7 +144,7 @@ impl BottomMenuItem{
     }
     pub fn on_click<F>(&mut self, t:F) ->Result<()>
     where
-        F: FnMut(web_sys::MouseEvent) + 'static
+        F: FnMut(web_sys::MouseEvent) ->Result<()> + 'static
     {
         let callback = Listener::new(t);
         self.element.add_event_listener_with_callback("click", callback.into_js())?;
@@ -331,9 +332,10 @@ impl BottomMenu {
             self_.home_item.click_listener = Some(callback);
             */
 
-            self_.home_item.on_click(move |_event| {
+            self_.home_item.on_click(move |_event| ->Result<()>{
                 let mut m = _this.lock().expect("Unable to lock BottomMenu for click event");
-                let _r = m.on_home_menu_click();
+                m.on_home_menu_click()?;
+                Ok(())
                 //log_trace!("##### home menu click");
             })?;
         }

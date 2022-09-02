@@ -2,7 +2,7 @@ use workflow_ux::result::Result;
 use web_sys::{CustomEvent, MouseEvent, Element};
 use crate::controls::listener::Listener;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct ElementWrapper{
     pub element : Element,
     listeners: Vec<Listener<CustomEvent>>,
@@ -15,7 +15,7 @@ impl ElementWrapper{
 
     pub fn on<F>(&mut self, name:&str, t:F) ->Result<()>
     where
-        F: FnMut(CustomEvent) + 'static
+        F: FnMut(CustomEvent) ->Result<()> + 'static
     {
         let listener = Listener::new(t);
         self.element.add_event_listener_with_callback(name, listener.into_js())?;
@@ -25,7 +25,7 @@ impl ElementWrapper{
 
     pub fn on_click<F>(&mut self, t:F) ->Result<()>
     where
-        F: FnMut(MouseEvent) + 'static
+        F: FnMut(MouseEvent) -> Result<()> + 'static
     {
         let listener = Listener::new(t);
         self.element.add_event_listener_with_callback("click", listener.into_js())?;
