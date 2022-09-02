@@ -3,6 +3,7 @@ use crate::layout::ElementLayout;
 use std::convert::Into;
 use web_sys::{EventTarget, Node, Element};
 use workflow_ux::result::Result;
+use workflow_ux::error::Error;
 
 
 #[wasm_bindgen]
@@ -37,14 +38,26 @@ impl Input {
     pub fn new(
         layout : &ElementLayout,
         attributes: &Attributes,
-        _docs : &Docs
+        docs : &Docs
     ) -> Result<Input> {
         let element = document()
             .create_element("flow-input")?
             .dyn_into::<FlowInputBase>()
             .expect("Unabel to cast Input into FlowInputBase");
 
-        let init_value: String = String::from("");
+        let pane_inner = layout.inner().ok_or(JsValue::from("unable to mut lock pane inner"))?;
+        pane_inner.element.append_child(&element)?;
+
+        Ok(Self::create(element, layout.clone(), attributes, docs, String::from(""))?)
+    }
+    fn create(
+        element: FlowInputBase,
+        layout : ElementLayout,
+        attributes: &Attributes,
+        _docs : &Docs,
+        init_value: String
+    ) -> Result<Input> {
+
         element.set_attribute("value", init_value.as_str())?;
         element.set_attribute("label", "Input")?;
         element.set_attribute("placeholder", "Please enter")?;
@@ -97,11 +110,8 @@ impl Input {
 
         // ~~~
 
-        let pane_inner = layout.inner().ok_or(JsValue::from("unable to mut lock pane inner"))?;
-        pane_inner.element.append_child(&element)?;
-
         Ok(Input { 
-            layout : layout.clone(),
+            layout,
             element,
             value,
         })
@@ -109,5 +119,26 @@ impl Input {
 
     pub fn value(&self) -> String {
         self.value.borrow().clone()
+    }
+    pub fn set_value(&self, value: String) -> Result<()>{
+        self.element.set_attribute("value", &value)?;
+        (*self.value.borrow_mut()) = value;
+        Ok(())
+    }
+}
+
+
+impl<'refs> TryFrom<ElementBindingContext<'refs>> for Input {
+    type Error = Error;
+
+    fn try_from(ctx : ElementBindingContext<'refs>) -> Result<Self> {
+        Ok(Self::create(
+            ctx.element.clone().dyn_into::<FlowInputBase>()?,
+            ctx.layout.clone(),
+            &ctx.attributes,
+            &ctx.docs,
+            String::new()
+        )?)
+
     }
 }

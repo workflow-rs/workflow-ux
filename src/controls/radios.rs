@@ -3,6 +3,8 @@ use std::marker::PhantomData;
 use web_sys::{Element, EventTarget, Node};
 use std::fmt::Debug;
 use workflow_ux::result::Result;
+use std::sync::Mutex;
+use crate::controls::element_wrapper::ElementWrapper;
 
 
 #[wasm_bindgen]
@@ -17,19 +19,21 @@ extern "C" {
     pub fn value(this: &FlowRadiosBase) -> String;
 }
 
+
 #[derive(Clone)]
 pub struct Radios<E> {
-    pub element : Element,
+    element_wrapper : ElementWrapper,
     value : Rc<RefCell<String>>,
+    change_callback : Arc<Mutex<Option<Callback<String>>>>,
     p:PhantomData<E>
 }
 
 impl<E> Radios<E>
-where E: EnumTrait<E> + Display
+where E: EnumTrait<E> + 'static + Display
 {
     
     pub fn element(&self) -> Element {
-        self.element.clone()
+        self.element_wrapper.element.clone()
         // Ok(self.element.clone().dyn_into::<Element>()?)
     }
 
@@ -58,46 +62,62 @@ where E: EnumTrait<E> + Display
         }
         let value = Rc::new(RefCell::new(init_value));
 
-        {
-            let el = element.clone().dyn_into::<FlowRadiosBase>().expect("Unable to cast to FlowRadioBase");
-            let value = value.clone();
-            let closure = Closure::wrap(Box::new(move |event: web_sys::CustomEvent| {
-
-                
-                log_trace!("flow radio changed event: {:?}", event);
-                let detail = event.detail();
-                log_trace!("flow radio changed event detail: {:?}", detail);
-                
-                let current_element_value = el.value();
-
-                log_trace!("#####current value: {:?}", current_element_value);
-                if let Some(op) = E::from_str(current_element_value.as_str()){
-                    log_trace!("op: {}", op);
-                }
-                let mut value = value.borrow_mut();
-                log_trace!("current value: {:?}", current_element_value);
-
-                *value = current_element_value;
-                
-
-            }) as Box<dyn FnMut(_)>);
-            element.add_event_listener_with_callback("select", closure.as_ref().unchecked_ref())?;
-            closure.forget();
-        }
-
         let pane_inner = layout
             .inner()
             .ok_or(JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
 
-        Ok(Radios {
-            element,
+        let mut radios = Radios {
+            element_wrapper: ElementWrapper::new(element),
             value,
+            change_callback:Arc::new(Mutex::new(None)),
             p:PhantomData
-        })
+        };
+        radios.init()?;
+    
+        Ok(radios)
+    }
+
+    fn init(&mut self)-> Result<()>{
+
+        let element = self.element();
+        let el = element.clone().dyn_into::<FlowRadiosBase>().expect("Unable to cast to FlowRadioBase");
+        let value = self.value.clone();
+        let calback_opt = self.change_callback.clone();
+        self.element_wrapper.on("select", move |event| {
+            
+            log_trace!("flow radio changed event: {:?}", event);
+            let detail = event.detail();
+            log_trace!("flow radio changed event detail: {:?}", detail);
+            
+            let new_value = el.value();
+
+            log_trace!("flow radio: new value: {:?}", new_value);
+            //if let Some(op) = E::from_str(current_element_value.as_str()){
+            //    log_trace!("op: {}", op);
+            //}
+            let mut value = value.borrow_mut();
+
+            *value = new_value.clone();
+
+            match calback_opt.lock().unwrap().as_mut(){
+                Some(cb)=>{
+                    cb(new_value);
+                }
+                None=>{
+
+                }
+            }
+        })?;
+
+        Ok(())
     }
 
     pub fn value(&self) -> String {
         self.value.borrow().clone()
+    }
+    pub fn on_change(&self, callback:Callback<String>)->Result<()>{
+        *self.change_callback.lock()? = Some(callback);
+        Ok(())
     }
 }

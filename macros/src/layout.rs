@@ -575,6 +575,7 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
             }
         }
     };
+    //println!("\n layout: {:?} _layout_title: {}", layout, _layout_title);
 
     let mut init_helper = quote!{};
     let mut init_helper_def = quote!{};
@@ -840,10 +841,20 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
         },
         _ => quote! {
 
-
-            pub fn try_create_default_view(module : Option<std::sync::Arc<dyn workflow_ux::module::ModuleInterface>>) -> workflow_ux::result::Result<#struct_name #struct_params> {
-                let view : std::sync::Arc<dyn workflow_ux::view::View> = workflow_ux::view::Default::try_new(module)?;
-                Ok(#struct_name::try_inject(&view.element())?)
+            pub fn try_create_layout_view(
+                module : Option<std::sync::Arc<dyn workflow_ux::module::ModuleInterface>>
+            ) -> workflow_ux::result::Result<std::sync::Arc<workflow_ux::view::Layout<Self, ()>>> {
+                Ok(Self::try_create_layout_view_with_data(module, Option::<()>::None)?)
+            }
+            
+            pub fn try_create_layout_view_with_data<D:'static>(
+                module : Option<std::sync::Arc<dyn workflow_ux::module::ModuleInterface>>,
+                data: Option<D>
+            ) -> workflow_ux::result::Result<std::sync::Arc<workflow_ux::view::Layout<Self, D>>> {
+                let el = workflow_ux::document().create_element("div")?;
+                let layout = Self::try_inject(&el)?;
+                let view = workflow_ux::view::Layout::try_new(module, layout, data)?;
+                Ok(view)
             }
             
             pub fn try_inject(parent: &web_sys::Element) -> workflow_ux::result::Result<#struct_name #struct_params> {
@@ -851,7 +862,7 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
                 let attributes = Attributes::new();
                 let docs = Docs::new();
 
-                Ok(#struct_name::new(&root,&attributes,&docs)?)
+                Ok(#struct_name::new(&root, &attributes, &docs)?)
             }
 
             pub fn new(parent_layout : &ElementLayout, attributes: &Attributes, docs : &Docs) -> workflow_ux::result::Result<#struct_name #struct_params> {
