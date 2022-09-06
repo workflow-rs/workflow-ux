@@ -192,7 +192,7 @@ impl BottomMenu {
         let element = doc.create_element("div")?;
         let (width, height) = {
             let rect_box = parent.get_bounding_client_rect();
-            let w = rect_box.width().max(320.0);
+            let w = rect_box.width().max(320.0).min(500.0);
             let h = rect_box.height().max(72.0);
             (w, h)
         };
