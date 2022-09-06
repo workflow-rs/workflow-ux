@@ -34,7 +34,7 @@ impl FlowMultiMenuBase{
 
 #[derive(Clone)]
 pub struct MultiSelect<E> {
-    pub element : Element,
+    pub element_wrapper : ElementWrapper,
     values : Rc<RefCell<Vec<String>>>,
     on_change_cb: Rc<RefCell<Option<Callback<Vec<String>>>>>,
     p:PhantomData<E>
@@ -46,12 +46,9 @@ where E: EnumTrait<E>
 {
     
     pub fn element(&self) -> FlowMultiMenuBase {
-        self.element.clone().dyn_into::<FlowMultiMenuBase>().expect("Unable to case to FlowMultiMenuBase")
+        self.element_wrapper.element.clone().dyn_into::<FlowMultiMenuBase>().expect("Unable to case to FlowMultiMenuBase")
     }
-    // pub fn element(&self) -> Element {
-    //     self.element.clone()
-    //     // self.element.clone().dyn_into::<FlowMultiMenuBase>().expect("Unable to case to FlowMultiMenuBase")
-    // }
+
     pub fn focus(&self) -> Result<()> {
         self.element().focus_form_control()?;
         Ok(())
@@ -85,8 +82,8 @@ where E: EnumTrait<E>
             .ok_or(JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
 
-        let control = MultiSelect {
-            element,
+        let mut control = MultiSelect {
+            element_wrapper: ElementWrapper::new(element),
             values,
             on_change_cb:Rc::new(RefCell::new(None)),
             p:PhantomData
@@ -95,11 +92,11 @@ where E: EnumTrait<E>
         Ok(control)
     }
 
-    fn init_events(&self) -> Result<()>{
-        let el = self.element.clone().dyn_into::<FlowMultiMenuBase>().expect("init_events(): Unable to cast to FlowMultiMenuBase");
+    fn init_events(&mut self) -> Result<()>{
+        let el = self.element();
         let values = self.values.clone();
         let cb_opt = self.on_change_cb.clone();
-        let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
+        self.element_wrapper.on("select", move |event| ->Result<()> {
             log_trace!("MultiSelect: select event: {:?}", event);
             let items:Vec<String> = el.value().into_serde().unwrap();
 
@@ -108,12 +105,12 @@ where E: EnumTrait<E>
             *values = items.clone();
 
             if let Some(cb) = &mut*cb_opt.borrow_mut(){
-                cb(items);
+                cb(items)?;
             };
 
-        }) as Box<dyn FnMut(_)>);
-        self.element.add_event_listener_with_callback("select", closure.as_ref().unchecked_ref())?;
-        closure.forget();
+            Ok(())
+
+        })?;
 
         Ok(())
     }
