@@ -74,7 +74,6 @@ impl Image {
 
         //  add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
         // self.element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
-        // closure.forget();
         Ok(self)
     }
 

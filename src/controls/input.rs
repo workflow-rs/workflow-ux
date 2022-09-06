@@ -3,6 +3,7 @@ use crate::layout::ElementLayout;
 use std::convert::Into;
 use workflow_ux::result::Result;
 use workflow_ux::error::Error;
+use crate::controls::listener::Listener;
 
 
 #[wasm_bindgen]
@@ -41,8 +42,6 @@ impl Input {
     ) -> Result<Input> {
         let element = document()
             .create_element("flow-input")?;
-            //.dyn_into::<FlowInputBase>()
-            //.expect("Unabel to cast Input into FlowInputBase");
 
         let pane_inner = layout.inner().ok_or(JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
@@ -88,11 +87,10 @@ impl Input {
 
     pub fn init(&mut self)-> Result<()>{
         let element = self.element();
-        // ~~~
         {
             let el = element.clone();
             let value = self.value.clone();
-            let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
+            self.element_wrapper.on("changed", move |event| -> Result<()> {
 
                 log_trace!("received changed event: {:?}", event);
                 let new_value = el.value();
@@ -101,16 +99,14 @@ impl Input {
 
                 *value = new_value;
 
-            }) as Box<dyn FnMut(_)>);
-            element.add_event_listener_with_callback("changed", closure.as_ref().unchecked_ref())?;
-            closure.forget();
-        }
+                Ok(())
 
-        // ~~~
+            })?;
+        }
         {
             let el = element.clone();
             let value = self.value.clone();
-            let closure = Closure::wrap(Box::new(move |event: web_sys::KeyEvent| {
+            let listener = Listener::new(move |event:web_sys::CustomEvent| ->Result<()> {
 
                 log_trace!("received key event: {:#?}", event);
                 let new_value = el.value();
@@ -118,11 +114,11 @@ impl Input {
                 let mut value = value.borrow_mut();
 
                 *value = new_value;
-
-            }) as Box<dyn FnMut(_)>);
-            element.add_event_listener_with_callback("keyup", closure.as_ref().unchecked_ref())?;
-            element.add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref())?;
-            closure.forget();
+                Ok(())
+            });
+            self.element_wrapper.element.add_event_listener_with_callback("keyup", listener.into_js())?;
+            self.element_wrapper.element.add_event_listener_with_callback("keydown", listener.into_js())?;
+            self.element_wrapper.push_listener(listener);
         }
 
         Ok(())

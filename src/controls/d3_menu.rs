@@ -5,6 +5,7 @@ use web_sys::{SvgPathElement, SvgElement};
 use workflow_ux::result::Result;
 use std::sync::Mutex;
 use crate::controls::svg::SvgNode;
+use crate::controls::listener::Listener;
 
 #[wasm_bindgen]
 #[derive(Debug)]
@@ -72,20 +73,6 @@ impl MenuItem{
     }
 }
 
-#[derive(Clone)]
-pub struct D3Menu {
-    pub element : Element,
-    svg: SvgElement,
-    circle_el:SvgPathElement,
-    circle_proxy_el:SvgElement,
-    items: BTreeMap<u8, MenuItem>,
-    width:i64,
-    size:i64,
-    large_size:i64,
-    value : Rc<RefCell<String>>,
-    closed:bool
-}
-
 static mut MENU : Option<Arc<Mutex<D3Menu>>> = None;
 
 pub fn get_menu()->Result<Arc<Mutex<D3Menu>>>{
@@ -129,6 +116,21 @@ pub fn show_menu()->Result<()>{
     let mut menu = m.lock().expect("Unable to lock D3Menu");
     let _ = menu.open();
     Ok(())
+}
+
+#[derive(Clone)]
+pub struct D3Menu {
+    pub element : Element,
+    svg: SvgElement,
+    circle_el:SvgPathElement,
+    circle_proxy_el:SvgElement,
+    items: BTreeMap<u8, MenuItem>,
+    width:i64,
+    size:i64,
+    large_size:i64,
+    value : Rc<RefCell<String>>,
+    closed:bool,
+    listeners:Vec<Listener<CustomEvent>>
 }
 
 impl D3Menu {
@@ -215,7 +217,8 @@ impl D3Menu {
             width,
             size,
             large_size,
-            closed:false
+            closed:false,
+            listeners:Vec::new()
         };
         let m = menu.init_event()?;
 
@@ -322,29 +325,27 @@ impl D3Menu {
     fn init_event(self)->Result<Arc<Mutex<Self>>>{
         let this = Arc::new(Mutex::new(self));
         let this_clone = this.clone();
-        let self_ = this_clone.lock().expect("Unable to lock D3Menu for click event");
+        let mut self_ = this_clone.lock().expect("Unable to lock D3Menu for click event");
         {
             let _this = this.clone();
-            let closure = Closure::wrap(
-                Box::new(move |_event: web_sys::TransitionEvent| {
+            let listener = Listener::new(move |_event: web_sys::CustomEvent| -> Result<()> {
                 let mut m = _this.lock().expect("Unable to lock D3Menu for click event");
-                let _r = m.on_transition_end();
                 log_trace!("##### transitionend");
-
-            }) as Box<dyn FnMut(web_sys::TransitionEvent)>);
-            self_.circle_proxy_el.add_event_listener_with_callback("transitionend", closure.as_ref().unchecked_ref())?;
-            closure.forget();
+                m.on_transition_end()?;
+                Ok(())
+            });
+            self_.circle_proxy_el.add_event_listener_with_callback("transitionend", listener.into_js())?;
+            self_.listeners.push(listener);
         }
         {
             let _this = this.clone();
-            let closure = Closure::wrap(
-                Box::new(move |_event: web_sys::MouseEvent| {
+            let listener = Listener::new(move |_event: web_sys::CustomEvent| -> Result<()> {
                 let mut m = _this.lock().expect("Unable to lock D3Menu for click event");
-                let _r = m.close();
-
-            }) as Box<dyn FnMut(web_sys::MouseEvent)>);
-            self_.circle_el.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
-            closure.forget();
+                m.close()?;
+                Ok(())
+            });
+            self_.circle_el.add_event_listener_with_callback("click", listener.into_js())?;
+            self_.listeners.push(listener);
         }
         
         Ok(this.clone())

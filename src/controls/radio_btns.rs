@@ -1,7 +1,5 @@
 use crate::prelude::*;
 use std::marker::PhantomData;
-use web_sys::{Element, EventTarget, Node};
-use std::fmt::Debug;
 use workflow_ux::result::Result;
 
 #[wasm_bindgen]
@@ -18,7 +16,7 @@ extern "C" {
 
 #[derive(Clone)]
 pub struct RadioBtns<E> {
-    pub element : Element,
+    pub element_wrapper : ElementWrapper,
     value : Rc<RefCell<String>>,
     on_change_cb:Rc<RefCell<Option<Callback<E>>>>,
     p:PhantomData<E>
@@ -27,9 +25,8 @@ pub struct RadioBtns<E> {
 impl<E> RadioBtns<E>
 where E: EnumTrait<E>+'static+Display
 {
-    pub fn element(&self) -> Element {
-        self.element.clone()
-        // Ok(self.element.clone().dyn_into::<Element>()?)
+    pub fn element(&self) -> FlowRadioBtnsBase {
+        self.element_wrapper.element.clone().dyn_into::<FlowRadioBtnsBase>().expect("Unable to cast Element to FlowRadioBtnsBase")
     }
 
     pub fn new(layout : &ElementLayout, attributes: &Attributes, _docs : &Docs) -> Result<RadioBtns<E>> {
@@ -61,8 +58,8 @@ where E: EnumTrait<E>+'static+Display
             .ok_or(JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
 
-        let btns = RadioBtns::<E>{
-            element,
+        let mut btns = RadioBtns::<E>{
+            element_wrapper: ElementWrapper::new(element),
             value,
             on_change_cb:Rc::new(RefCell::new(None)),
             p:PhantomData
@@ -73,31 +70,30 @@ where E: EnumTrait<E>+'static+Display
         Ok(btns)
     }
 
-    fn init(&self)-> Result<()>{
-        let el = self.element.clone().dyn_into::<FlowRadioBtnsBase>().expect("Unable to cast to FlowRadioBtnsBase");
+    fn init(&mut self)-> Result<()>{
+        let el = self.element();
         let value = self.value.clone();
         let cb_opt = self.on_change_cb.clone();
-        let closure = Closure::wrap(Box::new(move |event: web_sys::CustomEvent| {
+        self.element_wrapper.on("select", move |event| -> Result<()> {
             let detail = event.detail();
             log_trace!("flow radio changed event detail: {:?}", detail);
             
-            let current_element_value = el.value();
+            let new_value = el.value();
 
-            if let Some(variant) = E::from_str(current_element_value.as_str()){
+            if let Some(variant) = E::from_str(new_value.as_str()){
                 log_trace!("variant: {}", variant);
 
                 let mut value = value.borrow_mut();
-                log_trace!("new value: {:?}, old value: {}", current_element_value, value);
+                log_trace!("new value: {:?}, old value: {}", new_value, value);
 
-                *value = current_element_value;
+                *value = new_value;
 
                 if let Some(cb) =  &mut*cb_opt.borrow_mut(){
-                    cb(variant);
-                };
+                    return Ok(cb(variant)?);
+                }
             }
-        }) as Box<dyn FnMut(_)>);
-        self.element.add_event_listener_with_callback("select", closure.as_ref().unchecked_ref())?;
-        closure.forget();
+            Ok(())
+        })?;
     
         Ok(())
     }

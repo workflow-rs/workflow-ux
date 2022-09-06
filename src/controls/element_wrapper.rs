@@ -9,6 +9,12 @@ pub struct ElementWrapper{
     click_listeners:Vec<Listener<MouseEvent>>,
 }
 impl ElementWrapper{
+    pub fn push_listener(&mut self, listener: Listener<CustomEvent>){
+        self.listeners.push(listener);
+    }
+    pub fn push_click_listener(&mut self, listener: Listener<MouseEvent>){
+        self.click_listeners.push(listener);
+    }
     pub fn new(element : Element)->Self{
         Self { element, listeners: Vec::new(), click_listeners: Vec::new() }
     }

@@ -44,7 +44,7 @@ impl FlowMenuBase{
 
 #[derive(Clone)]
 pub struct Select<E> {
-    pub element : Element,
+    pub element_wrapper : ElementWrapper,
     value : Rc<RefCell<String>>,
     on_change_cb: Rc<RefCell<Option<Callback<String>>>>,
     p:PhantomData<E>
@@ -66,17 +66,11 @@ impl<E> Select<E>
 where E: EnumTrait<E>
 {
     
-    // pub fn element(&self) -> Element {
-    //     self.element.clone()
-    //     // Ok(self.element.clone().dyn_into::<FlowMenuBase>()?)
-    // }
     pub fn element(&self) -> FlowMenuBase {
-        self.element.clone().dyn_into::<FlowMenuBase>().expect("Unable to cast Select as FlowMenuBase")
+        self.element_wrapper.element.clone().dyn_into::<FlowMenuBase>().expect("Unable to cast Select as FlowMenuBase")
     }
-    // pub fn focus(&self) -> Result<()> {
     pub fn focus(&self) -> Result<()> {
         self.element().focus_form_control()?;
-        // self.element().focus_form_control()
         Ok(())
     }
 
@@ -88,7 +82,7 @@ where E: EnumTrait<E>
         };
 
         let control = Select {
-            element : element.clone(),
+            element_wrapper : ElementWrapper::new(element.clone()),
             value : Rc::new(RefCell::new(value)),
             on_change_cb:Rc::new(RefCell::new(None)),
             p:PhantomData
@@ -127,8 +121,8 @@ where E: EnumTrait<E>
             .ok_or(JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
 
-        let control = Select {
-            element,
+        let mut control = Select {
+            element_wrapper:ElementWrapper::new(element),
             value,
             on_change_cb:Rc::new(RefCell::new(None)),
             p:PhantomData
@@ -138,24 +132,23 @@ where E: EnumTrait<E>
         Ok(control)
     }
 
-    fn init_events(&self) -> Result<()>{
+    fn init_events(&mut self) -> Result<()>{
         let el = self.element();
-        // let el = self.element();
         let value = self.value.clone();
         let cb_opt = self.on_change_cb.clone();
-        let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
+        self.element_wrapper.on("select", move |event| -> Result<()> {
 
             log_trace!("Select: {:?}", event);
-            let current_value = el.value();
+            let new_value = el.value();
             let mut value = value.borrow_mut();
-            *value = current_value.clone();
+            *value = new_value.clone();
             if let Some(cb) = &mut*cb_opt.borrow_mut(){
-                cb(current_value);
-            };
+                cb(new_value)?;
+            }
 
-        }) as Box<dyn FnMut(_)>);
-        self.element.add_event_listener_with_callback("select", closure.as_ref().unchecked_ref())?;
-        closure.forget();
+            Ok(())
+
+        })?;
 
         Ok(())
     }

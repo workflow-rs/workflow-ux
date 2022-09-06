@@ -1,22 +1,20 @@
 use crate::prelude::*;
-use crate::layout::ElementLayout;
 use workflow_ux::result::Result;
 
 #[derive(Clone)]
 pub struct Checkbox {
     pub layout : ElementLayout,
-    pub element : Element,
+    pub element_wrapper : ElementWrapper,
     value : Rc<RefCell<bool>>,
+    on_change_cb:Rc<RefCell<Option<CallbackNoArgs>>>,
 }
 
 impl Checkbox {
     pub fn element(&self) -> Element {
-        self.element.clone()
+        self.element_wrapper.element.clone()
     }
 
-    pub fn new(pane : &ElementLayout, attributes: &Attributes, _docs : &Docs) -> Result<Checkbox> {  // pane-ctl
-
-        // https://rustwasm.github.io/wasm-bindgen/api/web_sys/struct.HtmlInputElement.html
+    pub fn new(pane : &ElementLayout, attributes: &Attributes, _docs : &Docs) -> Result<Checkbox> {
         let element = document()
             .create_element("flow-checkbox")?;
         for (k,v) in attributes.iter() {
@@ -27,34 +25,46 @@ impl Checkbox {
             }
         }
         let value = Rc::new(RefCell::new(false));
-        
-        // ~~~
-        {
-            let el = element.clone();
-            let value = value.clone();
-            let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
 
-                log_trace!("received change event: {:?}", event);
-                let current_element_value = el.get_attribute("checked").is_some();
-                log_trace!("current value: {:?}", current_element_value);
-                let mut value = value.borrow_mut();
-                log_trace!("current value: {:?}", current_element_value);
-
-                *value = current_element_value;
-
-            }) as Box<dyn FnMut(_)>);
-            element.add_event_listener_with_callback("changed", closure.as_ref().unchecked_ref())?;
-            closure.forget();
-        }
-
-        Ok(Checkbox { 
+        let mut control = Checkbox { 
             layout : pane.clone(),
-            element,
+            element_wrapper: ElementWrapper::new(element),
             value,
-        })
+            on_change_cb:Rc::new(RefCell::new(None))
+        };
+
+        control.init()?;
+
+        Ok(control)
+    }
+
+    fn init(&mut self)->Result<()>{
+
+        let el = self.element();
+        let value = self.value.clone();
+        let cb_opt = self.on_change_cb.clone();
+        self.element_wrapper.on("changed", move |_event| ->Result<()> {
+            let new_value = el.get_attribute("checked").is_some();
+            log_trace!("new value: {:?}", new_value);
+
+            *value.borrow_mut() = new_value;
+
+            if let Some(cb) =  &mut*cb_opt.borrow_mut(){
+                return Ok(cb()?);
+            }
+
+            Ok(())
+
+        })?;
+
+        Ok(())
     }
 
     pub fn value(&self) -> bool {
         *self.value.borrow()
+    }
+
+    pub fn on_change(&self, callback:CallbackNoArgs){
+        *self.on_change_cb.borrow_mut() = Some(callback);
     }
 }

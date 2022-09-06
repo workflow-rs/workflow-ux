@@ -1,9 +1,6 @@
 use workflow_ux::prelude::*;
 use workflow_ux::result::Result;
-// use crate::layout::ElementLayout;
 use std::{convert::Into, marker::PhantomData};
-use web_sys::{Element, EventTarget, Node};
-use std::fmt::Debug;
 
 
 #[wasm_bindgen]
@@ -20,18 +17,19 @@ extern "C" {
 
 #[derive(Clone)]
 pub struct Selector<E> {
-    pub element : Element,
+    pub element_wrapper : ElementWrapper,
     value : Rc<RefCell<String>>,
-    p:PhantomData<E>
+    p:PhantomData<E>,
+    on_change_cb:Rc<RefCell<Option<CallbackNoArgs>>>,
 }
 
 impl<E> Selector<E>
 where E: EnumTrait<E>+Display
 {
     
-    pub fn element(&self) -> Element {
-        // Ok(self.element.clone().dyn_into::<Element>()?)
-        self.element.clone()
+    pub fn element(&self) -> FlowSelectorBase {
+        self.element_wrapper.element.clone().dyn_into::<FlowSelectorBase>()
+            .expect("Unable to cast element to FlowSelectorBase")
     }
 
     pub fn new(layout : &ElementLayout, attributes: &Attributes, _docs : &Docs) -> Result<Selector<E>> {
@@ -73,46 +71,58 @@ where E: EnumTrait<E>+Display
         }
         let value = Rc::new(RefCell::new(init_value));
 
-        {
-            let el = element
-                .clone()
-                .dyn_into::<FlowSelectorBase>()
-                .expect("Unable to cast element to FlowSelectorBase");
-            let value = value.clone();
-            let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
-
-                
-                log_trace!("Selector:flow select event: {:?}", event);
-                let current_element_value = el.value();
-
-                log_trace!("Selector:current value: {:?}", current_element_value);
-                if let Some(op) = E::from_str(current_element_value.as_str()){
-                    log_trace!("op: {}", op);
-                }
-                let mut value = value.borrow_mut();
-                log_trace!("Selector:current value: {:?}", current_element_value);
-
-                *value = current_element_value;
-                
-
-            }) as Box<dyn FnMut(_)>);
-            element.add_event_listener_with_callback("select", closure.as_ref().unchecked_ref())?;
-            closure.forget();
-        }
-
         let pane_inner = layout
             .inner()
             .ok_or(JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
 
-        Ok(Selector {
-            element,
+        let mut control = Selector {
+            element_wrapper: ElementWrapper::new(element),
             value,
-            p:PhantomData
-        })
+            p:PhantomData,
+            on_change_cb:Rc::new(RefCell::new(None))
+        };
+
+        control.init()?;
+
+        Ok(control)
+    }
+
+    fn init(&mut self)->Result<()>{
+
+        let el = self.element();
+        let value = self.value.clone();
+        let cb_opt = self.on_change_cb.clone();
+        self.element_wrapper.on("select", move |event| -> Result<()> {
+
+            log_trace!("Selector:flow select event: {:?}", event);
+            let new_value = el.value();
+
+            log_trace!("Selector:current value: {:?}", new_value);
+            if let Some(op) = E::from_str(new_value.as_str()){
+                log_trace!("op: {}", op);
+            }
+            let mut value = value.borrow_mut();
+            log_trace!("Selector:current value: {:?}", new_value);
+
+            *value = new_value;
+
+            if let Some(cb) =  &mut*cb_opt.borrow_mut(){
+                return Ok(cb()?);
+            }
+            
+            Ok(())
+
+        })?;
+
+        Ok(())
     }
 
     pub fn value(&self) -> String {
         self.value.borrow().clone()
+    }
+
+    pub fn on_change(&self, callback:CallbackNoArgs){
+        *self.on_change_cb.borrow_mut() = Some(callback);
     }
 }

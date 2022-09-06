@@ -148,8 +148,6 @@ impl BottomMenuItem{
     {
         let callback = Listener::new(t);
         self.element.add_event_listener_with_callback("click", callback.into_js())?;
-        //self_.home_item.element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
-        //closure.forget();
         self.click_listener = Some(callback);
         Ok(())
     }
@@ -311,46 +309,12 @@ impl BottomMenu {
         let mut self_ = this.lock().expect("Unable to lock BottomMenu for click event");
         {
             let _this = this.clone();
-            /*
-            let closure = Closure::wrap(
-                Box::new(move |_event| {
-                    let mut m = _this.lock().expect("Unable to lock BottomMenu for click event");
-                    let _r = m.on_home_menu_click();
-                    //log_trace!("##### home menu click");
-
-            }) as Box<dyn FnMut(web_sys::MouseEvent)>);
-            */
-            /*
-            let callback = Listener::new(move |_event| {
-                let mut m = _this.lock().expect("Unable to lock BottomMenu for click event");
-                let _r = m.on_home_menu_click();
-                //log_trace!("##### home menu click");
-            });
-            self_.home_item.element.add_event_listener_with_callback("click", callback.into_js())?;
-            //self_.home_item.element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
-            //closure.forget();
-            self_.home_item.click_listener = Some(callback);
-            */
-
             self_.home_item.on_click(move |_event| ->Result<()>{
                 let mut m = _this.lock().expect("Unable to lock BottomMenu for click event");
                 m.on_home_menu_click()?;
                 Ok(())
-                //log_trace!("##### home menu click");
             })?;
         }
-        /*{
-            let _this = this.clone();
-            let closure = Closure::wrap(
-                Box::new(move |_event: web_sys::MouseEvent| {
-                let mut m = _this.lock().expect("Unable to lock BottomMenu for click event");
-                let _r = m.close();
-
-            }) as Box<dyn FnMut(web_sys::MouseEvent)>);
-            self_.circle_el.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
-            closure.forget();
-        }
-        */
         
         Ok(this.clone())
     }

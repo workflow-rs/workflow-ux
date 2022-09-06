@@ -3,7 +3,7 @@ use workflow_ux::result::Result;
 
 #[derive(Clone)]
 pub struct TokenSelect{
-    pub element : Element,
+    pub element_wrapper : ElementWrapper,
     value : Rc<RefCell<String>>,
     on_change_cb: Rc<RefCell<Option<Callback<String>>>>
 }
@@ -13,7 +13,7 @@ pub struct TokenSelect{
 impl TokenSelect{
     
     pub fn element(&self) -> FlowMenuBase {
-        self.element.clone().dyn_into::<FlowMenuBase>().expect("Unable to cast TokenSelect to FlowMenuBase")
+        self.element_wrapper.element.clone().dyn_into::<FlowMenuBase>().expect("Unable to cast TokenSelect to FlowMenuBase")
     }
 
     pub fn focus(&self) -> Result<()> {
@@ -47,8 +47,8 @@ impl TokenSelect{
             .ok_or(JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
 
-        let control = TokenSelect {
-            element,
+        let mut control = TokenSelect {
+            element_wrapper:ElementWrapper::new(element),
             value,
             on_change_cb:Rc::new(RefCell::new(None))
         };
@@ -57,23 +57,23 @@ impl TokenSelect{
         Ok(control)
     }
 
-    fn init_events(&self) -> Result<()>{
-        let el = self.element.clone().dyn_into::<FlowMenuBase>()?;//.map_err(|err|error!("Unable to cast TokenSelect to FlowMenuBase {:#?}",err))?;
+    fn init_events(&mut self) -> Result<()>{
+        let el = self.element();
         let value = self.value.clone();
         let cb_opt = self.on_change_cb.clone();
-        let closure = Closure::wrap(Box::new(move |event: web_sys::InputEvent| {
+        self.element_wrapper.on("select", move |event| ->Result<()> {
 
             log_trace!("Select: {:?}", event);
-            let current_value = el.value();
+            let new_value = el.value();
             let mut value = value.borrow_mut();
-            *value = current_value.clone();
+            *value = new_value.clone();
             if let Some(cb) = &mut*cb_opt.borrow_mut(){
-                cb(current_value);
-            };
+                cb(new_value)?;
+            }
 
-        }) as Box<dyn FnMut(_)>);
-        self.element.add_event_listener_with_callback("select", closure.as_ref().unchecked_ref())?;
-        closure.forget();
+            Ok(())
+
+        })?;
 
         Ok(())
     }

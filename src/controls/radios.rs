@@ -93,7 +93,7 @@ where E: EnumTrait<E> + 'static + Display
             *value.borrow_mut() = new_value.clone();
         
             if let Some(cb) = calback.borrow_mut().as_mut(){
-                cb(new_value);
+                cb(new_value)?;
             }
 
             Ok(())

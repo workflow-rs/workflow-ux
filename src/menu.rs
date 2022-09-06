@@ -1,10 +1,8 @@
-// use std::future::Future;
 use js_sys::Array;
 use workflow_ux::prelude::*;
 use workflow_ux::icon::Icon;
 use workflow_ux::result::Result;
 use workflow_ux::error::Error;
-// use workflow_log::*;
 
 pub type MenuHandlerFn = Box<dyn Fn() -> Result<()>>;
 
@@ -108,29 +106,33 @@ pub fn select(target : &Element) -> Result<()> {
 
 #[derive(Debug, Clone)]
 pub struct MenuGroup {
-    element: Element,
-    item : Option<Element>,
+    element_wrapper: ElementWrapper,
+    item : Option<ElementWrapper>,
 }
 
 impl MenuGroup {
 
     pub fn select(&self) -> Result<()> {
         if let Some(item) = &self.item {
-            select(item)?;
+            select(&item.element)?;
         }
         Ok(())
     }
 
     pub fn element(&self) -> Element {
-        self.element.clone()
+        self.element_wrapper.element.clone()
     }
 
     pub fn from_id(id: &str) -> Result<MenuGroup> {
         let element = document().get_element_by_id(&id)
             .ok_or(Error::MissingElement("WorkspaceMenuGroup::from_id()".into(),id.into()))?;
-        let item = element.get_elements_by_tag_name("li").item(0);
+        let item_opt = element.get_elements_by_tag_name("li").item(0);
+        let mut item = None;
+        if let Some(el) = item_opt{
+            item = Some(ElementWrapper::new(el));
+        }
         Ok(MenuGroup {
-            element,
+            element_wrapper: ElementWrapper::new(element),
             item
         })
     }
@@ -163,41 +165,38 @@ impl MenuGroup {
         sub_li.set_attribute("class", "sub")?;
         let element = document().create_element("ul")?;
         sub_li.append_child(&element)?;
-        parent.element.append_child(&li)?;
+        parent.element_wrapper.element.append_child(&li)?;
         li.insert_adjacent_element("afterend", &sub_li)?;
         
         Ok(MenuGroup {
-            element,
-            item : Some(li)
+            element_wrapper: ElementWrapper::new(element),
+            item : Some(ElementWrapper::new(li))
         })
 
     }
 
     pub fn with_id<M : Into<Menu>>(&mut self, id: M) -> &mut Self {
         let id : Menu = id.into();
-        self.element.set_id(&id.to_string());
+        self.element_wrapper.element.set_id(&id.to_string());
         self
     }
 
-    pub fn with_callback(self, callback: Box<dyn Fn(&MenuGroup) -> Result<()>>) -> Result<Self> {
-        // let el = self.item.clone().unwrap();
+    pub fn with_callback(mut self, callback: Box<dyn Fn(&MenuGroup) -> Result<()>>) -> Result<Self> {
         let self_ = self.clone();
-        let closure = Closure::<dyn FnMut(web_sys::MouseEvent)>::new(Box::new(move |_event: web_sys::MouseEvent| {
-            log_trace!("MenuGroup::with_callback called");
-            // _event.prevent_default();
-            match callback(&self_) {
-                Ok(_) => {},
-                Err(err) => {
-                    log_error!("Error executing MenuItem callback: {:?}", err);
-                }
-            }
-        }));
-        self
-            .item
-            .clone()
-            .expect("MenuGroup::with_callback() unable to bind to menu group without an item")
-            .add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
-        closure.forget();
+        if let Some(element_wrapper) = &mut self.item{
+            element_wrapper.on_click(move |_event| -> Result<()> {
+                log_trace!("MenuGroup::with_callback called");
+                match callback(&self_) {
+                    Ok(_) => {},
+                    Err(err) => {
+                        log_error!("Error executing MenuItem callback: {:?}", err);
+                    }
+                };
+                Ok(())
+            })?;
+        }else{
+            panic!("MenuGroup::with_callback() unable to bind to menu group without an item");
+        }
         Ok(self)
     }
 
@@ -206,27 +205,27 @@ impl MenuGroup {
 
 #[derive(Debug, Clone)]
 pub struct MenuItem {
-    element: Element,
+    element_wrapper: ElementWrapper,
     badge:Option<Element>
 }
 
 impl MenuItem {
 
     pub fn select(&self) -> Result<()> {
-        select(&self.element)?;
+        select(&self.element_wrapper.element)?;
         Ok(())
     }
 
 
     pub fn element(&self) -> Element {
-        self.element.clone()
+        self.element_wrapper.element.clone()
     }
 
     pub fn from_id(id: &str) -> Result<MenuItem> {
         let element = document().get_element_by_id(&id)
             .ok_or(Error::MissingElement("WorkspaceMenuItem::from_id()".into(),id.into()))?;
         Ok(MenuItem {
-            element,
+            element_wrapper: ElementWrapper::new(element),
             badge: None
         })
     }
@@ -276,14 +275,14 @@ impl MenuItem {
         parent.append_child(&element)?;
 
         Ok(MenuItem {
-            element,
+            element_wrapper: ElementWrapper::new(element),
             badge: None
         })
     }
 
     pub fn with_id<M : Into<Menu>>(self, id: M) -> Self {
         let id : Menu = id.into();
-        self.element.set_id(&id.to_string());
+        self.element_wrapper.element.set_id(&id.to_string());
         self
     }
     pub fn set_badge(&mut self, num:u64)->Result<()>{
@@ -294,7 +293,7 @@ impl MenuItem {
             None=>{
                 let badge = document().create_element("span")?;
                 badge.set_attribute("class", "menu-badge")?;
-                let icon_box_el_opt = self.element.query_selector(".icon-box")?;
+                let icon_box_el_opt = self.element_wrapper.element.query_selector(".icon-box")?;
                 if let Some(icon_box_el) = icon_box_el_opt{
                     icon_box_el.append_child(&badge)?;
                     self.badge = Some(badge);
@@ -311,103 +310,23 @@ impl MenuItem {
         Ok(())
     }
 
-    pub fn with_callback(self, callback: Box<dyn Fn(&MenuItem) -> Result<()>>) -> Result<Self> {
-        // let el = self.element.clone();
+    pub fn with_callback(mut self, callback: Box<dyn Fn(&MenuItem) -> Result<()>>) -> Result<Self> {
         let self_ = self.clone();
-        let closure = Closure::<dyn FnMut(web_sys::MouseEvent)>::new(Box::new(move |_event: web_sys::MouseEvent| {
+        self.element_wrapper.on_click(move |event| ->Result<()> {
             log_trace!("MenuItem::with_callback called");
-            // _event.prevent_default();
-            _event.stop_immediate_propagation();
+            event.stop_immediate_propagation();
             
             match callback(&self_) {
                 Ok(_) => {},
                 Err(err) => {
                     log_error!("Error executing MenuItem callback: {:?}", err);
                 }
-            }
-        }));
-        self.element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
-        closure.forget();
-        Ok(self)
-    }
+            };
 
-    // fn takes_closure<'a>(f: impl Fn() -> Box<dyn Future<Output=()>>)
-    // // where 
-    // {
-    //     // let mut foo = Foo {};
-    //     let f = Box::pin(f);
-    //     async move {
-
-    //         f().await
-    //     }
-    // }
-
-/* 
-    pub fn async_callback_tests(self, 
-    
-        // f: impl Fn() -> Pin<Box<dyn '_ + Future<Output = ()>>>
-        // f: impl Fn() -> Box<dyn 'static + Future<Output = ()>> + 'static
-        f: impl Fn() -> Pin<Box<dyn 'static + Future<Output = ()>>> + 'static
-    ) -> Result<Self>  //callback: Box<dyn Fn() -> dyn Future<Output = Result<()>>>) -> Result<Self> {
-    // where
-    //     F: Future<Output = T> + 'static,
-    //     T: 'static,
-    {
-
-        // let future = async move {
-        //     f().await
-        // };
-
-        // let f_ = Box::pin(f);
-
-        let self_ = self.clone();
-        self_.callback(Box::new(move ||{
-            log_trace!("browse - click");
-            // let workspace = workspace.clone();
-            // let f = async move {
-            //     future.await
-            // };
-    
-            // let self_ = self_.clone();
-            async_std::task::block_on(async move {
-                log_trace!("browse - in async block wait...");
-                //let r = 
-                // self_.load().await
-                f().await
-                // future.await
-    //            callback().await
-                // log_trace!("browse - in async block wait post...");
-                
-//                workspace.write().await.activate(Self::get().await).await.expect("Module activation failed");
-            });
             Ok(())
-        }));
-
-
+        })?;
         Ok(self)
     }
-*/
-
-
-
-    // pub fn async_callback<F>(self, 
-    //     f: impl Fn() -> F + 'static
-    // ) -> Result<Self>
-    // where
-    // F:Future<Output = ()> + 'static
-    // {
-    //     let self_ = self.clone();
-    //     self_.with_callback(Box::new(move ||{
-    //         log_trace!("click");
-    //         let fut = f();
-    //         async_std::task::block_on(async move {
-    //             fut.await
-    //         });
-    //         Ok(())
-    //     }))?;
-    //     Ok(self)
-    // }
-
-
+    
 }
 

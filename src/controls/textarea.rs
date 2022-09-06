@@ -1,6 +1,5 @@
 use crate::prelude::*;
 use workflow_ux::result::Result;
-// use workflow_ux::error::Error;
 
 #[wasm_bindgen]
 extern "C" {
@@ -19,14 +18,15 @@ extern "C" {
 #[derive(Clone)]
 pub struct Textarea {
     pub layout : ElementLayout,
-    pub element : FlowTextareaBase,
+    pub element_wrapper : ElementWrapper,
     value : Rc<RefCell<String>>,
+    on_change_cb:Rc<RefCell<Option<CallbackNoArgs>>>,
 }
 
 impl Textarea {
     
     pub fn element(&self) -> FlowTextareaBase {
-        self.element.clone().dyn_into::<FlowTextareaBase>().expect("Unable to cast to FlowTextareaBase")
+        self.element_wrapper.element.clone().dyn_into::<FlowTextareaBase>().expect("Unable to cast to FlowTextareaBase")
     }
 
     pub fn focus(&self) -> Result<()> {
@@ -39,9 +39,7 @@ impl Textarea {
         _docs : &Docs
     ) -> Result<Textarea> {
         let element = document()
-            .create_element("flow-textarea")?
-            .dyn_into::<FlowTextareaBase>()
-            .map_err(|err|format!("Unable to create & cast FlowTextareaBase {:#?}",err))?;
+            .create_element("flow-textarea")?;
 
         let init_value: String = String::from("");
         for (k,v) in attributes.iter() {
@@ -51,33 +49,47 @@ impl Textarea {
 
         let value = Rc::new(RefCell::new(init_value));
 
-        {
-            let el = element.clone();
-            let value = value.clone();
-            let closure = Closure::wrap(Box::new(move |_event: web_sys::InputEvent| {
-                let current_element_value = el.value();
-                let mut value = value.borrow_mut();
-                log_trace!("current value: {:?}", current_element_value);
-
-                *value = current_element_value;
-
-            }) as Box<dyn FnMut(_)>);
-            element.add_event_listener_with_callback("changed", closure.as_ref().unchecked_ref())?;
-            closure.forget();
-        }
-
         let pane_inner = layout.inner().ok_or(JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
 
-        Ok(Textarea { 
+        let mut control = Textarea { 
             layout : layout.clone(),
-            element,
+            element_wrapper: ElementWrapper::new(element),
             value,
-        })
+            on_change_cb:Rc::new(RefCell::new(None))
+        };
+
+        control.init()?;
+
+        Ok(control)
+    }
+
+    fn init(&mut self)->Result<()>{
+        let el = self.element();
+        let value = self.value.clone();
+        let cb_opt = self.on_change_cb.clone();
+        self.element_wrapper.on("changed", move |_event| ->Result<()> {
+            let new_value = el.value();
+            log_trace!("new value: {:?}", new_value);
+
+            *value.borrow_mut() = new_value;
+            if let Some(cb) =  &mut*cb_opt.borrow_mut(){
+                return Ok(cb()?);
+            }
+
+            Ok(())
+        })?;
+
+        Ok(())
     }
 
     pub fn value(&self) -> String {
         self.value.borrow().clone()
     }
+    
+    pub fn on_change(&self, callback:CallbackNoArgs){
+        *self.on_change_cb.borrow_mut() = Some(callback);
+    }
+
 }
 

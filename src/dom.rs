@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, controls::listener::Listener};
 use std::{sync::Arc, str::FromStr};
 use ahash::AHashMap;
 use crate::id::Id;
@@ -28,14 +28,15 @@ pub fn register(el : &Arc<dyn Element>) {
 
 pub struct Dom {
     elements : AHashMap<Id, Arc<dyn Element>>,
-    // callback : Closure::<dyn FnMut(JsValue)>,
+    dom_listener: Option<Listener<js_sys::Array>>
 }
 
 
 impl Dom {
     pub fn init() {
         let dom = Dom {
-            elements: AHashMap::default()
+            elements: AHashMap::default(),
+            dom_listener: None
         };
 
         unsafe { DOM = Some(dom); }
@@ -43,11 +44,11 @@ impl Dom {
         global().init_observer().expect("Unable to init observer");
     }
 
-    pub fn init_observer(&self) -> Result<(),Error> {
+    pub fn init_observer(&mut self) -> Result<(),Error> {
 
         let body = document().get_elements_by_tag_name("body").item(0).expect("Unable to get body element");
 
-        let callback = Closure::<dyn FnMut(js_sys::Array)>::new(Box::new(move |array: js_sys::Array| {
+        let listener = Listener::new(move |array: js_sys::Array| ->Result<(), crate::error::Error> {
 
             let records : Vec<MutationRecord> = array
                 .iter()
@@ -68,17 +69,18 @@ impl Dom {
                         }
                     }
                 }
-            }
+            };
+
+            Ok(())
             // log_trace!("= = = = = = = = MutationObserver called : {:?}", data);
-        }));
+        });
 
-        let observer = MutationObserver::new(callback.as_ref().unchecked_ref()).map_err(|e|Error::JsError(format!("{:?}", e).to_string()))?;
-        callback.forget();
-
+        let observer = MutationObserver::new(listener.into_js()).map_err(|e|Error::JsError(format!("{:?}", e).to_string()))?;
+        self.dom_listener = Some(listener);
         let mut options = MutationObserverInit::new();
         options.child_list(true);
         options.subtree(true);
-        observer.observe_with_options(&body,&options).map_err(|e|Error::JsError(format!("{:?}", e).to_string()))?;
+        observer.observe_with_options(&body, &options).map_err(|e|Error::JsError(format!("{:?}", e).to_string()))?;
 
 
         Ok(())

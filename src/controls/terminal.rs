@@ -28,8 +28,7 @@ extern "C" {
 
 #[derive(Clone)]
 pub struct Terminal {
-    //pub layout : ElementLayout,
-    pub element : WorkflowTerminal,
+    pub element_wrapper : ElementWrapper,
     value : Rc<RefCell<String>>,
 }
 
@@ -37,7 +36,7 @@ pub struct Terminal {
 impl Terminal {
     
     pub fn element(&self) -> WorkflowTerminal {
-        self.element.clone().dyn_into::<WorkflowTerminal>().expect("Unable to cast to WorkflowTerminal")
+        self.element_wrapper.element.clone().dyn_into::<WorkflowTerminal>().expect("Unable to cast to WorkflowTerminal")
     }
 
     pub fn new(
@@ -46,62 +45,46 @@ impl Terminal {
         _docs : &Docs
     ) -> Result<Terminal> {
         let element = document()
-            .create_element("workflow-terminal")?
-            .dyn_into::<WorkflowTerminal>()?;
-            // .map_err(|err|error!("Terminal::new(): Unable to create & cast to WorkflowTerminal {:#?}",err))?;
-
+            .create_element("workflow-terminal")?;
         let init_value: String = String::from("");
-        //element.set_attribute("value", init_value.as_str())?;
-        //element.set_attribute("label", "Input")?;
-        //element.set_attribute("placeholder", "Please enter")?;
 
         for (k,v) in attributes.iter() {
             element.set_attribute(k,v)?;
         }
 
-
         let value = Rc::new(RefCell::new(init_value));
         let pane_inner = layout.inner().ok_or(JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
-        let terminal = Terminal { 
-            //layout : layout.clone(),
-            element,
+        let mut terminal = Terminal {
+            element_wrapper: ElementWrapper::new(element),
             value,
         };
         terminal.init_event()?;
         Ok(terminal)
     }
 
-    fn init_event(&self)->Result<()>{
+    fn init_event(&mut self)->Result<()>{
         let this = self.clone();
-        let closure = Closure::wrap(
-            Box::new(move|event: web_sys::CustomEvent| {
+        self.element_wrapper.on("cmd", move|event| ->Result<()> {
 
             log_trace!("received terminal event: {:#?}", event);
             let detail = event.detail();
             
-            match utils::try_get_string(&detail, "cmd"){
-                Ok(cmd)=>{
-                    log_trace!("cmd: {:#?}", cmd);
-                    let _this = this.clone();
-                    let pr = future_to_promise(async move{
-                        _this.sink(cmd).await
-                    });
-                    let _result = utils::apply_with_args1(
-                        &detail, 
-                        "resolve", 
-                        JsValue::from(pr)
-                    );
+            let cmd = utils::try_get_string(&detail, "cmd")?;
+            log_trace!("cmd: {:#?}", cmd);
+            let _this = this.clone();
+            let pr = future_to_promise(async move{
+                _this.sink(cmd).await
+            });
+            utils::apply_with_args1(
+                &detail,
+                "resolve",
+                JsValue::from(pr)
+            )?;
 
-                },
-                Err(_e)=>{
+            Ok(())
+        })?;
 
-                }
-            };
-
-        }) as Box<dyn FnMut(_)>);
-        self.element.add_event_listener_with_callback("cmd", closure.as_ref().unchecked_ref())?;
-        closure.forget();
 
         Ok(())
     }

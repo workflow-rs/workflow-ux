@@ -129,7 +129,6 @@ impl Link {
         }));
         // self.element().set_onclick(Some(onclick.as_ref().unchecked_ref()));
         self.element.add_event_listener_with_callback("click", onclick.as_ref().unchecked_ref())?;
-        //onclick.forget();
         *self._onclick.lock().unwrap() = Some(onclick);
 
 
