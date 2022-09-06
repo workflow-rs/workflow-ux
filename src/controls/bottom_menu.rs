@@ -1,3 +1,4 @@
+use crate::error;
 use crate::{prelude::*, icon::Icon};
 use web_sys::SvgElement;
 use workflow_ux::result::Result;
@@ -13,8 +14,14 @@ pub fn get_bottom_menu()-> Result<Arc<Mutex<BottomMenu>>>{
             menu.clone()
         }
         None=>{
-            let body = document().body().unwrap();
-            let menu_arc = bottom_menu::BottomMenu::create_in(&body, None)?;
+            //let body = document().body().unwrap();
+            let parent = match document().query_selector("#workspace-bottom-nav").expect("#workspace-bottom-nav is missing"){
+                Some(el)=>el,
+                None=>{
+                    return Err(error!("#workspace-bottom-nav element is required for bottom nav"))
+                }
+            };
+            let menu_arc = bottom_menu::BottomMenu::create_in(&parent, None)?;
             
             let menu_arc_clone = menu_arc.clone();
             unsafe { BOTTOM_MENU = Some(menu_arc.clone()); }
@@ -96,12 +103,12 @@ impl BottomMenuItem{
         let path_el = SvgElement::new("path").expect("BottomMenuItem: Unable to create path")
             .set_cls("slider");
         let circle_el = SvgElement::new("circle").expect("BottomMenuItem: Unable to create circle")
-            .set_radius("31")
-            .set_cpos("0", "36");
+            .set_radius("30")
+            .set_cpos("0", "38");
 
         let icon_el = SvgElement::new("image").expect("BottomMenuItem: Unable to create image")
             .set_href(&icon_.to_string())
-            .set_pos("-15", "15")
+            .set_pos("-15", "17")
             .set_size("30", "30")
             .set_aspect_ratio("xMidYMid meet");
 
@@ -109,7 +116,7 @@ impl BottomMenuItem{
         let text_el = SvgElement::new("text").expect("BottomMenuItem: Unable to create text")
             .set_html(&text)
             .set_text_anchor("middle")
-            .set_pos("0", "55");
+            .set_pos("0", "57");
 
         let element = SvgElement::new("g").expect("BottomMenuItem: Unable to create root")
             .set_cls("menu")
@@ -183,27 +190,19 @@ impl BottomMenu {
     pub fn create_in(parent:&Element, attributes: Option<&Attributes>)-> Result<Arc<Mutex<BottomMenu>>> {
         let doc = document();
         let element = doc.create_element("div")?;
-        let (width, height) = match doc.query_selector(".bottom-nav-holder")?{
-            Some(body)=>{
-                let body_box = body.get_bounding_client_rect();
-                let w = body_box.width();
-                let h = body_box.height();
-                if w < h{
-                    (w, w)
-                }else{
-                    (h, h)
-                }
-            }
-            None=>{
-                (390.0, 72.0)
-            }
+        let (width, height) = {
+            let rect_box = parent.get_bounding_client_rect();
+            let w = rect_box.width().max(320.0);
+            let h = rect_box.height().max(72.0);
+            (w, h)
         };
+        let width = width+10.0;
         element.set_attribute("class", "bottom-nav")?;
         element.set_attribute("hide", "true")?;
         let view_box = format!("0,0,{width},{height}");
         let svg = SvgElement::new("svg")?
             .set_view_box(&view_box)
-            .set_size("100%", "100%")
+            .set_size("100%", &format!("{}", height - 4.0))
             .set_aspect_ratio("xMidYMid meet");
         element.append_child(&svg)?;
 

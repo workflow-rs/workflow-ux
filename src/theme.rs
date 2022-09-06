@@ -50,10 +50,12 @@ pub fn init_theme(theme: Theme) -> Result<()> {
 
 pub fn set_theme(theme: Theme) -> Result<()> {
 
-    let el = document()
-        .get_elements_by_tag_name("body")
-        .item(0)
-        .ok_or(Error::UnableToGetBody)?;
+    let el = match document().body(){
+            Some(el)=>el,
+            None=>{
+                return Err(Error::UnableToGetBody);
+            }
+        };
 
     let list = el.class_list();
     for idx in 0..list.length() {
