@@ -155,7 +155,16 @@ impl MenuGroup {
         let text_box_el = document().create_element("div")?;
         text_box_el.set_attribute("class", "text-box")?;
 
+        let short_title_el = document().create_element("span")?;
+        short_title_el.set_attribute("class", "short-title")?;
+        if caption.short.len() > 0{
+            short_title_el.set_inner_html(&caption.short);
+        }else{
+            short_title_el.set_inner_html(&caption.title);
+        }
+
         icon_box_el.append_child(&icon_el)?;
+        icon_box_el.append_child(&short_title_el)?;
         text_box_el.set_inner_html(&caption.title);
 
         li.append_child(&icon_box_el)?;
