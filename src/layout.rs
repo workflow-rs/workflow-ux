@@ -194,7 +194,6 @@ impl ElementLayout {
                 let mut parse_doc = true;
                 if let Some(md_doc) = attributes.get("md_doc") {
                     //form_control.set_title(title)?;
-                    log_trace!("md_doc: {}", md_doc);
                     parse_doc = !md_doc.eq("false");
                 }
                 
@@ -204,7 +203,11 @@ impl ElementLayout {
 
                 for (k,v) in attributes.iter() {
                     if !k.eq("title"){
-                        form_control.set_attribute(k,v)?;
+                        if k.eq("no_info"){
+                            form_control.set_attribute("no-info",v)?;
+                        }else{
+                            form_control.set_attribute(k,v)?;
+                        }   
                     }
                 }
 

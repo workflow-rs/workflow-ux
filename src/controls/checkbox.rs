@@ -18,7 +18,7 @@ impl Checkbox {
         let element = document()
             .create_element("flow-checkbox")?;
         for (k,v) in attributes.iter() {
-            if k.eq("title") || k.eq("html"){
+            if k.eq("title") || k.eq("html") || k.eq("label"){
                 element.set_inner_html(v);
             }else{
                 element.set_attribute(k,v)?;

@@ -33,8 +33,8 @@ impl TokenSelector{
         
         let tree = html!{
             <div class="h-box align-center">
-                <flow-input placeholder={amount_title}></flow-input>
-                <flow-select placeholder={token_title}></flow-select>
+                <flow-input label={amount_title}></flow-input>
+                <flow-select label={token_title}></flow-select>
                 <flow-btn>{btn_text}</flow-btn>
             </div>
             <flow-input label={selected_label}></flow-input>
