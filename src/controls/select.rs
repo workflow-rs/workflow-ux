@@ -98,7 +98,7 @@ where E: EnumTrait<E>
             .create_element("flow-select")?;
             
 
-        let init_value: String = String::from("");
+        let mut init_value: String = String::new();
         let items = E::list();
         for item in items.iter() {
             let menu_item = doc.create_element("flow-menu-item")?;
@@ -112,7 +112,12 @@ where E: EnumTrait<E>
                 log_trace!("Use `MultiSelect` for multiple selection {:?}", attributes);
                 continue;
             }
-            element.set_attribute(k,v)?;
+            if k.eq("value"){
+                element.set_attribute("selected",v)?;
+                init_value = v.to_string();
+            }else{
+                element.set_attribute(k,v)?;
+            }
         }
         let value = Rc::new(RefCell::new(init_value));
 

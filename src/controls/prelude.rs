@@ -11,6 +11,7 @@ pub use crate::controls::{
     multiselect::MultiSelect,
     stage_footer::StageFooter,
     token_select::TokenSelect,
+    token_selector::TokenSelector,
     base_element::BaseElement,
     terminal::Terminal,
     d3_menu::D3Menu

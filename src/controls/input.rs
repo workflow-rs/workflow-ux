@@ -53,7 +53,7 @@ impl Input {
         layout : ElementLayout,
         attributes: &Attributes,
         _docs : &Docs,
-        init_value: String
+        mut init_value: String
     ) -> Result<Input> {
 
         element.set_attribute("value", init_value.as_str())?;
@@ -62,6 +62,9 @@ impl Input {
 
         for (k,v) in attributes.iter() {
             element.set_attribute(k,v)?;
+            if k.eq("value"){
+                init_value = v.to_string();
+            }
         }
         let value = Rc::new(RefCell::new(init_value));
 

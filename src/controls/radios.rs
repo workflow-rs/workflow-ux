@@ -36,7 +36,7 @@ where E: EnumTrait<E> + 'static + Display
         let element = doc
             .create_element("flow-radios")?;
 
-        let mut init_value: String = String::from("");
+        let mut init_value: String = String::new();
         let items = E::list();
         for item in items.iter() {
             let radio = doc.create_element("flow-radio")?;
@@ -46,19 +46,25 @@ where E: EnumTrait<E> + 'static + Display
             if init_value.eq(""){
                 init_value = String::from(item.as_str())
             }
-        }
-        
-        element.set_attribute("selected", init_value.as_str())?;
+        }  
 
         for (k,v) in attributes.iter() {
-            element.set_attribute(k,v)?;
+            if k.eq("value"){
+                init_value = v.to_string();
+            }else{
+                element.set_attribute(k,v)?;
+            }
         }
-        let value = Rc::new(RefCell::new(init_value));
+
+        element.set_attribute("selected", init_value.as_str())?;
+        
+        let value = Rc::new(RefCell::new(init_value.clone()));
 
         let pane_inner = layout
             .inner()
             .ok_or(JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
+
 
         let mut radios = Radios {
             element_wrapper: ElementWrapper::new(element),
@@ -82,7 +88,7 @@ where E: EnumTrait<E> + 'static + Display
             log_trace!("flow radio changed event: {:?}", event);
             let detail = event.detail();
             log_trace!("flow radio changed event detail: {:?}", detail);
-            
+
             let new_value = el.value();
 
             log_trace!("flow radio: new value: {:?}", new_value);
@@ -104,6 +110,12 @@ where E: EnumTrait<E> + 'static + Display
 
     pub fn value(&self) -> String {
         self.value.borrow().clone()
+    }
+
+    pub fn set_value(&mut self, value:String)->Result<()>{
+        self.element_wrapper.element.set_attribute("selected", value.as_str())?;
+        *self.value.borrow_mut() = value;
+        Ok(())
     }
 
     pub fn on_change(&self, callback:Callback<String>)->Result<()>{

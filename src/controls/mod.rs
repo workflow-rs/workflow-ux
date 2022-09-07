@@ -16,6 +16,7 @@ pub mod select;
 pub mod multiselect;
 pub mod selector;
 pub mod token_select;
+pub mod token_selector;
 pub mod stage_footer;
 pub mod base_element;
 pub mod terminal;
