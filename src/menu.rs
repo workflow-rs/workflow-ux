@@ -250,7 +250,11 @@ impl MenuItem {
 
         let subtitle_el = document().create_element("div")?;
         subtitle_el.set_attribute("class", "sub-title")?;
-        subtitle_el.set_inner_html(&caption.subtitle);
+        if caption.subtitle.len() > 0 {
+            subtitle_el.set_inner_html(&caption.subtitle);
+        }else{
+            subtitle_el.set_inner_html("Default Subtitle");
+        }
         text_box_el.append_child(&subtitle_el)?;
 
         let short_title_el = document().create_element("span")?;
