@@ -191,11 +191,17 @@ impl ElementLayout {
             },
             ElementLayoutStyle::Section => {
                 let form_control = FormControl::new()?;
+                let mut parse_doc = true;
+                if let Some(md_doc) = attributes.get("md_doc") {
+                    //form_control.set_title(title)?;
+                    log_trace!("md_doc: {}", md_doc);
+                    parse_doc = !md_doc.eq("false");
+                }
                 
-                match attributes.get("title") {
-                    Some(title) => { form_control.set_title(title)?; },
-                    None => { }
-                };
+                if let Some(title) = attributes.get("title") {
+                   form_control.set_title(title)?;
+                }
+
                 for (k,v) in attributes.iter() {
                     if !k.eq("title"){
                         form_control.set_attribute(k,v)?;
@@ -204,7 +210,13 @@ impl ElementLayout {
 
                 let disposition = child.get_attribute("docs");
                 if disposition.is_none() || disposition.unwrap() != "consume" {
-                    let markdown = docs.join("\n");
+                    let mut markdown = docs.join("\n");
+                    if parse_doc{
+                        markdown = ::markdown::to_html(&markdown)
+                                    .replace("<a href='#", "<a href ='#")
+                                    .replace("<a href=", "<a target=\"_blank\" href=");
+                    }
+                    //log_trace!("parse_doc: {parse_doc}, {markdown}");
                     form_control.set_info(&markdown)?;
                 }
 

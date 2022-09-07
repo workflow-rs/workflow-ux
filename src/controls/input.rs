@@ -57,8 +57,8 @@ impl Input {
     ) -> Result<Input> {
 
         element.set_attribute("value", init_value.as_str())?;
-        element.set_attribute("label", "Input")?;
-        element.set_attribute("placeholder", "Please enter")?;
+        //element.set_attribute("label", "Input")?;
+        //element.set_attribute("placeholder", "Please enter")?;
 
         for (k,v) in attributes.iter() {
             element.set_attribute(k,v)?;
