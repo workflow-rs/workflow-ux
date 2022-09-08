@@ -31,12 +31,6 @@ impl FormResult{
 
 #[async_trait(?Send)]
 pub trait FormHandlers{
-    async fn get_categories()->Result<Vec<Category>>{
-        let mut list:Vec<Category> = Vec::new();
-        list.push(("Category 1", "cat-1").into());
-        list.push(("Category 2", "cat-2").into());
-        Ok(list)
-    }
     async fn load(&mut self)->Result<()>;
     async fn submit(&mut self)->Result<FormResult>;
 }
