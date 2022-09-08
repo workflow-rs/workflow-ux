@@ -60,8 +60,6 @@ impl Select<()>{
     }
 }
 
-
-
 impl<E> Select<E>
 where E: EnumTrait<E>
 {
@@ -161,7 +159,26 @@ where E: EnumTrait<E>
     pub fn value(&self) -> String {
         self.value.borrow().clone()
     }
+
+    pub fn set_value<T: Into<String>>(&self, value:T)->Result<()>{
+        let value = value.into();
+        FieldHelper::set_attr(&self.element_wrapper.element, "selected", &value)?;
+        *self.value.borrow_mut() = value;
+        Ok(())
+    }
+
     pub fn on_change(&self, callback:Callback<String>){
         *self.on_change_cb.borrow_mut() = Some(callback);
+    }
+
+    pub fn change_options<T:Into<String>>(&self, options:Vec<(T, T)>)->Result<()>{
+        let items = Array::new_with_length(options.len() as u32);
+        for (text, value) in options{
+            let opt = Select::create_option(text, value);
+            items.push(&JsValue::from(opt));
+        }
+
+        self.element().change_options(items);
+        Ok(())
     }
 }

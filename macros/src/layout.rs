@@ -581,8 +581,12 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
     let mut init_helper_def = quote!{};
     let mut init_extra_props = quote!{};
     let mut init_extra_props_def = quote!{};
+    let mut layout_loading = quote!{};
     let layout_style = match layout {
-        Layout::Form => quote! { workflow_ux::layout::ElementLayoutStyle::Form },
+        Layout::Form => {
+            layout_loading = quote! {layout.load().await?;};
+            quote! { workflow_ux::layout::ElementLayoutStyle::Form }
+        },
         Layout::Section => quote! { workflow_ux::layout::ElementLayoutStyle::Section },
         Layout::Stage => {
             init_helper = quote! { 
@@ -841,18 +845,19 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
         },
         _ => quote! {
 
-            pub fn try_create_layout_view(
+            pub async fn try_create_layout_view(
                 module : Option<std::sync::Arc<dyn workflow_ux::module::ModuleInterface>>
             ) -> workflow_ux::result::Result<std::sync::Arc<workflow_ux::view::Layout<Self, ()>>> {
-                Ok(Self::try_create_layout_view_with_data(module, Option::<()>::None)?)
+                Ok(Self::try_create_layout_view_with_data(module, Option::<()>::None).await?)
             }
             
-            pub fn try_create_layout_view_with_data<D:'static>(
+            pub async fn try_create_layout_view_with_data<D:'static>(
                 module : Option<std::sync::Arc<dyn workflow_ux::module::ModuleInterface>>,
                 data: Option<D>
             ) -> workflow_ux::result::Result<std::sync::Arc<workflow_ux::view::Layout<Self, D>>> {
                 let el = workflow_ux::document().create_element("div")?;
-                let layout = Self::try_inject(&el)?;
+                let mut layout = Self::try_inject(&el)?;
+                #layout_loading
                 let view = workflow_ux::view::Layout::try_new(module, layout, data)?;
                 Ok(view)
             }

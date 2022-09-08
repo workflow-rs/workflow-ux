@@ -16,14 +16,14 @@ extern "C" {
 
 
 #[derive(Clone)]
-pub struct Radios<E> {
+pub struct Radio<E> {
     element_wrapper : ElementWrapper,
     value : Rc<RefCell<String>>,
     change_callback : OptionalCallback<String>,
     p:PhantomData<E>
 }
 
-impl<E> Radios<E>
+impl<E> Radio<E>
 where E: EnumTrait<E> + 'static + Display
 {
     
@@ -31,7 +31,7 @@ where E: EnumTrait<E> + 'static + Display
         self.element_wrapper.element.clone()
     }
 
-    pub fn new(layout : &ElementLayout, attributes: &Attributes, _docs : &Docs) -> Result<Radios<E>> {
+    pub fn new(layout : &ElementLayout, attributes: &Attributes, _docs : &Docs) -> Result<Radio<E>> {
         let doc = document();
         let element = doc
             .create_element("flow-radios")?;
@@ -66,15 +66,15 @@ where E: EnumTrait<E> + 'static + Display
         pane_inner.element.append_child(&element)?;
 
 
-        let mut radios = Radios {
+        let mut radio = Radio {
             element_wrapper: ElementWrapper::new(element),
             value,
             change_callback:Rc::new(RefCell::new(None)),
             p:PhantomData
         };
-        radios.init()?;
+        radio.init()?;
     
-        Ok(radios)
+        Ok(radio)
     }
 
     fn init(&mut self)-> Result<()>{

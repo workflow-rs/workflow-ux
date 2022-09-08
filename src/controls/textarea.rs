@@ -23,6 +23,8 @@ pub struct Textarea {
     on_change_cb:Rc<RefCell<Option<CallbackNoArgs>>>,
 }
 
+//impl FieldHelpers for Textarea{}
+
 impl Textarea {
     
     pub fn element(&self) -> FlowTextareaBase {
@@ -85,6 +87,13 @@ impl Textarea {
 
     pub fn value(&self) -> String {
         self.value.borrow().clone()
+    }
+
+    pub fn set_value<T: Into<String>>(&self, value:T)->Result<()>{
+        let value = value.into();
+        FieldHelper::set_value_attr(&self.element_wrapper.element, &value)?;
+        *self.value.borrow_mut() = value;
+        Ok(())
     }
     
     pub fn on_change(&self, callback:CallbackNoArgs){

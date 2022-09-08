@@ -16,6 +16,8 @@ pub use workflow_log::{log_trace,log_warning,log_error};
 pub use crate::{document,window};
 pub use crate::theme::*;
 pub use crate::control::{Control,ElementBindingContext};
+pub use crate::form::{FormHandlers, FormResult};
+pub use crate::controls::helper::FieldHelper;
 
 // TODO review and namespace all controls
 pub use crate::controls::*;

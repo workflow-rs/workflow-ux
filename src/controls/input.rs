@@ -28,9 +28,8 @@ pub struct Input {
     value : Rc<RefCell<String>>,
 }
 
-
 impl Input {
-    
+
     pub fn element(&self) -> FlowInputBase {
         self.element_wrapper.element.clone().dyn_into::<FlowInputBase>().expect("Unable to cast element to FlowInputBase")
     }
@@ -82,11 +81,14 @@ impl Input {
     pub fn value(&self) -> String {
         self.value.borrow().clone()
     }
-    pub fn set_value(&self, value: String) -> Result<()>{
-        self.element_wrapper.element.set_attribute("value", &value)?;
-        (*self.value.borrow_mut()) = value;
+
+    pub fn set_value<T: Into<String>>(&self, value:T)->Result<()>{
+        let value = value.into();
+        FieldHelper::set_value_attr(&self.element_wrapper.element, &value)?;
+        *self.value.borrow_mut() = value;
         Ok(())
     }
+    
 
     pub fn init(&mut self)-> Result<()>{
         let element = self.element();

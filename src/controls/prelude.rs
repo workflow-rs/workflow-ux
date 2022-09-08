@@ -3,7 +3,7 @@ pub use crate::controls::{
     checkbox::Checkbox,
     input::Input,
     text::Text,
-    radios::Radios,
+    radio::Radio,
     radio_btns::RadioBtns,
     select::*,
     textarea::Textarea,
@@ -16,3 +16,5 @@ pub use crate::controls::{
     terminal::Terminal,
     d3_menu::D3Menu
 };
+pub use crate::form::{FormHandlers, FormResult};
+pub type UXResult<T> = workflow_ux::result::Result<T>;

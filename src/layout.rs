@@ -10,7 +10,7 @@ use workflow_ux::result::Result;
 use wasm_bindgen::JsCast;
 // use crate::utils::{document,get_element_by_id};
 // use crate::dom::document;
-use workflow_log::log_trace;
+//use workflow_log::log_trace;
 use workflow_ux::prelude::*;
 
 use crate::attributes::Attributes;
@@ -61,10 +61,12 @@ pub trait DefaultFunctions{
     fn validate_stage(&self) -> Result<bool>{
         Ok(true)
     }
+    /*
     fn submit(&self) -> Result<bool>{
         log_trace!("DefaultFunctions::submit()");
         Ok(true)
     }
+    */
 }
 
 pub trait Elemental {
