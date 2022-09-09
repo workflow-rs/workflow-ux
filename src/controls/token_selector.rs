@@ -4,6 +4,7 @@ use workflow_html::{html, Render};
 
 #[derive(Clone)]
 pub struct TokenSelector{
+    pub layout: ElementLayout,
     pub element_wrapper : ElementWrapper,
     value : Rc<RefCell<String>>,
     on_change_cb: Rc<RefCell<Option<Callback<String>>>>
@@ -52,6 +53,7 @@ impl TokenSelector{
         pane_inner.element.append_child(&element)?;
 
         let mut control = TokenSelector {
+            layout:layout.clone(),
             element_wrapper: ElementWrapper::new(element),
             value,
             on_change_cb: Rc::new(RefCell::new(None))

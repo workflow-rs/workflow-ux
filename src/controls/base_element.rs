@@ -19,6 +19,26 @@ extern "C" {
 }
 
 impl BaseElement{
+    pub fn show(&self, show:bool)->Result<()>{
+        if show{
+            self.remove_attribute("hide")?;
+        }else{
+            self.set_attribute("hide", "true")?;
+        }
+
+        Ok(())
+    }
+    pub fn show_form_control(&self, show:bool)->Result<()>{
+        if let Some(ct) = self.closest_form_control()?{
+            if show{
+                ct.remove_attribute("hide")?;
+            }else{
+                ct.set_attribute("hide", "true")?;
+            }
+        }
+
+        Ok(())
+    }
     pub fn closest_form_control(&self)->Result<Option<FormControlBase>>{
         self._closest_form_control("flow-form-control".into())
     }

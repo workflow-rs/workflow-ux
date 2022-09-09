@@ -118,8 +118,7 @@ where E: EnumTrait<E> + 'static + Display
         Ok(())
     }
 
-    pub fn on_change(&self, callback:Callback<String>)->Result<()>{
+    pub fn on_change(&self, callback:Callback<String>){
         *self.change_callback.borrow_mut() = Some(callback);
-        Ok(())
     }
 }

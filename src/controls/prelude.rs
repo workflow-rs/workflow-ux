@@ -13,6 +13,7 @@ pub use crate::controls::{
     token_select::TokenSelect,
     token_selector::TokenSelector,
     base_element::BaseElement,
+    element_wrapper::BaseElementTrait,
     terminal::Terminal,
     d3_menu::D3Menu
 };

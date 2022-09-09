@@ -1,6 +1,34 @@
+use wasm_bindgen::JsCast;
 use workflow_ux::result::Result;
+pub use wasm_bindgen::prelude::*;
 use web_sys::{CustomEvent, MouseEvent, Element};
 use crate::controls::listener::Listener;
+use crate::controls::form::FormControlBase;
+
+pub trait BaseElementTrait{
+    fn show_form_control(&self, show:bool)->Result<()>{
+        if let Some(ct) = self.closest_form_control()?{
+            if show{
+                ct.remove_attribute("hide")?;
+            }else{
+                ct.set_attribute("hide", "true")?;
+            }
+        }
+
+        Ok(())
+    }
+    fn closest_form_control(&self)->Result<Option<FormControlBase>>;
+}
+
+impl BaseElementTrait for Element{
+    fn closest_form_control(&self)->Result<Option<FormControlBase>>{
+        if let Some(el) = self.closest("flow-form-control")?{
+            return Ok(Some(el.dyn_into::<FormControlBase>()?));
+        }
+
+        Ok(None)
+    }
+}
 
 #[derive(Clone, Debug)]
 pub struct ElementWrapper{

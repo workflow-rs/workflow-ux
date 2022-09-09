@@ -33,6 +33,9 @@ extern "C" {
     // Remove old/current options and set new option
     #[wasm_bindgen (structural , method , js_class = "FlowMenuBase" , js_name = changeOptions)]
     pub fn change_options(this: &FlowMenuBase, options:Array);
+
+    #[wasm_bindgen (structural , method , js_class = "FlowMenuBase" , js_name = selectFirst)]
+    pub fn select_first(this: &FlowMenuBase)->String;
 }
 
 
@@ -163,8 +166,16 @@ where E: EnumTrait<E>
     pub fn set_value<T: Into<String>>(&self, value:T)->Result<()>{
         let value = value.into();
         FieldHelper::set_attr(&self.element_wrapper.element, "selected", &value)?;
-        *self.value.borrow_mut() = value;
+        *self.value.borrow_mut() = value.clone();
+
+        //if let Some(cb) = &mut*self.on_change_cb.borrow_mut(){
+            //cb(value)?;
+        //}
+
         Ok(())
+    }
+    pub fn select_first(&self)->String{
+        self.element().select_first()
     }
 
     pub fn on_change(&self, callback:Callback<String>){

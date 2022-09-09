@@ -11,7 +11,7 @@ extern "C" {
     // The `FlowInputBase` class.
     // [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/Element)"]
     // *This API requires the following crate features to be activated: `Element`*
-    #[wasm_bindgen (extends = Element , extends = Node , extends = EventTarget , extends = :: js_sys :: Object , js_name = FlowInput , typescript_type = "FlowInput")]
+    #[wasm_bindgen (extends = BaseElement, js_name = FlowInput , typescript_type = "FlowInput")]
     #[derive(Debug, Clone, PartialEq, Eq)]
     pub type FlowInputBase;
     // Getter for the `namespaceURI` field of this object.
