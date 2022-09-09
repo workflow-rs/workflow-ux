@@ -53,6 +53,9 @@ pub struct Select<E> {
     p:PhantomData<E>
 }
 
+unsafe impl<E> Send for Select<E> where E: EnumTrait<E>{}
+unsafe impl<E> Sync for Select<E> where E: EnumTrait<E>{}
+
 impl Select<()>{
     pub fn create_option<S: Into<String>>(text:S, value:S)->SelectOption{
         FlowMenu::_create_option(text.into(), value.into())
