@@ -7,8 +7,8 @@ use workflow_core::enums::*;
 // use workflow_macros::describe_enum;
 use convert_case::{Case, Casing};
 
-#[derive(Debug, Clone)]
 #[describe_enum]
+#[derive(Debug, Clone)]
 pub enum Theme {
     Light,
     Dark,
