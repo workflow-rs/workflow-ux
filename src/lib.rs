@@ -6,7 +6,6 @@ pub mod prelude;
 
 pub mod error;
 pub mod result;
-pub mod id;
 pub mod dom;
 pub mod attributes;
 pub mod docs;

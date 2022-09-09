@@ -1,7 +1,7 @@
 use crate::{prelude::*, controls::listener::Listener};
 use std::{sync::Arc, str::FromStr};
 use ahash::AHashMap;
-use crate::id::Id;
+use workflow_core::id::Id;
 use thiserror::Error;
 use wasm_bindgen::JsCast;
 #[derive(Error, Debug)]

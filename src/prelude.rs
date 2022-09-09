@@ -50,6 +50,7 @@ pub use web_sys::{
     MutationRecord,
 };
 pub use workflow_core::enums::EnumTrait;
+pub use workflow_core::id::Id;
 pub use crate::menu::{MenuItem,MenuGroup};
 pub use crate::module::{Module,ModuleInterface};
 pub use crate::attributes::Attributes;
@@ -64,7 +65,6 @@ pub use async_trait::async_trait;
 pub use workflow_ux_macros::Module;
 pub use workflow_ux_macros::declare_module;
 
-pub use workflow_ux::id::Id;
 
 pub type Callback<E> = Box<dyn FnMut(E)->crate::result::Result<()>>;
 pub type CallbackNoArgs = Box<dyn FnMut()->crate::result::Result<()>>;
