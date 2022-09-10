@@ -1,0 +1,95 @@
+use crate::prelude::*;
+//use crate::layout::ElementLayout;
+//use crate::controls::element_wrapper::ElementWrapper;
+//use crate::attributes::Attributes;
+//use crate::docs::Docs;
+use workflow_ux::result::Result;
+use workflow_i18n::i18n;
+//use workflow_html::{html, Render};
+//use workflow_ux::form::FormHandlers;
+
+/*
+#[wasm_bindgen]
+extern "C" {
+    // The `FormFooter` class.
+    #[wasm_bindgen (extends = BaseElement, js_name = FormFooter , typescript_type = "FormFooter")]
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub type FormFooterBase;
+
+    #[wasm_bindgen (structural, method, js_class = "FormFooter", js_name = hideButton)]
+    pub fn hide_button(this: &FormFooterBase, btn:&str);
+
+    #[wasm_bindgen (structural, method, js_class = "FormFooter", js_name = showButton)]
+    pub fn show_button(this: &FormFooterBase, btn:&str);
+}
+*/
+
+
+#[derive(Clone)]
+pub struct FormFooter{
+    pub layout: ElementLayout,
+    pub element_wrapper : ElementWrapper,
+    on_submit_click_cb:Rc<RefCell<Option<Callback<String>>>>,
+    submit_btn: ElementWrapper
+}
+
+impl FormFooter {
+    pub fn new(
+        layout : &ElementLayout,
+        _attributes: &Attributes,
+        _docs : &Docs
+    )->Result<Self>{
+        let element = document()
+            .create_element("div")?;
+        element.class_list().add_1("workflow-form-footer")?;
+
+        let submit_btn = document()
+            .create_element("flow-btn")?;
+        submit_btn.class_list().add_1("primary")?;
+        submit_btn.set_inner_html(&i18n("Submit"));
+        element.append_child(&submit_btn)?;
+
+        let pane_inner = layout.inner().ok_or(JsValue::from("unable to mut lock pane inner"))?;
+        pane_inner.element.class_list().add_1("with-form-footer")?;
+        let mut control = Self{
+            layout: layout.clone(),
+            element_wrapper: ElementWrapper::new(element),
+            on_submit_click_cb: Rc::new(RefCell::new(None)),
+            submit_btn: ElementWrapper::new(submit_btn)
+        };
+
+        control.init()?;
+
+        Ok(control)
+    }
+
+    pub fn element(&self) -> Element {
+        self.element_wrapper.element.clone()//.dyn_into::<FormFooterBase>().expect("Unable to cast element to FormFooterBase")
+    }
+
+    pub fn set_submit_btn_text<T:Into<String>>(&self, text:T)-> Result<()> {
+        self.submit_btn.element.set_inner_html(&text.into());
+        Ok(())
+    }
+
+    pub fn init(&mut self) -> Result<()> {
+        /*
+        let el = self.element();
+        el.hide_button("next");
+        el.hide_button("previous");
+        el.show_button("submit");
+        */
+        let cb_opt = self.on_submit_click_cb.clone();
+        self.submit_btn.on_click(move|_e|->Result<()>{
+            if let Some(cb) =  &mut*cb_opt.borrow_mut(){
+                return Ok(cb("submit".to_string())?);
+            }
+            Ok(())
+        })?;
+        Ok(())
+    }
+
+    pub fn on_submit_click(&self, callback:Callback<String>){
+        *self.on_submit_click_cb.borrow_mut() = Some(callback);
+    }
+}

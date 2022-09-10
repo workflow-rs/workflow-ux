@@ -22,6 +22,7 @@ pub mod view;
 pub mod link;
 pub mod image;
 pub mod form;
+pub mod form_footer;
 
 pub mod macros {
     pub use workflow_ux_macros::*;

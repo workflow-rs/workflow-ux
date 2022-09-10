@@ -264,7 +264,7 @@ impl ElementLayout {
         let layout = self.inner()
             .ok_or("ElementLayout::init_footer() - failure to lock parent layout inner")?;
         match &layout.layout_style {
-            ElementLayoutStyle::Stage => {
+            ElementLayoutStyle::Stage | ElementLayoutStyle::Form => {
                 let footer = document().create_element("workflow-stage-footer").unwrap();
                 let parent = layout.element.parent_element()
                 .ok_or("ElementLayout::init_footer() parent_element() - failure to lock parent layout inner")?;

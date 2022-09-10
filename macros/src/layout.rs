@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::convert::Into;
 use proc_macro::TokenStream;
 use proc_macro2::{
-    // Span,
+    Span,
     // Ident,
     Punct,
     Spacing,
@@ -534,7 +534,7 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
 
 
     let mut field_idents_str:Vec<String> = vec![];
-    let field_idents : Vec<Ident> = fields.iter().map(|f| {
+    let mut field_idents : Vec<Ident> = fields.iter().map(|f| {
         field_idents_str.push(f.field_name.to_string());
         f.field_name.clone()
     }).collect();
@@ -582,9 +582,53 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
     let mut init_extra_props = quote!{};
     let mut init_extra_props_def = quote!{};
     let mut layout_loading = quote!{};
+    let mut layout_binding = quote!{};
     let layout_style = match layout {
         Layout::Form => {
             layout_loading = quote! {layout.load().await?;};
+
+            init_extra_props = quote! {
+                _footer: workflow_ux::form_footer::FormFooter,
+            };
+            field_idents.push(Ident::new("_footer", Span::call_site()));
+            field_initializers.push(quote! {
+                let mut _footer = {
+                    let mut layout_attributes = Attributes::new();
+                    let mut ctl_attributes = Attributes::new();
+                    let docs: Vec<&str> = vec![];
+                    let footer = workflow_ux::form_footer::FormFooter::new(&_layout, &ctl_attributes, &docs)?;
+                    let child = footer.element();
+                    _layout.append_child(&child, &layout_attributes, &docs)?;
+                    footer
+                };
+            });
+            let msg1 = format!("Unable to lock form {} for footer binding.", struct_name_string);
+            let msg2 = format!("Unable to lock form {} for footer submit action.", struct_name_string);
+            let msg3 = format!("Form ({}) submit() error: {{}}", struct_name_string);
+            layout_binding = quote! ({
+                let layout_clone = view.layout();
+                let unlocked = layout_clone.clone();
+                let mut locked = unlocked.lock().expect(#msg1);
+                //workflow_log::log_trace!("_footer::::::{:?}", locked._footer);//.on_submit_click()?;
+                locked._footer.on_submit_click(Box::new(move|_|->workflow_ux::result::Result<()>{
+                    let unlocked = layout_clone.clone();
+                    workflow_core::task::spawn(async move{
+                        let mut locked = unlocked.lock().expect(#msg2);
+                        locked.submit().await.map_err(|err|{
+                            workflow_log::log_trace!(#msg3, err);
+                        })
+                    });
+                    Ok(())
+                }));
+            });
+
+            init_helper_def = quote!{
+                pub fn set_submit_btn_text<T:Into<String>>(&self, text:T)->workflow_ux::result::Result<()>{
+                    self._footer.set_submit_btn_text(text)?;
+                    Ok(())
+                }
+            };
+
             quote! { workflow_ux::layout::ElementLayoutStyle::Form }
         },
         Layout::Section => quote! { workflow_ux::layout::ElementLayoutStyle::Section },
@@ -760,7 +804,7 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
         Layout::Html => quote! { workflow_ux::layout::ElementLayoutStyle::Html },
     };
 
-// let attrs_kv: Vec<(String,String)> = Vec::new();
+    // let attrs_kv: Vec<(String,String)> = Vec::new();
     let attrs_kv = layout_attributes.to_string_kv();
     // let attrs_k : Vec<TokenStream> = attrs_kv.iter().map(|item| {
     let attrs_k : Vec<String> = attrs_kv.iter().map(|item| {
@@ -859,6 +903,7 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
                 let mut layout = Self::try_inject(&el)?;
                 #layout_loading
                 let view = workflow_ux::view::Layout::try_new(module, layout, data)?;
+                #layout_binding
                 Ok(view)
             }
             
