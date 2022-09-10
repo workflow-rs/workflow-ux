@@ -583,6 +583,9 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
     let mut init_extra_props_def = quote!{};
     let mut layout_loading = quote!{};
     let mut layout_binding = quote!{};
+    let impl_def = quote!{
+        unsafe impl #struct_params Send for #struct_name #struct_params{}
+    };
     let layout_style = match layout {
         Layout::Form => {
             layout_loading = quote! {layout.load().await?;};
@@ -605,7 +608,7 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
 
             layout_binding = quote! ({
                 let layout_clone = view.layout();
-                let mut locked = layout_clone.lock().expect(&format!("Unable to lock form {} for footer binding.", #struct_name_string));
+                let mut locked = layout_clone.lock().await;//.expect(&format!("Unable to lock form {} for footer binding.", #struct_name_string));
                 locked._footer.bind_layout(#struct_name_string.to_string(), view.clone())?;
             });
 
@@ -615,6 +618,10 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
                     Ok(())
                 }
             };
+
+            //impl_def = quote!{
+            //    unsafe impl #struct_params Send for #struct_name #struct_params{}
+            //};
 
             quote! { workflow_ux::layout::ElementLayoutStyle::Form }
         },
@@ -882,7 +889,7 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
                 Ok(Self::try_create_layout_view_with_data(module, Option::<()>::None).await?)
             }
             
-            pub async fn try_create_layout_view_with_data<D:'static>(
+            pub async fn try_create_layout_view_with_data<D:Send + 'static>(
                 module : Option<std::sync::Arc<dyn workflow_ux::module::ModuleInterface>>,
                 data: Option<D>
             ) -> workflow_ux::result::Result<std::sync::Arc<workflow_ux::view::Layout<Self, D>>> {
@@ -933,6 +940,7 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
 
         }
     };
+    
 
 
     let ts = quote!{
@@ -942,6 +950,8 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
             #init_extra_props
             #( #fields ),*
         }
+
+        #impl_def
 
         impl #struct_params   #struct_name #struct_params{
 

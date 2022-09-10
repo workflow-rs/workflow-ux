@@ -31,9 +31,11 @@ extern "C" {
 pub struct FormFooter{
     pub layout: ElementLayout,
     pub element_wrapper : ElementWrapper,
-    on_submit_click_cb:Rc<RefCell<Option<Callback<String>>>>,
+    on_submit_click_cb:Arc<Mutex<Option<Callback<String>>>>,
     submit_btn: ElementWrapper
 }
+
+unsafe impl Send for FormFooter{}
 
 impl FormFooter {
     pub fn new(
@@ -56,7 +58,7 @@ impl FormFooter {
         let mut control = Self{
             layout: layout.clone(),
             element_wrapper: ElementWrapper::new(element),
-            on_submit_click_cb: Rc::new(RefCell::new(None)),
+            on_submit_click_cb: Arc::new(Mutex::new(None)),
             submit_btn: ElementWrapper::new(submit_btn)
         };
 
@@ -77,7 +79,7 @@ impl FormFooter {
     pub fn init(&mut self) -> Result<()> {
         let cb_opt = self.on_submit_click_cb.clone();
         self.submit_btn.on_click(move|_e|->Result<()>{
-            if let Some(cb) =  &mut*cb_opt.borrow_mut(){
+            if let Some(cb) =  &mut*cb_opt.lock().expect("Unable to lock submit_click_cb"){
                 return Ok(cb("submit".to_string())?);
             }
             Ok(())
@@ -85,22 +87,24 @@ impl FormFooter {
         Ok(())
     }
 
-    pub fn on_submit_click(&self, callback:Callback<String>){
-        *self.on_submit_click_cb.borrow_mut() = Some(callback);
+    pub fn on_submit_click(&self, callback:Callback<String>)->Result<()>{
+        let mut locked = self.on_submit_click_cb.lock()?;
+        *locked = Some(callback);
+        Ok(())
     }
 
     pub fn bind_layout<F:, D>(&mut self, struct_name:String, view:Arc<Layout<F, D>>)->Result<()>
     where 
-    F : FormHandlers + Elemental + 'static,
-    D : 'static
+    F : FormHandlers + Elemental + Send + 'static,
+    D : Send + 'static
     {
         let layout_clone = view.layout();
         self.submit_btn.on_click(move|_|->Result<()>{
             let unlocked = layout_clone.clone();
             let struct_name = struct_name.clone();
             workflow_core::task::spawn(async move{
-                let mut locked = unlocked.lock()
-                    .expect(&format!("Unable to lock form {} for footer submit action.", &struct_name));
+                let mut locked = unlocked.lock().await;
+                    //.expect(&format!("Unable to lock form {} for footer submit action.", &struct_name));
                 locked.submit().await.map_err(|err|{
                     workflow_log::log_trace!("Form ({}) submit() error: {:?}", &struct_name, err);
                 })

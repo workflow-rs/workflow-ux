@@ -29,7 +29,7 @@ impl FormResult{
     }
 }
 
-#[async_trait(?Send)]
+#[async_trait]
 pub trait FormHandlers{
     async fn load(&mut self)->Result<()>;
     async fn submit(&mut self)->Result<FormResult>;

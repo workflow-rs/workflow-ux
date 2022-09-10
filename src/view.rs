@@ -223,8 +223,9 @@ type EvictFn = Box<dyn Fn() -> Result<()>>;
 type DropFn = Box<dyn Fn()>;
 // type EvictFn = Box<dyn Fn()>;
 
+type AsyncMutex<A> = async_std::sync::Mutex<A>;
 pub struct Layout<F,D> {
-    layout : Arc<Mutex<F>>,
+    layout : Arc<AsyncMutex<F>>,
     data : Arc<Mutex<Option<D>>>,
     evict : Arc<Mutex<Option<EvictFn>>>,
     drop : Arc<Mutex<Option<DropFn>>>,
@@ -234,8 +235,8 @@ pub struct Layout<F,D> {
 
 impl<F,D> Layout<F,D> 
 where 
-    F : layout::Elemental + 'static,
-    D : 'static
+    F : layout::Elemental + Send + 'static,
+    D : Send + 'static
 {
     // pub fn try_new(module : Arc<dyn ModuleInterface>) -> Result<Arc<dyn View>> {
     pub fn try_new(module : Option<Arc<dyn ModuleInterface>>, layout : F, data : Option<D>) -> Result<Arc<Layout<F,D>>> {
@@ -246,7 +247,7 @@ where
         let view = Layout::<F,D> { 
             element,
             module,
-            layout : Arc::new(Mutex::new(layout)),
+            layout : Arc::new(AsyncMutex::new(layout)),
             data : Arc::new(Mutex::new(data)),
             // evict : Arc::new(Mutex::new(evict)),
             evict : Arc::new(Mutex::new(None)),
@@ -265,7 +266,7 @@ where
         Ok(self)
     }
 
-    pub fn layout(&self) -> Arc<Mutex<F>> {
+    pub fn layout(&self) -> Arc<AsyncMutex<F>> {
         self.layout.clone()
     }
 

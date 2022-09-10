@@ -9,6 +9,8 @@ pub struct Text {
     pub element : Element,
 }
 
+unsafe impl Send for Text{}
+
 impl Text {
     pub fn element(&self) -> Element {
         self.element.clone()
