@@ -5,6 +5,8 @@ use crate::prelude::*;
 //use crate::docs::Docs;
 use workflow_ux::result::Result;
 use workflow_i18n::i18n;
+use workflow_ux::layout::Elemental;
+use crate::view::Layout;
 //use workflow_html::{html, Render};
 //use workflow_ux::form::FormHandlers;
 
@@ -73,12 +75,6 @@ impl FormFooter {
     }
 
     pub fn init(&mut self) -> Result<()> {
-        /*
-        let el = self.element();
-        el.hide_button("next");
-        el.hide_button("previous");
-        el.show_button("submit");
-        */
         let cb_opt = self.on_submit_click_cb.clone();
         self.submit_btn.on_click(move|_e|->Result<()>{
             if let Some(cb) =  &mut*cb_opt.borrow_mut(){
@@ -91,5 +87,27 @@ impl FormFooter {
 
     pub fn on_submit_click(&self, callback:Callback<String>){
         *self.on_submit_click_cb.borrow_mut() = Some(callback);
+    }
+
+    pub fn bind_layout<F:, D>(&mut self, struct_name:String, view:Arc<Layout<F, D>>)->Result<()>
+    where 
+    F : FormHandlers + Elemental + 'static,
+    D : 'static
+    {
+        let layout_clone = view.layout();
+        self.submit_btn.on_click(move|_|->Result<()>{
+            let unlocked = layout_clone.clone();
+            let struct_name = struct_name.clone();
+            workflow_core::task::spawn(async move{
+                let mut locked = unlocked.lock()
+                    .expect(&format!("Unable to lock form {} for footer submit action.", &struct_name));
+                locked.submit().await.map_err(|err|{
+                    workflow_log::log_trace!("Form ({}) submit() error: {:?}", &struct_name, err);
+                })
+            });
+            Ok(())
+        })?;
+
+        Ok(())
     }
 }

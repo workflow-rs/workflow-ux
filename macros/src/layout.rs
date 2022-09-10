@@ -602,24 +602,11 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
                     footer
                 };
             });
-            let msg1 = format!("Unable to lock form {} for footer binding.", struct_name_string);
-            let msg2 = format!("Unable to lock form {} for footer submit action.", struct_name_string);
-            let msg3 = format!("Form ({}) submit() error: {{}}", struct_name_string);
+
             layout_binding = quote! ({
                 let layout_clone = view.layout();
-                let unlocked = layout_clone.clone();
-                let mut locked = unlocked.lock().expect(#msg1);
-                //workflow_log::log_trace!("_footer::::::{:?}", locked._footer);//.on_submit_click()?;
-                locked._footer.on_submit_click(Box::new(move|_|->workflow_ux::result::Result<()>{
-                    let unlocked = layout_clone.clone();
-                    workflow_core::task::spawn(async move{
-                        let mut locked = unlocked.lock().expect(#msg2);
-                        locked.submit().await.map_err(|err|{
-                            workflow_log::log_trace!(#msg3, err);
-                        })
-                    });
-                    Ok(())
-                }));
+                let mut locked = layout_clone.lock().expect(&format!("Unable to lock form {} for footer binding.", #struct_name_string));
+                locked._footer.bind_layout(#struct_name_string.to_string(), view.clone())?;
             });
 
             init_helper_def = quote!{
