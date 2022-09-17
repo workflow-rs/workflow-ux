@@ -1,6 +1,7 @@
 use std::{sync::{Arc, Mutex}, any::TypeId};
 
 use workflow_ux::prelude::*;
+use downcast::{downcast_sync, AnySync};
 
 use workflow_ux::layout;
 // use crate::{prelude::*, application};
@@ -111,7 +112,7 @@ impl Into<Element> for Container {
 
 
 #[async_trait(?Send)]
-pub trait View : Sync + Send {
+pub trait View : Sync + Send + AnySync{
     fn element(&self) -> Element;
     //  {
     //     self.element.clone()
@@ -138,6 +139,8 @@ pub trait View : Sync + Send {
     //     self.module.clone()
     // }
 }
+
+downcast_sync!(dyn View);
 
 // unsafe impl Sync for dyn View {} 
 

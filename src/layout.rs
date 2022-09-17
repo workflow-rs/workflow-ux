@@ -207,6 +207,8 @@ impl ElementLayout {
                     if !k.eq("title"){
                         if k.eq("no_info"){
                             form_control.set_attribute("no-info",v)?;
+                        }else if k.eq("no_icon"){
+                            form_control.set_attribute("no-icon",v)?;
                         }else{
                             form_control.set_attribute(k,v)?;
                         }   
