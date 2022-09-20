@@ -2,10 +2,20 @@
 name = "workflow-ux"
 version = "0.1.0"
 edition = "2021"
+license = "Apache-2.0 OR MIT"
+repository = "https://github.com/workflow-rs/workflow-ux"
+keywords = ["wasm","framework","ux"]
+categories = ["wasm"]
+exclude = ["/.*", "/test"]
+description = """
+WebComponent-based application user interface framework based on async Rust
+"""
+
+[lib]
+crate-type = ["cdylib", "lib"]
 
 [dependencies]
 workflow-core = { path = "../workflow-core" }
-# workflow-core-macros = { path = "../workflow-core/macros" }
 workflow-i18n = { path = "../workflow-i18n" }
 workflow-log = { path = "../workflow-log" }
 workflow-html = { path = "../workflow-html" }
@@ -16,7 +26,6 @@ wasm-bindgen = { version = "0.2.79", features = ["serde-serialize"] }
 wasm-bindgen-futures = "0.4.31"
 js-sys = "0.3.56"
 async-std = "1.11.0"
-# wasm-bindgen-futures = "0.4.31"
 async-trait = "0.1.56"
 convert_case = "0.5.0"
 markdown = "0.3.0"
@@ -28,7 +37,6 @@ bs58 = "0.4.0"
 derivative = "2.2.0"
 console_error_panic_hook = "0.1.7"
 ritehash = "0.2.0"
-
 
 [dependencies.web-sys]
 version = "0.3.56"
