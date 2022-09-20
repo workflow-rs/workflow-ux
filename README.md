@@ -1,4 +1,4 @@
-# WORKFLOW-UX
+## WORKFLOW-UX
 
 Part of the [WORKFLOW-RS](https://github.com/workflow-rs) application framework.
 
