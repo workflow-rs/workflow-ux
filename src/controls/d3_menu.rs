@@ -87,15 +87,17 @@ pub fn get_menu()->Result<Arc<Mutex<D3Menu>>>{
             let menu_arc_clone = menu_arc.clone();
             unsafe { MENU = Some(menu_arc.clone()); }
 
-            let mut menu = menu_arc.lock().expect("Unable to lock D3Menu");
-            log_trace!("creating menu: {:?}", menu.element);
+            //let mut menu = menu_arc.lock().expect("Unable to lock D3Menu");
+            //log_trace!("creating menu: {:?}", menu.element);
             
+            /*
             menu.add_item("Settings", Icon::IconRootSVG("settings".to_string()))?;
             menu.add_item("Work", Icon::IconRootSVG("work".to_string()))?;
             menu.add_item("Ban", Icon::IconRootSVG("ban".to_string()))?;
             
             menu.add_item("Campfire", Icon::IconRootSVG("campfire".to_string()))?;
             menu.add_item("Dao", Icon::IconRootSVG("dao".to_string()))?;
+            */
             /*menu.add_item("Classroom", Icon::Classroom)?;
             menu.add_item("CloudUnavailable", Icon::CloudUnavailable)?;
             menu.add_item("Certificate", Icon::Certificate)?;

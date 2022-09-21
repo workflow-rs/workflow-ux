@@ -6,6 +6,7 @@ use workflow_ux::error::Error;
 
 pub type MenuHandlerFn = Box<dyn Fn() -> Result<()>>;
 
+#[derive(Debug, Clone)]
 pub struct MenuCaption {
     title: String,
     short: String,
@@ -108,9 +109,12 @@ pub fn select(target : &Element) -> Result<()> {
 pub struct MenuGroup {
     element_wrapper: ElementWrapper,
     item : Option<ElementWrapper>,
+    sub_li: Option<Element>,
+    pub caption: MenuCaption,
+    pub child_groups: Arc<Mutex<Vec<MenuGroup>>>
 }
 
-impl MenuGroup {
+impl MenuGroup{
 
     pub fn select(&self) -> Result<()> {
         if let Some(item) = &self.item {
@@ -133,7 +137,10 @@ impl MenuGroup {
         }
         Ok(MenuGroup {
             element_wrapper: ElementWrapper::new(element),
-            item
+            item,
+            sub_li: None,
+            child_groups:Arc::new(Mutex::new(Vec::new())),
+            caption: MenuCaption::from("")
         })
     }
 
@@ -174,14 +181,32 @@ impl MenuGroup {
         sub_li.set_attribute("class", "sub")?;
         let element = document().create_element("ul")?;
         sub_li.append_child(&element)?;
-        parent.element_wrapper.element.append_child(&li)?;
-        li.insert_adjacent_element("afterend", &sub_li)?;
         
-        Ok(MenuGroup {
+        
+        let item = parent.add_child_group(MenuGroup {
             element_wrapper: ElementWrapper::new(element),
-            item : Some(ElementWrapper::new(li))
-        })
+            item : Some(ElementWrapper::new(li.clone())),
+            sub_li: Some(sub_li),
+            child_groups:Arc::new(Mutex::new(Vec::new())),
+            caption
+        })?;
 
+
+        Ok(item)
+
+    }
+
+    fn add_child_group(&self,  child: MenuGroup)->Result<MenuGroup>{
+        if let Some(el) = &child.item{
+            self.element_wrapper.element.append_child(&el.element)?;
+            if let Some(sub_li) = &child.sub_li{
+                el.element.insert_adjacent_element("afterend", sub_li)?;
+            }
+        }
+
+        self.child_groups.lock().as_mut().unwrap().push(child.clone());
+
+        Ok(child)
     }
 
     pub fn with_id<M : Into<Menu>>(&mut self, id: M) -> &mut Self {
