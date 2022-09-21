@@ -15,11 +15,16 @@ WebComponent-based application user interface framework based on async Rust
 crate-type = ["cdylib", "lib"]
 
 [dependencies]
-workflow-core = { path = "../workflow-core" }
-workflow-i18n = { path = "../workflow-i18n" }
-workflow-log = { path = "../workflow-log" }
+workflow-core = "0.1.0"
+workflow-i18n = "0.1.0"
+workflow-log = "0.1.0"
 workflow-html = { path = "../workflow-html" }
-workflow-wasm = { path = "../workflow-wasm" }
+workflow-wasm = "0.1.0"
+# workflow-core = { path = "../workflow-core" }
+# workflow-i18n = { path = "../workflow-i18n" }
+# workflow-log = { path = "../workflow-log" }
+# workflow-html = { path = "../workflow-html" }
+# workflow-wasm = { path = "../workflow-wasm" }
 workflow-ux-macros = { path = "macros" }
 
 wasm-bindgen = { version = "0.2.79", features = ["serde-serialize"] }
