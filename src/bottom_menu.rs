@@ -188,7 +188,7 @@ impl BottomMenu {
         let size = self.width / 5.0;
         let offset = size/2.0;
         let half_index = self.items.len() as f64 / 2.0;
-        let mut home_item_added = false;
+        let mut add_home_item = self.popup_menu.is_some();
         //log_trace!("BottomMenu: update ========>\n\n");
         for item in &self.items{
             let x = offset + index * size;
@@ -196,8 +196,8 @@ impl BottomMenu {
             //log_trace!("BottomMenu: item.text:{}", item.text);
             self.svg.append_child(&item.element)?;
             index = index+1.0;
-            if !home_item_added && index >= half_index{
-                home_item_added = true;
+            if add_home_item && index >= half_index{
+                add_home_item = false;
                 self.svg.append_child(&self.home_item.element)?;
                 let x = offset + index * size;
                 self.home_item.set_position(x, 1.0)?;
