@@ -1,8 +1,9 @@
 use js_sys::Array;
-use workflow_ux::prelude::*;
-use workflow_ux::icon::Icon;
-use workflow_ux::result::Result;
-use workflow_ux::error::Error;
+use crate::prelude::*;
+use crate::icon::Icon;
+use crate::result::Result;
+use crate::error::Error;
+use crate::find_el;
 
 pub type MenuHandlerFn = Box<dyn Fn() -> Result<()>>;
 
@@ -127,9 +128,8 @@ impl MenuGroup{
         self.element_wrapper.element.clone()
     }
 
-    pub fn from_id(id: &str) -> Result<MenuGroup> {
-        let element = document().get_element_by_id(&id)
-            .ok_or(Error::MissingElement("WorkspaceMenuGroup::from_id()".into(),id.into()))?;
+    pub fn from_el(el_selector: &str) -> Result<MenuGroup> {
+        let element = find_el(el_selector, "WorkspaceMenuGroup::from_el()")?;
         let item_opt = element.get_elements_by_tag_name("li").item(0);
         let mut item = None;
         if let Some(el) = item_opt{

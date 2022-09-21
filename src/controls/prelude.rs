@@ -14,8 +14,7 @@ pub use crate::controls::{
     token_selector::TokenSelector,
     base_element::BaseElement,
     element_wrapper::BaseElementTrait,
-    terminal::Terminal,
-    d3_menu::D3Menu
+    terminal::Terminal
 };
 pub use crate::form::{FormHandlers, FormResult};
 pub type UXResult<T> = workflow_ux::result::Result<T>;
