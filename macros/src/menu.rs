@@ -102,6 +102,46 @@ pub fn menu_group(input: TokenStream) -> TokenStream {
     ).into()
 }
 
+pub fn main_menu(input: TokenStream) -> TokenStream {
+    let menu = parse_macro_input!(input as Menu);
+    
+    /*
+    let menu_type = Ident::new("MainMenu", Span::call_site());
+    menu_impl(
+        menu_type,
+        menu.parent,
+        menu.title,
+        menu.icon,
+        menu.module_type,
+        menu.module_handler_fn
+    ).into()
+    */
+
+    let icon = menu.icon;
+    let title = menu.title;
+    let module_type = menu.module_type;
+    let module_handler_fn = menu.module_handler_fn;
+
+
+    (quote!{
+
+        {
+            workflow_ux::menu::MainMenu::new(#title.into(), #icon)?
+            .with_callback(Box::new(move |target|{
+                let target = target.clone();
+                workflow_core::task::wasm::spawn(async move {
+                    #module_type::get().#module_handler_fn().await.map_err(|e| { log_error!("{}",e); }).ok();
+                    workflow_log::log_trace!("selecting target element: {:?}", target);
+                    target.select().ok();
+                });
+                Ok(())
+            }))?
+        }
+
+
+    }).into()
+}
+
 
 fn menu_impl(
     menu_type : Ident,

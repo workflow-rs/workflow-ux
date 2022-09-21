@@ -1,78 +1,9 @@
-use crate::error;
 use crate::{prelude::*, icon::Icon};
-use web_sys::SvgElement;
 use workflow_ux::result::Result;
-use std::sync::Mutex;
 use crate::controls::svg::SvgNode;
 use crate::controls::listener::Listener;
+use crate::find_el;
 
-static mut BOTTOM_MENU : Option<Arc<Mutex<BottomMenu>>> = None;
-
-pub fn get_bottom_menu()-> Result<Arc<Mutex<BottomMenu>>>{
-    let menu_arc = match unsafe {&BOTTOM_MENU}{
-        Some(menu)=>{
-            menu.clone()
-        }
-        None=>{
-            //let body = document().body().unwrap();
-            let parent = match document().query_selector("#workspace-bottom-nav").expect("#workspace-bottom-nav is missing"){
-                Some(el)=>el,
-                None=>{
-                    return Err(error!("#workspace-bottom-nav element is required for bottom nav"))
-                }
-            };
-            let menu_arc = bottom_menu::BottomMenu::create_in(&parent, None)?;
-            
-            let menu_arc_clone = menu_arc.clone();
-            unsafe { BOTTOM_MENU = Some(menu_arc.clone()); }
-
-            let mut menu = menu_arc.lock().expect("Unable to lock BottomMenu");
-            log_trace!("creating bottom menu: {:?}", menu.element);
-
-            menu.add_default_item("Settings", Icon::svg("settings"))?;
-            menu.add_default_item("Work", Icon::svg("work"))?;
-            menu.add_default_item("Ban", Icon::svg("ban"))?;
-            menu.add_default_item("Clock", Icon::svg("clock"))?;
-
-            menu_arc_clone
-        }
-    };
-    Ok(menu_arc)
-    //let mut menu = menu_arc.lock().expect("Unable to lock BottomMenu");
-    //let _ = menu.show();
-    //Ok(())
-}
-
-pub fn update_menus(menus:Option<Vec<BottomMenuItem>>)->Result<()>{
-    let m = get_bottom_menu()?;
-    let mut menu = m.lock().expect("Unable to lock BottomMenu");
-    let default_len = menu.default_items.len();
-    let mut update_size = 0;
-    let mut update_list = Vec::with_capacity(default_len);
-
-    
-    if let Some(items) = menus{
-        update_size = items.len().min(default_len);
-        for item in items[0..update_size].to_vec(){
-            update_list.push(item);
-        }
-    }
-
-    for i in update_size..default_len{
-        update_list.push(menu.default_items[i].clone());
-    }
-
-    menu.items.clear();
-    for item in update_list{
-        //log_trace!("BottomMenu: new bottom item: => {:?} : {}", item.text, item.id);
-        menu.items.push(item);
-    }
-
-    menu.update()?;
-
-
-    Ok(())
-}
 
 pub fn create_item<T:Into<String>, I: Into<Icon>>(text:T, icon:I)->Result<BottomMenuItem>{
     Ok(BottomMenuItem::new(text.into(), icon)?)
@@ -85,7 +16,7 @@ where F: FnMut(web_sys::MouseEvent) ->Result<()> + 'static
     Ok(item)
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct BottomMenuItem{
     pub id:u8,
     pub text:String,
@@ -160,12 +91,12 @@ impl BottomMenuItem{
     }
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct BottomMenu {
     pub element : Element,
     svg: SvgElement,
-    items: Vec<BottomMenuItem>,
-    default_items: Vec<BottomMenuItem>,
+    pub items: Vec<BottomMenuItem>,
+    pub default_items: Vec<BottomMenuItem>,
     width:f64,
     value : Rc<RefCell<String>>,
     home_item: BottomMenuItem
@@ -184,6 +115,12 @@ impl BottomMenu {
     ) -> Result<Arc<Mutex<BottomMenu>>> {
         let pane_inner = layout.inner().ok_or(JsValue::from("unable to mut lock pane inner"))?;
         let menu = Self::create_in(&pane_inner.element, Some(attributes))?;
+        Ok(menu)
+    }
+
+    pub fn from_el(el_selector:&str, attributes: Option<&Attributes>)-> Result<Arc<Mutex<BottomMenu>>> {
+        let parent = find_el(el_selector, "BottomMenu::from_el()")?;
+        let menu = Self::create_in(&parent, attributes)?;
         Ok(menu)
     }
 
@@ -281,7 +218,7 @@ impl BottomMenu {
         Ok(())
     }
 
-    fn add_default_item<T:Into<String>, I: Into<Icon>>(&mut self, text:T, icon:I)->Result<()>{
+    pub fn add_default_item<T:Into<String>, I: Into<Icon>>(&mut self, text:T, icon:I)->Result<()>{
         let item = BottomMenuItem::new(text.into(), icon)?;
 
         //self.svg.append_child(&item.element)?;
@@ -290,8 +227,22 @@ impl BottomMenu {
         Ok(())
     }
 
+    pub fn add_default_item_with_callback<T:Into<String>, I: Into<Icon>, F>(
+        &mut self,
+        text:T, icon:I, t:F
+    )->Result<()>
+    where F: FnMut(web_sys::MouseEvent) ->Result<()> + 'static
+    {
+        let mut item = BottomMenuItem::new(text.into(), icon)?;
+        item.on_click(t)?;
+        self.items.push(item.clone());
+        self.default_items.push(item);
+        Ok(())
+    }
+
     pub fn show(&mut self)->Result<()>{
         self.update()?;
+        self.element.remove_attribute("hide")?;
         Ok(())
     }
 
@@ -299,7 +250,7 @@ impl BottomMenu {
         //let m = d3_menu::get_menu()?;
         //let mut menu = m.lock().expect("Unable to lock D3Menu");
         //let _ = menu.show();
-        d3_menu::show_menu()?;
+        //d3_menu::show_menu()?;
         Ok(())
     }
 

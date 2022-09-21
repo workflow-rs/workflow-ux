@@ -14,9 +14,12 @@ pub mod controls;
 pub mod icon;
 pub mod theme;
 pub mod menu;
+pub mod bottom_menu;
 pub mod layout;
 pub mod module;
 pub mod application;
+pub mod workspace;
+pub mod app_menu;
 // pub mod enums;
 pub mod view;
 pub mod link;
@@ -43,7 +46,8 @@ pub mod hash {
 
 use web_sys::{
     Window,
-    Document
+    Document,
+    Element
 };
 
 pub fn document() -> Document {
@@ -54,4 +58,13 @@ pub fn document() -> Document {
 
 pub fn window() -> Window {
     web_sys::window().expect("no global `window` exists")
+}
+
+pub fn find_el(selector:&str, error_msg:&str)->std::result::Result<Element, error::Error>{
+    let element = match document().query_selector(selector).expect(&error::Error::MissingElement(error_msg.into(), selector.into() ).to_string()){
+        Some(el)=>el,
+        None=>return Err(error::Error::MissingElement(error_msg.into(), selector.into() ))
+    };
+
+    Ok(element)
 }

@@ -1,30 +1,24 @@
 use std::{sync::{Arc, Mutex}, any::TypeId};
 
-use workflow_ux::prelude::*;
+use crate::{prelude::*, app_menu::AppMenu};
+use crate::{bottom_menu, layout, result::Result};
 use downcast::{downcast_sync, AnySync};
-
-use workflow_ux::layout;
-// use crate::{prelude::*, application};
-use workflow_ux::result::Result;
 use workflow_log::log_trace;
-// pub enum Eviction {
-//     Allow,
-//     Disallow,
-// }
-
 
 
 #[derive(Clone)]
 pub struct Container {
     element: Element,
     view : Arc<RwLock<Option<Arc<dyn View>>>>,
+    app_menu: Option<Arc<AppMenu>>
 }
 
 impl Container {
-    pub fn new(element: Element) -> Self {
+    pub fn new(element: Element, app_menu:Option<Arc<AppMenu>>) -> Self {
         Container {
             element,
-            view : Arc::new(RwLock::new(None))
+            view : Arc::new(RwLock::new(None)),
+            app_menu
         }
     }
 
@@ -88,8 +82,13 @@ impl Container {
             let el = previous.element();
             self.element.remove_child(&el)?;
         }
+
         
-        bottom_menu::update_menus(incoming.bottom_menus())?;
+        
+        if let Some(app_menu) = &self.app_menu{
+            log_trace!("app_menu.update_bottom_menus: {:?}", incoming.bottom_menus());
+            app_menu.update_bottom_menus(incoming.bottom_menus())?;
+        }
 
         self.element.append_child(&incoming.element())?;
         Ok(())

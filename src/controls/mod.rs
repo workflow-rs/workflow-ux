@@ -22,8 +22,6 @@ pub mod base_element;
 pub mod terminal;
 pub mod prelude;
 pub mod svg;
-pub mod d3_menu;
-pub mod bottom_menu;
 pub mod listener;
 pub mod element_wrapper;
 pub mod helper;

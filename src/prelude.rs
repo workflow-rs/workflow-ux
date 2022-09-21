@@ -48,14 +48,19 @@ pub use web_sys::{
     MutationObserver,
     MutationObserverInit,
     MutationRecord,
+    SvgElement
 };
 pub use workflow_core::enums::EnumTrait;
 pub use workflow_core::id::Id;
 pub use crate::menu::{MenuItem,MenuGroup};
+pub use crate::app_menu;
 pub use crate::module::{Module,ModuleInterface};
 pub use crate::attributes::Attributes;
 pub use crate::docs::Docs;
 pub use crate::view;
+pub use crate::bottom_menu::{BottomMenu, BottomMenuItem};
+pub use crate::workspace;
+pub use crate::view::Container;
 
 
 pub use crate::application::global as application;
