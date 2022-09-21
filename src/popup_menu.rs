@@ -1,11 +1,11 @@
 use std::{collections::BTreeMap, f64::consts::PI};
 
 use crate::{prelude::*, icon::Icon};
-use web_sys::{SvgPathElement, SvgElement};
 use workflow_ux::result::Result;
-use std::sync::Mutex;
 use crate::controls::svg::SvgNode;
 use crate::controls::listener::Listener;
+use std::sync::{MutexGuard, LockResult};
+use crate::menu::MenuCaption;
 
 #[wasm_bindgen]
 #[derive(Debug)]
@@ -15,18 +15,18 @@ pub struct ElPosition{
     pub y:u16,
 }
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub struct MenuItem{
-    pub id:u8,
-    pub text:String,
+    pub id: u8,
+    pub text: String,
     pub element : SvgElement,
-    pub text_el : SvgElement,
-    pub circle_el : SvgElement,
-    pub icon_el: SvgElement
+    pub items: Arc<Mutex<BTreeMap<u8, MenuItem>>>,
+    pub click_listener: Arc<Mutex<Option<Listener<web_sys::MouseEvent>>>>
 }
 
 impl MenuItem{
-    fn new<I: Into<Icon>>(text:String, icon:I)->Result<Self>{
+    pub fn new<I : Into<Icon>>(parent: &MenuItem, caption: MenuCaption, icon: I) -> Result<Self> {
+        
         let icon_:Icon = icon.into();
 
         let circle_el = SvgElement::new("circle").expect("MenuItem: Unable to create circle")
@@ -39,7 +39,7 @@ impl MenuItem{
             .set_size("35", "35")
             .set_aspect_ratio("xMidYMid meet");
 
-        let text:String = text.into();
+        let text:String = caption.title;
         let text_el = SvgElement::new("text").expect("MenuItem: Unable to create text")
             .set_html(&text)
             .set_text_anchor("middle")
@@ -51,14 +51,21 @@ impl MenuItem{
             .add_child(&icon_el)
             .add_child(&text_el);
 
-        Ok(Self{
+        let item = Self{
             id:Self::get_id(),
             text,
             element,
-            text_el,
-            circle_el,
-            icon_el
-        })
+            click_listener: Arc::new(Mutex::new(None)),
+            items: Arc::new(Mutex::new(BTreeMap::new()))
+        };
+
+        {
+            let mut locked = parent.items.lock().expect("Unable to lock popup_menu/parent.items for new child");
+            locked.insert(item.id, item.clone());
+            //log_trace!("locked.len(): {}, parent:{:?}", locked.len(), parent);
+        }
+
+        Ok(item)
     }
     pub fn set_position(&self, x:f32, y:f32)->Result<()>{
         self.element.set_attribute("style", &format!("transform: translate({x}px, {y}px);"))?;
@@ -71,91 +78,71 @@ impl MenuItem{
             ID
         }
     }
-}
+    pub fn with_callback(self, callback: Box<dyn Fn(&MenuItem) -> Result<()>>) ->Result<Self>{
+        let self_ = self.clone();
+        let callback = Listener::new(move|event: web_sys::MouseEvent|->Result<()>{
+            log_trace!("MenuItem::with_callback called");
+            event.stop_immediate_propagation();
+            
+            match callback(&self_) {
+                Ok(_) => {},
+                Err(err) => {
+                    log_error!("Error executing MenuItem callback: {:?}", err);
+                }
+            };
 
-static mut MENU : Option<Arc<Mutex<D3Menu>>> = None;
-
-pub fn get_menu()->Result<Arc<Mutex<D3Menu>>>{
-    let menu_arc = match unsafe {&MENU}{
-        Some(menu)=>{
-            menu.clone()
+            Ok(())
+        });
+        self.element.add_event_listener_with_callback("click", callback.into_js())?;
+        {
+            let mut locked = self.click_listener.lock().expect("Unable to lock popu_pmenu.click_listener");
+            (*locked) = Some(callback);
         }
-        None=>{
-            let body = document().body().unwrap();
-            let menu_arc = D3Menu::create_in(&body, None)?;
-            
-            let menu_arc_clone = menu_arc.clone();
-            unsafe { MENU = Some(menu_arc.clone()); }
-
-            //let mut menu = menu_arc.lock().expect("Unable to lock D3Menu");
-            //log_trace!("creating menu: {:?}", menu.element);
-            
-            /*
-            menu.add_item("Settings", Icon::IconRootSVG("settings".to_string()))?;
-            menu.add_item("Work", Icon::IconRootSVG("work".to_string()))?;
-            menu.add_item("Ban", Icon::IconRootSVG("ban".to_string()))?;
-            
-            menu.add_item("Campfire", Icon::IconRootSVG("campfire".to_string()))?;
-            menu.add_item("Dao", Icon::IconRootSVG("dao".to_string()))?;
-            */
-            /*menu.add_item("Classroom", Icon::Classroom)?;
-            menu.add_item("CloudUnavailable", Icon::CloudUnavailable)?;
-            menu.add_item("Certificate", Icon::Certificate)?;
-            menu.add_item("Connected", Icon::Connected)?;
-            menu.add_item("Clock", Icon::Clock)?;
-            menu.add_item("Funding", Icon::Funding)?;
-            */
-
-            menu_arc_clone
-        }
-    };
-
-    Ok(menu_arc)
+        Ok(self)
+    }
 }
 
-pub fn show_menu()->Result<()>{
-    let m = get_menu()?;
-    let mut menu = m.lock().expect("Unable to lock D3Menu");
-    let _ = menu.open();
-    Ok(())
+#[derive(Debug, Clone)]
+pub struct PopupMenuInner {
+    //size: i64,
+    closed: bool,
+    listeners: Vec<Listener<CustomEvent>>
 }
 
-#[derive(Clone)]
-pub struct D3Menu {
+static mut POPUP_MENU : Option<Arc<PopupMenu>> = None;
+
+pub fn get_popup_menu()-> Option<Arc<PopupMenu>>{
+    unsafe {POPUP_MENU.clone()}
+}
+
+#[derive(Debug, Clone)]
+pub struct PopupMenu {
     pub element : Element,
+    pub root: MenuItem,
     svg: SvgElement,
-    circle_el:SvgPathElement,
-    circle_proxy_el:SvgElement,
-    items: BTreeMap<u8, MenuItem>,
-    width:i64,
-    size:i64,
-    large_size:i64,
-    value : Rc<RefCell<String>>,
-    closed:bool,
-    listeners:Vec<Listener<CustomEvent>>
+    circle_el: SvgPathElement,
+    circle_proxy_el: SvgElement,
+    width: i64,
+    large_size: i64,
+    inner: Arc<Mutex<PopupMenuInner>>
 }
 
-impl D3Menu {
+impl PopupMenu {
 
 
     pub fn element(&self) -> Element {
         self.element.clone()
     }
 
-    pub fn new(
-        layout : &ElementLayout,
-        attributes: &Attributes,
-        _docs : &Docs
-    ) -> Result<Arc<Mutex<D3Menu>>> {
-        let pane_inner = layout.inner().ok_or(JsValue::from("unable to mut lock pane inner"))?;
-        let menu = Self::create_in(&pane_inner.element, Some(attributes))?;
+    pub fn from_el(el_selector:&str, attributes: Option<&Attributes>) -> Result<Arc<Self>> {
+        let element = find_el(el_selector, "PopupMenu::from_el()")?;
+        let menu = Self::create_in(&element, attributes)?;
         Ok(menu)
     }
 
-    pub fn create_in(parent:&Element, attributes: Option<&Attributes>)-> Result<Arc<Mutex<D3Menu>>> {
+    pub fn create_in(parent:&Element, attributes: Option<&Attributes>)-> Result<Arc<Self>> {
         let doc = document();
-        let element = doc
-            .create_element("div")?;
+        let element = doc.create_element("div")?;
         let mut large_size = 1000;
         let (width, height) = match doc.query_selector("body")?{
             Some(body)=>{
@@ -175,7 +162,7 @@ impl D3Menu {
             }
         };
         let size = -1;
-        element.set_attribute("class", "d3-menu")?;
+        element.set_attribute("class", "workflow-popup-menu")?;
         element.set_attribute("hide", "true")?;
         let view_box = format!("0,0,{width},{height}");
         let svg = SvgElement::new("svg")?
@@ -206,23 +193,33 @@ impl D3Menu {
             }
         }
 
-        let init_value: String = String::from("");
-        let value = Rc::new(RefCell::new(init_value));
         parent.append_child(&element)?;
-        let menu = D3Menu {
+
+        let root = MenuItem{
+            id: MenuItem::get_id(),
+            text: "root".to_string(),
+            element: SvgElement::new("g").expect("MenuItem: Unable to create root"),
+            click_listener: Arc::new(Mutex::new(None)),
+            items: Arc::new(Mutex::new(BTreeMap::new()))
+        };
+
+        let menu = Self {
             svg,
             element,
-            value,
             circle_el,
             circle_proxy_el,
-            items:BTreeMap::new(),
+            root,
             width,
-            size,
             large_size,
-            closed:false,
-            listeners:Vec::new()
+            inner: Arc::new(Mutex::new(PopupMenuInner {
+                //size,
+                closed: false,
+                listeners: Vec::new()
+            }))
         };
         let m = menu.init_event()?;
+
+        unsafe { POPUP_MENU = Some(m.clone()); }
 
         Ok(m)
     }
@@ -234,24 +231,30 @@ impl D3Menu {
         format!("M {}, {} a {},{} 0 1,0 {dim},0 a {},{} 0 1,0 {},0", dim2/2, dim2/2+size_half, dim/2, dim/2, dim/2, dim/2, dim*-1)
     }
 
-    fn set_circle_size(&mut self, size:i64)->Result<()>{
-        self.size = size;
+    fn set_circle_size(&self, size:i64)->Result<()>{
+        //self.size = size;
         self.circle_el.set_attribute("d", &Self::create_circle_path(self.width, size))?;
         Ok(())
     }
 
-    pub fn update(&mut self, size:i64)->Result<()>{
+    fn get_root(&self)->&MenuItem{
+        &self.root
+    }
+
+    pub fn update(&self, size:i64)->Result<()>{
         self.set_circle_size(size)?;
 
         let mut index:f32 = 0.0;
-        let node_count = self.items.len() as f32;
+        let items = self.get_root().items.lock().expect("Unable to lock popup menu items");
+        let node_count = items.len() as f32;
 
         let circumference = self.circle_el.get_total_length();
         //log_trace!("circumference: {circumference}, node_count:{node_count}");
         let section_length = circumference/node_count;
         //log_trace!("size: {}, section_length: {}", size, section_length);
 
-        for (_id, item) in self.items.iter(){
+        for (_id, item) in items.iter(){
+            self.svg.append_child(&item.element)?;
             let position = section_length*index+section_length/ (2 as f32);
             let p = self.circle_el.get_point_at_length(circumference-position)?;
             //log_trace!("p.y(): {}", p.y());
@@ -280,40 +283,62 @@ impl D3Menu {
     fn calc_size(&self)->i64{
         //Math.ceil(98 * 8 / Math.PI)
         //const box_size:f64 = 98.0;
-        let size = (98.0 * (self.items.len() as f64)) / PI;
+        let items = self.get_root().items.lock().expect("Unable to lock popup menu items");
+        let size = (98.0 * (items.len() as f64)) / PI;
         size.ceil() as i64
     }
 
-    pub fn add_item<T:Into<String>, I: Into<Icon>>(&mut self, text:T, icon:I)->Result<()>{
-        let item = MenuItem::new(text.into(), icon)?;
-
-        self.svg.append_child(&item.element)?;
-        self.items.insert(item.id, item);
+    pub fn create_item<T:Into<MenuCaption>, I: Into<Icon>>(parent:&MenuItem, text:T, icon:I)->Result<MenuItem>{
+        let item = MenuItem::new(parent, text.into(), icon)?;
+        Ok(item)
+    }
+    pub fn add_item(&self, item: MenuItem)->Result<()>{
+        //self.svg.append_child(&item.element)?;
+        let mut items = self.get_root().items.lock().expect("Unable to lock popup menu items");
+        items.insert(item.id, item);
         Ok(())
     }
-    pub fn show(&mut self)->Result<()>{
-        self.closed = false;
+    fn inner(&self)-> LockResult<MutexGuard<'_, PopupMenuInner>> {
+        self.inner.lock()
+    }
+    fn is_closed(&self)->Result<bool>{
+        Ok(self.inner()?.closed)
+    }
+    fn set_closed(&self, closed:bool)->Result<()>{
+        self.inner()?.closed = closed;
+        Ok(())
+    }
+    pub fn show(&self)->Result<()>{
+        self.set_closed(false)?;
         self.element.remove_attribute("hide")?;
         self.element.set_attribute("closed", "true")?;
         self.element.set_attribute("opening", "true")?;
         Ok(())
     }
 
-    pub fn open(&mut self)->Result<()>{
+    pub fn open_menu(menu:&Arc<Self>)->Result<()>{
+        //let mut menu = menu.lock().expect("Unable to lock PopupMenu");
+        menu.open()?;
+
+        Ok(())
+    }
+
+    pub fn open(&self)->Result<()>{
         self.update(self.large_size)?;
         self.show()?;
         self.update(self.calc_size())?;
         Ok(())
     }
-    pub fn close(&mut self)->Result<()>{
-        self.closed = true;
+    pub fn close(&self)->Result<()>{
+        self.set_closed(true)?;
         self.update(self.large_size)?;
         self.element.set_attribute("closing", "true")?;
         Ok(())
     }
 
-    fn on_transition_end(&mut self)->Result<()>{
-        if self.closed{
+    fn on_transition_end(&self)->Result<()>{
+        let closed = self.is_closed()?;
+        if closed{
             self.element.set_attribute("hide", "true")?;
         }else{
             self.element.remove_attribute("hide")?;
@@ -324,37 +349,35 @@ impl D3Menu {
         Ok(())
     }
 
-    fn init_event(self)->Result<Arc<Mutex<Self>>>{
-        let this = Arc::new(Mutex::new(self));
-        let this_clone = this.clone();
-        let mut self_ = this_clone.lock().expect("Unable to lock D3Menu for click event");
+    fn init_event(self)->Result<Arc<Self>>{
+        let this = Arc::new(self);
+        let self_ = this.clone();
         {
             let _this = this.clone();
             let listener = Listener::new(move |_event: web_sys::CustomEvent| -> Result<()> {
-                let mut m = _this.lock().expect("Unable to lock D3Menu for click event");
-                log_trace!("##### transitionend");
-                m.on_transition_end()?;
+                //let mut m = _this.lock().expect("Unable to lock PopupMenu for click event");
+                //log_trace!("##### transitionend");
+                _this.on_transition_end()?;
                 Ok(())
             });
             self_.circle_proxy_el.add_event_listener_with_callback("transitionend", listener.into_js())?;
-            self_.listeners.push(listener);
+            let mut inner = self_.inner()?;
+            inner.listeners.push(listener);
         }
         {
             let _this = this.clone();
             let listener = Listener::new(move |_event: web_sys::CustomEvent| -> Result<()> {
-                let mut m = _this.lock().expect("Unable to lock D3Menu for click event");
-                m.close()?;
+                //let mut m = _this.lock().expect("Unable to lock PopupMenu for click event");
+                _this.close()?;
                 Ok(())
             });
             self_.circle_el.add_event_listener_with_callback("click", listener.into_js())?;
-            self_.listeners.push(listener);
+            let mut inner = self_.inner()?;
+            inner.listeners.push(listener);
         }
         
         Ok(this.clone())
     }
 
-    pub fn value(&self) -> String {
-        self.value.borrow().clone()
-    }
 
 }

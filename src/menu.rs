@@ -9,9 +9,9 @@ pub type MenuHandlerFn = Box<dyn Fn() -> Result<()>>;
 
 #[derive(Debug, Clone)]
 pub struct MenuCaption {
-    title: String,
-    short: String,
-    subtitle: String,
+    pub title: String,
+    pub short: String,
+    pub subtitle: String,
 }
 
 impl From<Vec<&str>> for MenuCaption {

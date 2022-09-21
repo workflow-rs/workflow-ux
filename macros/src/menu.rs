@@ -102,7 +102,7 @@ pub fn menu_group(input: TokenStream) -> TokenStream {
     ).into()
 }
 
-pub fn main_menu(input: TokenStream) -> TokenStream {
+pub fn popup_menu(input: TokenStream) -> TokenStream {
     let menu = parse_macro_input!(input as Menu);
     
     /*
@@ -118,6 +118,7 @@ pub fn main_menu(input: TokenStream) -> TokenStream {
     */
 
     let icon = menu.icon;
+    let parent = menu.parent;
     let title = menu.title;
     let module_type = menu.module_type;
     let module_handler_fn = menu.module_handler_fn;
@@ -126,13 +127,16 @@ pub fn main_menu(input: TokenStream) -> TokenStream {
     (quote!{
 
         {
-            workflow_ux::menu::MainMenu::new(#title.into(), #icon)?
+            workflow_ux::popup_menu::MenuItem::new(&#parent, #title.into(), #icon)?
             .with_callback(Box::new(move |target|{
+                if let Some(popup_menu) = workflow_ux::popup_menu::get_popup_menu(){
+                    popup_menu.close().map_err(|e| { log_error!("unable to close popup menu: {}", e); }).ok();
+                }
                 let target = target.clone();
                 workflow_core::task::wasm::spawn(async move {
                     #module_type::get().#module_handler_fn().await.map_err(|e| { log_error!("{}",e); }).ok();
                     workflow_log::log_trace!("selecting target element: {:?}", target);
-                    target.select().ok();
+                    //target.select().ok();
                 });
                 Ok(())
             }))?

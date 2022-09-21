@@ -98,8 +98,8 @@ pub struct BottomMenu {
     pub items: Vec<BottomMenuItem>,
     pub default_items: Vec<BottomMenuItem>,
     width:f64,
-    value : Rc<RefCell<String>>,
-    home_item: BottomMenuItem
+    home_item: BottomMenuItem,
+    popup_menu: Option<Arc<PopupMenu>>
 }
 
 impl BottomMenu {
@@ -114,17 +114,17 @@ impl BottomMenu {
         _docs : &Docs
     ) -> Result<Arc<Mutex<BottomMenu>>> {
         let pane_inner = layout.inner().ok_or(JsValue::from("unable to mut lock pane inner"))?;
-        let menu = Self::create_in(&pane_inner.element, Some(attributes))?;
+        let menu = Self::create_in(&pane_inner.element, Some(attributes), None)?;
         Ok(menu)
     }
 
-    pub fn from_el(el_selector:&str, attributes: Option<&Attributes>)-> Result<Arc<Mutex<BottomMenu>>> {
+    pub fn from_el(el_selector:&str, attributes: Option<&Attributes>, popup_menu:Option<Arc<PopupMenu>>)-> Result<Arc<Mutex<BottomMenu>>> {
         let parent = find_el(el_selector, "BottomMenu::from_el()")?;
-        let menu = Self::create_in(&parent, attributes)?;
+        let menu = Self::create_in(&parent, attributes, popup_menu)?;
         Ok(menu)
     }
 
-    pub fn create_in(parent:&Element, attributes: Option<&Attributes>)-> Result<Arc<Mutex<BottomMenu>>> {
+    pub fn create_in(parent:&Element, attributes: Option<&Attributes>, popup_menu:Option<Arc<PopupMenu>>)-> Result<Arc<Mutex<BottomMenu>>> {
         let doc = document();
         let element = doc.create_element("div")?;
         let (width, height) = {
@@ -156,19 +156,17 @@ impl BottomMenu {
             }
         }
 
-        let init_value: String = String::from("");
-        let value = Rc::new(RefCell::new(init_value));
         parent.append_child(&element)?;
         let home_item = create_item("Home", Icon::IconRootSVG("home".to_string()))?;
         home_item.set_active();
         let menu = BottomMenu {
             svg,
             element,
-            value,
             items: Vec::new(),
             default_items: Vec::new(),
             width,
-            home_item
+            home_item,
+            popup_menu
         };
 
         let m = menu.init_event()?;
@@ -247,10 +245,9 @@ impl BottomMenu {
     }
 
     pub fn on_home_menu_click(&mut self)->Result<()>{
-        //let m = d3_menu::get_menu()?;
-        //let mut menu = m.lock().expect("Unable to lock D3Menu");
-        //let _ = menu.show();
-        //d3_menu::show_menu()?;
+        if let Some(m) = &self.popup_menu{
+            PopupMenu::open_menu(m)?;
+        }
         Ok(())
     }
 
@@ -267,10 +264,6 @@ impl BottomMenu {
         }
         
         Ok(this.clone())
-    }
-
-    pub fn value(&self) -> String {
-        self.value.borrow().clone()
     }
 
 }

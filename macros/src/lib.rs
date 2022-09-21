@@ -23,8 +23,8 @@ pub fn menu_group(item: TokenStream) -> TokenStream {
 }
 
 #[proc_macro]
-pub fn main_menu(item: TokenStream) -> TokenStream {
-    menu::main_menu(item) 
+pub fn popup_menu(item: TokenStream) -> TokenStream {
+    menu::popup_menu(item) 
 }
 
 #[proc_macro]

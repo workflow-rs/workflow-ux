@@ -15,6 +15,7 @@ pub mod icon;
 pub mod theme;
 pub mod menu;
 pub mod bottom_menu;
+pub mod popup_menu;
 pub mod layout;
 pub mod module;
 pub mod application;
