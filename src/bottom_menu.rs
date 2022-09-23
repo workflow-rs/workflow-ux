@@ -21,6 +21,7 @@ pub struct BottomMenuItem{
     pub id:u8,
     pub text:String,
     pub element : SvgElement,
+    pub path_el: SvgElement,
     pub text_el : SvgElement,
     pub circle_el : SvgElement,
     pub icon_el: SvgElement,
@@ -33,6 +34,7 @@ impl BottomMenuItem{
 
         let path_el = SvgElement::new("path").expect("BottomMenuItem: Unable to create path")
             .set_cls("slider");
+        path_el.set_attribute("d", "M -56 1 l 36 0 c 10 0, 20 0, 20 0 a0 0 0 0 0 0 0 c 0 0 10 0 20 0 l 41 0 l 0 -1 l -117 0 z")?;
         let circle_el = SvgElement::new("circle").expect("BottomMenuItem: Unable to create circle")
             .set_radius("30")
             .set_cpos("0", "38");
@@ -60,14 +62,17 @@ impl BottomMenuItem{
             id:Self::get_id(),
             text,
             element,
+            path_el,
             text_el,
             circle_el,
             icon_el,
             click_listener:None
         })
     }
-    pub fn set_active(&self){
-        let _r = self.element.set_attribute("class", "menu active");
+    pub fn set_active(&self)->Result<()>{
+        self.path_el.set_attribute("d", "M -56 1 l 0 0 c 10 0, 20 0, 20 34 a36 36 0 0 0 72 0 c 0 -34 10 -34 20 -34 l 5 0 l 0 -1 l -117 0 z")?;
+        self.element.set_attribute("class", "menu active")?;
+        Ok(())
     }
     pub fn set_position(&self, x:f64, y:f64)->Result<()>{
         self.element.set_attribute("style", &format!("transform: translate({x}px, {y}px);"))?;
@@ -158,7 +163,7 @@ impl BottomMenu {
 
         parent.append_child(&element)?;
         let home_item = create_item("Home", Icon::IconRootSVG("home".to_string()))?;
-        home_item.set_active();
+        home_item.set_active()?;
         let menu = BottomMenu {
             svg,
             element,
