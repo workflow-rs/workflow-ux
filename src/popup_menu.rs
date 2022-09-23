@@ -60,15 +60,20 @@ impl MenuItem{
         };
 
         {
-            let mut locked = parent.items.lock().expect("Unable to lock popup_menu/parent.items for new child");
-            locked.insert(item.id, item.clone());
+            {
+                let mut locked = parent.items.lock().expect("Unable to lock popup_menu/parent.items for new child");
+                locked.insert(item.id, item.clone());
+            }
+            if let Some(menu) = get_popup_menu(){
+                menu.append_child_element(&item.element)?;
+            }
             //log_trace!("locked.len(): {}, parent:{:?}", locked.len(), parent);
         }
 
         Ok(item)
     }
     pub fn set_position(&self, x:f32, y:f32)->Result<()>{
-        self.element.set_attribute("style", &format!("transform: translate({x}px, {y}px);"))?;
+        self.element.set_attribute("style", &format!("--menu-x: {x}px; --menu-y: {y}px;"))?;
         Ok(())
     }
     fn get_id()->u8{
@@ -161,6 +166,7 @@ impl PopupMenu {
                 (500, 500)
             }
         };
+        //let large_size = 400;
         let size = -1;
         element.set_attribute("class", "workflow-popup-menu")?;
         element.set_attribute("hide", "true")?;
@@ -254,7 +260,9 @@ impl PopupMenu {
         //log_trace!("size: {}, section_length: {}", size, section_length);
 
         for (_id, item) in items.iter(){
-            self.svg.append_child(&item.element)?;
+            //if item.element.parent_element().is_none(){
+            //    self.svg.append_child(&item.element)?;
+            //}
             let position = section_length*index+section_length/ (2 as f32);
             let p = self.circle_el.get_point_at_length(circumference-position)?;
             //log_trace!("p.y(): {}", p.y());
@@ -313,6 +321,12 @@ impl PopupMenu {
         self.element.remove_attribute("hide")?;
         self.element.set_attribute("closed", "true")?;
         self.element.set_attribute("opening", "true")?;
+        Ok(())
+    }
+
+    fn append_child_element(&self, element: &Element)->Result<()>{
+        self.svg.append_child(element)?;
+        self.update(self.large_size)?;
         Ok(())
     }
 
