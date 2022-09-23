@@ -17,7 +17,7 @@ impl Application {
     pub fn new() -> Result<Application> {
         log_trace!("Creating Workflow Application");
 
-        console_error_panic_hook::set_once();
+        //console_error_panic_hook::set_once();
 
         // init framework components
         // TODO fetch language code from localstorage

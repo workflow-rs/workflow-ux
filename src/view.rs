@@ -82,11 +82,9 @@ impl Container {
             let el = previous.element();
             self.element.remove_child(&el)?;
         }
-
-        
         
         if let Some(app_menu) = &self.app_menu{
-            log_trace!("app_menu.update_bottom_menus: {:?}", incoming.bottom_menus());
+            //log_trace!("app_menu.update_bottom_menus: {:?}", incoming.bottom_menus());
             app_menu.update_bottom_menus(incoming.bottom_menus())?;
         }
 
