@@ -27,8 +27,9 @@ workflow-wasm = "0.1.0"
 # workflow-wasm = { path = "../workflow-wasm" }
 workflow-ux-macros = { path = "macros" }
 
-wasm-bindgen = { version = "0.2.79", features = ["serde-serialize"] }
+wasm-bindgen = { version = "0.2.79" }
 wasm-bindgen-futures = "0.4.31"
+serde-wasm-bindgen = "0.4"
 js-sys = "0.3.56"
 async-std = "1.11.0"
 async-trait = "0.1.56"
@@ -40,7 +41,6 @@ ahash = "0.8.0"
 rand = "0.7.3"
 bs58 = "0.4.0"
 derivative = "2.2.0"
-console_error_panic_hook = "0.1.7"
 ritehash = "0.2.0"
 
 [dependencies.web-sys]

@@ -2,13 +2,14 @@ use wasm_bindgen::JsValue;
 //, convert::{WasmAbi, IntoWasmAbi, FromWasmAbi}};
 use std::sync::PoisonError;
 use workflow_i18n::Error as i18nError;
+use serde_wasm_bindgen::Error as SerdeError;
 use thiserror::Error;
 
 #[macro_export]
 macro_rules! error {
     ($($t:tt)*) => ( workflow_ux::error::Error::String(format_args!($($t)*).to_string()) )
 }
-pub use error; 
+pub use error;
 
 #[allow(non_camel_case_types)]
 #[derive(Debug, Error)]
@@ -61,11 +62,18 @@ pub enum Error {
     TimerError(#[from] workflow_wasm::timers::Error)
 }
 
-impl From<JsValue> for Error {
+impl From<JsValue> for Error {  
     fn from(val: JsValue) -> Self {
         Self::JsValue(val)
     }
 }
+
+impl From<SerdeError> for Error {
+    fn from(e: SerdeError) -> Self {
+        Self::JsValue(e.into())
+    }
+}
+
 
 impl From<Error> for JsValue {
     fn from(error: Error) -> JsValue {

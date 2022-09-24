@@ -1,7 +1,7 @@
 use crate::prelude::*;
 use std::{convert::Into, marker::PhantomData};
 use js_sys::Array;
-use workflow_ux::result::Result;
+use crate::result::Result;
 
 
 #[wasm_bindgen]
@@ -17,7 +17,7 @@ extern "C" {
     pub fn value(this: &FlowMultiMenuBase) -> JsValue;
 
     # [wasm_bindgen (structural , method , js_class = "FlowMultiMenuBase" , js_name = select)]
-    pub fn _select(this: &FlowMultiMenuBase, values:JsValue);
+    pub fn _select(this: &FlowMultiMenuBase, values:Array);
 
     // Remove old/current options and set new option
     # [wasm_bindgen (structural , method , js_class = "FlowMultiMenuBase" , js_name = changeOptions)]
@@ -28,7 +28,11 @@ extern "C" {
 impl FlowMultiMenuBase{
     pub fn select<S: ToString>(self: &FlowMultiMenuBase, selection:Vec<S>){
         let select:Vec<String> = (&selection).iter().map(|a| a.to_string()).collect();
-        self._select(JsValue::from_serde(&select).unwrap());
+        let list = Array::new_with_length(select.len() as u32);
+        for str in select{
+            list.push(&JsValue::from_str(&str));
+        }
+        self._select(list);
     }
 }
 
@@ -98,8 +102,7 @@ where E: EnumTrait<E>
         let cb_opt = self.on_change_cb.clone();
         self.element_wrapper.on("select", move |event| ->Result<()> {
             log_trace!("MultiSelect: select event: {:?}", event);
-            let items:Vec<String> = el.value().into_serde().unwrap();
-
+            let items:Vec<String> = serde_wasm_bindgen::from_value(el.value())?;
             log_trace!("MultiSelect: current_values: {:?}", items);
             let mut values = values.borrow_mut();
             *values = items.clone();
