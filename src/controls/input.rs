@@ -1,8 +1,8 @@
 use crate::prelude::*;
 use crate::layout::ElementLayout;
 use std::convert::Into;
-use workflow_ux::result::Result;
-use workflow_ux::error::Error;
+use crate::result::Result;
+use crate::error::Error;
 use crate::controls::listener::Listener;
 
 

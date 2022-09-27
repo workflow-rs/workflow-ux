@@ -26,6 +26,7 @@ pub mod view;
 pub mod link;
 pub mod image;
 pub mod form;
+pub mod panel;
 pub mod form_footer;
 
 pub mod macros {
@@ -68,4 +69,19 @@ pub fn find_el(selector:&str, error_msg:&str)->std::result::Result<Element, erro
     };
 
     Ok(element)
+}
+
+pub fn create_el(tag:&str, attrs:Vec<(&str, &str)>, html:Option<&str>)->std::result::Result<Element, error::Error>{
+    let doc = document();
+    let el = doc.create_element(tag)?;
+
+    for (name, value) in attrs{
+        el.set_attribute(name, value)?;
+    }
+
+    if let Some(html) = html{
+        el.set_inner_html(html);
+    }
+
+    Ok(el)
 }

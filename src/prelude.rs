@@ -34,6 +34,7 @@ pub use crate::layout::ElementLayoutStyle;
 pub use crate::layout::DefaultFunctions;
 pub use crate::controls::base_element::BaseElement;
 pub use crate::controls::select::FlowMenuBase;
+pub use crate::create_el;
 pub use web_sys::{
     Document,
     Element,
@@ -64,6 +65,7 @@ pub use crate::bottom_menu::{BottomMenu, BottomMenuItem};
 pub use crate::workspace;
 pub use crate::view::Container;
 pub use crate::find_el;
+pub use crate::panel::*;
 
 
 pub use crate::application::global as application;
