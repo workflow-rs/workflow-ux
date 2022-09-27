@@ -40,26 +40,6 @@ impl InfoRow{
             cb(&this)?;
             Ok(())
         }));
-        /*
-        {
-            let mut locked = self.right_icon_el.lock().expect("Unable to lock right_icon_el");
-            if let Some(el) = locked.as_mut(){
-                log_trace!("InfoRow.on() => event22222: {}", event);
-                let this = self.clone();
-                match el.on_click(move|_e|->Result<()>{
-                    cb(&this)?;
-                    Ok(())
-                }){
-                    Ok(_)=>{
-
-                    }
-                    Err(e)=>{
-                        panic!("Unable to bind InfoRow.on({}), e:{:?}", event, e);
-                    }
-                }
-            }
-        }
-        */
 
         self
     }
@@ -67,6 +47,18 @@ impl InfoRow{
 
 
 impl Render for InfoRow{
+    /*
+    fn on(&mut self, event:&str, cb: Box<dyn Fn(dyn Render) -> ElementResult<()>>){
+        log_trace!("InfoRow.on() => event: {}", event);
+        let this = self.clone();
+        self.right_icon_click_listener = Some(Listener::new(move|_e|->Result<()>{
+            cb(this)?;
+            Ok(())
+        }));
+
+        //self
+    }
+    */
     fn render(&self, _w: &mut Vec<String>) -> ElementResult<()>{
         //let attr = self.get_attributes();
         //let children = self.get_children();
