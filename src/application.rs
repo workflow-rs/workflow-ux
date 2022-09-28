@@ -80,7 +80,11 @@ impl Application {
         
         for name in module_load_order {
             if let Some(module_load_fn_name) = modules.remove(*name) {
-                self.load_module(&pkg,name,&module_load_fn_name)?;
+                if module_disable_list.contains(name) {
+                    log_warning!("skipping disable module {}", name);
+                } else {
+                    self.load_module(&pkg,name,&module_load_fn_name)?;
+                }
             } else {
                 log_error!("Unable to load module: {}", name);
             }

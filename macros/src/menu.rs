@@ -134,7 +134,7 @@ pub fn popup_menu(input: TokenStream) -> TokenStream {
                 }
                 let target = target.clone();
                 workflow_core::task::wasm::spawn(async move {
-                    #module_type::get().#module_handler_fn().await.map_err(|e| { log_error!("{}",e); }).ok();
+                    #module_type::get().unwrap().#module_handler_fn().await.map_err(|e| { log_error!("{}",e); }).ok();
                     workflow_log::log_trace!("selecting target element: {:?}", target);
                     //target.select().ok();
                 });
@@ -164,7 +164,7 @@ fn menu_impl(
             .with_callback(Box::new(move |target|{
                 let target = target.clone();
                 workflow_core::task::wasm::spawn(async move {
-                    #module_type::get().#module_handler_fn().await.map_err(|e| { log_error!("{}",e); }).ok();
+                    #module_type::get().unwrap().#module_handler_fn().await.map_err(|e| { log_error!("{}",e); }).ok();
                     workflow_log::log_trace!("selecting target element: {:?}", target);
                     target.select().ok();
                 });

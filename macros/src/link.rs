@@ -127,7 +127,7 @@ pub fn link_with_callback(input: TokenStream) -> TokenStream {
                 #transforms
                 // let target = target.clone();
                 workflow_core::task::wasm::spawn(async move {
-                    #module_type::get().#module_handler_fn(#args).await.map_err(|e| { log_error!("{}",e); }).ok();
+                    #module_type::get().unwrap().#module_handler_fn(#args).await.map_err(|e| { log_error!("{}",e); }).ok();
                     // log_trace!("callback for link element: {:?}", target);
                     // target.select().ok();
                 });

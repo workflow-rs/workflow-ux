@@ -150,12 +150,13 @@ fn module_impl(module_struct : Expr, module_name : &str, container_types : Optio
                 Ok(workflow_ux::module::register(#module_name, std::sync::Arc::new(module),&#container_types).await?)
             }
     
-            pub fn get() -> std::sync::Arc<#module_struct> {
+            pub fn get() -> Option<std::sync::Arc<#module_struct>> {
                 match workflow_ux::module::get_interface::<#module_struct>(#module_name)
                 {
-                    Some(module) => module,
+                    Some(module) => Some(module),
                     None => {
-                        panic!("fatal: module {} not found in the registry", #module_name);
+                        workflow_log::log_error!("error: module '{}' not found in the registry", #module_name);
+                        None
                     },
                 }
             }
