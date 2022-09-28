@@ -27,6 +27,7 @@ pub mod link;
 pub mod image;
 pub mod form;
 pub mod panel;
+pub mod app_drawer;
 pub mod form_footer;
 pub mod user_agent;
 

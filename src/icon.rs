@@ -26,9 +26,13 @@ pub enum Icon {
     Url(String),
     IconRootCustom(String),
     IconRootSVG(String),
+    Css(String),
 }
 
 impl Icon{
+    pub fn css<T:Into<String>>(icon:T)->Icon{
+        Self::Css(icon.into())
+    }
     pub fn svg<T:Into<String>>(icon:T)->Icon{
         Self::IconRootSVG(icon.into())
     }
@@ -45,7 +49,7 @@ fn custom(name:&str) -> String {
 }
 
 fn svg(name:&str) -> String {
-    format!("{}/{}.svg",icon_folder(),name).to_string()
+    format!("{}/{}.svg#icon",icon_folder(),name).to_string()
 }
 
 impl ToString for Icon {
@@ -54,6 +58,7 @@ impl ToString for Icon {
             Icon::Url(url) => url.clone(),
             Icon::IconRootCustom(name) => custom(&name),
             Icon::IconRootSVG(name) => svg(&name),
+            Icon::Css(name) => name.clone(),
         }
     }
 }

@@ -1,5 +1,5 @@
-use workflow_ux::prelude::*;
-use workflow_ux::result::Result;
+use crate::prelude::*;
+use crate::result::Result;
 
 #[wasm_bindgen]
 extern "C" {

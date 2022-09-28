@@ -47,15 +47,49 @@ pub fn set_logo(_logo : &str) -> Result<()> {
 pub fn init_theme(theme: Theme) -> Result<()> {
     Ok(set_theme(theme)?)
 }
+fn build_theme_file_path(theme: &Theme)->String{
+    format!("/resources/themes/{}.css", 
+            theme.as_str()
+                .from_case(Case::Camel)
+                .to_case(Case::Kebab)
+        ).to_string()
+}
 
 pub fn set_theme(theme: Theme) -> Result<()> {
+    let doc = document();
+    let el = match doc.body(){
+        Some(el)=>el,
+        None=>{
+            return Err(Error::UnableToGetBody);
+        }
+    };
 
-    let el = match document().body(){
-            Some(el)=>el,
-            None=>{
-                return Err(Error::UnableToGetBody);
+    let theme_link = match doc.query_selector("head link[app-theme]")?{
+        Some(el)=>el,
+        None=>{
+            if let Some(head) = doc.query_selector("head")?{
+                let link = doc.create_element("link")?;
+                link.set_attribute("app-theme", &theme.to_folder_name())?;
+                link.set_attribute("rel", "stylesheet")?;
+                link.set_attribute("type", "text/css")?;
+                head.append_child(&link)?;
+                link
+            }else{
+                panic!("unable to get head element for theme");
             }
-        };
+            
+        }
+    };
+    let theme_file_path =  build_theme_file_path(&theme);
+    if let Some(p) = theme_link.get_attribute("href"){
+        if !p.eq(&theme_file_path){
+            theme_link.set_attribute("href", &theme_file_path)?;
+            theme_link.set_attribute("app-theme", &theme.to_folder_name())?;
+        }
+    }else{
+        theme_link.set_attribute("href", &theme_file_path)?;
+        theme_link.set_attribute("app-theme", &theme.to_folder_name())?;
+    }
 
     let list = el.class_list();
     for idx in 0..list.length() {

@@ -150,11 +150,21 @@ impl MenuGroup{
         let li = document().create_element("li")?;
         li.set_attribute("class", &format!("menu-item skip-drawer-event"))?;
 
-        let icon_el = document().create_element("img")?;
+        let icon : Icon = icon.into();
+        let icon_el = match icon {
+            Icon::Css(name)=>{
+                let icon_el = document().create_element("div")?;
+                icon_el.set_attribute("icon", &name)?;
+                icon_el
+            }
+            _=>{
+                let icon_el = document().create_element("img")?;
+                icon_el.set_attribute("src", &icon.to_string())?;
+                icon_el
+            }
+        };
         icon_el.set_attribute("class", "icon skip-drawer-event")?;
         // icon_el.set_attribute("class", "icon")?;
-        let icon : Icon = icon.into();
-        icon_el.set_attribute("src", &icon.to_string())?;
     
         let icon_box_el = document().create_element("div")?;
         icon_box_el.set_attribute("class", "icon-box")?;
@@ -297,11 +307,20 @@ impl MenuItem {
 
         element.set_attribute("class", "menu-item")?; // &format!("menu-item {}", cls))?;
 
-        let icon_el = document().create_element("img")?;
-        icon_el.set_attribute("class", "icon")?;
-        // let icon_url : String = icon.to_string(); 
         let icon : Icon = icon.into();
-        icon_el.set_attribute("src", &icon.to_string())?;
+        let icon_el = match icon {
+            Icon::Css(name)=>{
+                let icon_el = document().create_element("div")?;
+                icon_el.set_attribute("icon", &name)?;
+                icon_el
+            }
+            _=>{
+                let icon_el = document().create_element("img")?;
+                icon_el.set_attribute("src", &icon.to_string())?;
+                icon_el
+            }
+        };
+        icon_el.set_attribute("class", "icon")?;
 
         let icon_box_el = document().create_element("div")?;
         icon_box_el.set_attribute("class", "icon-box")?;

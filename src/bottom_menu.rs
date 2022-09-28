@@ -39,7 +39,7 @@ impl BottomMenuItem{
             .set_radius("30")
             .set_cpos("0", "38");
 
-        let icon_el = SvgElement::new("image").expect("BottomMenuItem: Unable to create image")
+        let icon_el = SvgElement::new("use").expect("BottomMenuItem: Unable to create image")
             .set_href(&icon_.to_string())
             .set_pos("-15", "17")
             .set_size("30", "30")
