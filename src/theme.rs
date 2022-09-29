@@ -1,19 +1,24 @@
 // use wasm_bindgen::prelude::*;
-use workflow_ux::document;
-use workflow_ux::result::Result;
-use workflow_ux::error::Error;
-use workflow_core::enums::*;
-// use workflow_core_macros::*;//describe_enum;
-// use workflow_macros::describe_enum;
-use convert_case::{Case, Casing};
+use crate::prelude::{Arc, Mutex, SvgElement};
+use crate::{document, result::Result, error::Error};
+use crate::icon::{IconInfoMap, icon_root};
+use crate::prelude::log_trace;
+use crate::controls::svg::SvgNode;
 
-#[describe_enum]
+use convert_case::{Case, Casing};
+use wasm_bindgen::JsCast;
+
+#[derive(Debug, Clone)]
+pub struct CustomTheme{
+    pub name:String,
+    pub contents:ThemeContents
+}
+
 #[derive(Debug, Clone)]
 pub enum Theme {
     Light,
     Dark,
-    // DarkBlue,
-
+    Custom(CustomTheme)
 }
 
 impl Default for Theme {
@@ -21,19 +26,49 @@ impl Default for Theme {
         Theme::Light
     }
 }
+#[derive(Debug, Clone)]
+pub struct ThemeContents{
+    css:String, 
+    svg:String
+}
+
+static mut DARK_THEME : Option<ThemeContents> = None;
+static mut LIGHT_THEME : Option<ThemeContents> = None;
 
 impl Theme {
+    pub fn update_theme_content_icons(icons:Arc<Mutex<IconInfoMap>>){
+        unsafe{DARK_THEME = Some(build_theme_content("dark", icons.clone()))}
+        unsafe{LIGHT_THEME = Some(build_theme_content("light", icons))}
+
+        match refresh_theme(){
+            Ok(_)=>{}
+            Err(e)=>{
+                log_trace!("unable to flush theme content: {:?}", e);
+            }
+        }
+    }
+    fn name(&self)->String{
+        match self {
+            Theme::Custom(theme)=> theme.name.clone(),
+            Theme::Dark=>"dark".to_string(),
+            Theme::Light=>"light".to_string()
+        }
+    }
     fn to_class_name(&self) -> String {
-        format!("flow-theme-{}", 
-            self.as_str()
-                .from_case(Case::Camel)
-                .to_case(Case::Kebab)
-        ).to_string()
+        format!("flow-theme-{}", self.to_folder_name())
     }
     fn to_folder_name(&self) -> String {
-        self.as_str()
+        self.name()
             .from_case(Case::Camel)
             .to_case(Case::Kebab)
+    }
+
+    fn content(&self)->ThemeContents{
+        match self {
+            Theme::Custom(theme)=> theme.contents.clone(),
+            Theme::Dark=>get_theme_content("dark"),
+            Theme::Light=>get_theme_content("light")
+        }
     }
 }
 
@@ -47,12 +82,48 @@ pub fn set_logo(_logo : &str) -> Result<()> {
 pub fn init_theme(theme: Theme) -> Result<()> {
     Ok(set_theme(theme)?)
 }
+/*
 fn build_theme_file_path(theme: &Theme)->String{
     format!("/resources/themes/{}.css", 
             theme.as_str()
                 .from_case(Case::Camel)
                 .to_case(Case::Kebab)
         ).to_string()
+}
+*/
+
+fn build_theme_content(theme:&str, icons:Arc<Mutex<IconInfoMap>>)->ThemeContents{
+    let mut icons_list = Vec::new();
+    let mut var_list = Vec::new();
+    let mut svg_list = Vec::new();
+    let locked = icons.lock().expect("Unable to lock icons for builing theme contents");
+    let root = icon_root();
+    for (id, icon) in locked.iter(){
+        var_list.push(format!("--svg-icon-{}:url(\"{}/{}/{}\");", id, root, theme, icon.file_name));
+        icons_list.push(format!(".icon[icon=\"{}\"]{{background-image:var(--svg-icon-{})}}", id, id));
+        svg_list.push(format!(
+            "<symbol id=\"svg-icon-{}\" viewBox=\"0 0 50 50\"><image href=\"{}/{}/{}\"></image></symbol>",
+            id, root, theme, icon.file_name
+        ));
+    }
+
+    ThemeContents{
+        css: format!("body{{{}}}\n{}", var_list.join(""), icons_list.join("")),
+        svg: svg_list.join("")
+    }
+}
+
+fn get_theme_content(theme:&str)->ThemeContents{
+    let theme_opt = if theme.eq("dark"){
+        unsafe{DARK_THEME.as_ref()}
+    }else{
+        unsafe{LIGHT_THEME.as_ref()}
+    };
+
+    match theme_opt {
+        Some(content)=>content.clone(),
+        None=>ThemeContents{css:"".to_string(), svg:"".to_string()}
+    }
 }
 
 pub fn set_theme(theme: Theme) -> Result<()> {
@@ -64,31 +135,53 @@ pub fn set_theme(theme: Theme) -> Result<()> {
         }
     };
 
-    let theme_link = match doc.query_selector("head link[app-theme]")?{
+    let theme_el = match doc.query_selector("head style[app-theme]")?{
         Some(el)=>el,
         None=>{
             if let Some(head) = doc.query_selector("head")?{
-                let link = doc.create_element("link")?;
-                link.set_attribute("app-theme", &theme.to_folder_name())?;
-                link.set_attribute("rel", "stylesheet")?;
-                link.set_attribute("type", "text/css")?;
-                head.append_child(&link)?;
-                link
+                let el = doc.create_element("style")?;
+                //el.set_attribute("app-theme", &theme.to_folder_name())?;
+                //el.set_attribute("rel", "stylesheet")?;
+                el.set_attribute("type", "text/css")?;
+                head.append_child(&el)?;
+                el
             }else{
                 panic!("unable to get head element for theme");
             }
             
         }
     };
-    let theme_file_path =  build_theme_file_path(&theme);
-    if let Some(p) = theme_link.get_attribute("href"){
-        if !p.eq(&theme_file_path){
-            theme_link.set_attribute("href", &theme_file_path)?;
-            theme_link.set_attribute("app-theme", &theme.to_folder_name())?;
+    let theme_svg_el = match doc.query_selector("body svg[app-theme]")?{
+        Some(el)=>el.dyn_into::<SvgElement>()?,
+        None=>{
+            if let Some(body) = doc.query_selector("body")?{
+                let svg = SvgElement::new("svg")?;
+                svg.set_attribute("display", "none")?;
+                body.append_child(&svg)?;
+                svg
+            }else{
+                panic!("unable to get body element for theme svg");
+            }
         }
-    }else{
-        theme_link.set_attribute("href", &theme_file_path)?;
-        theme_link.set_attribute("app-theme", &theme.to_folder_name())?;
+    };
+    
+    let content =  theme.content();
+    let name = format!("{}-{}-{}",
+        theme.to_folder_name(),
+        content.css.len(),
+        content.svg.len()
+    );
+    let mut update = true;
+    if let Some(p) = theme_el.get_attribute("app-theme"){
+        if p.eq(&name){
+            update = false;
+        }
+    }
+    if update{
+        theme_el.set_inner_html(&content.css);
+        theme_svg_el.set_inner_html(&content.svg);
+        theme_el.set_attribute("app-theme", &name)?;
+        theme_svg_el.set_attribute("app-theme", &name)?;
     }
 
     let list = el.class_list();
@@ -114,6 +207,11 @@ fn update_current_theme(theme : Theme) -> Result<()> {
     // TODO - iterate over dom, replace all themable elements
     workflow_ux::icon::update_theme()?;
 
+    Ok(())
+}
+
+fn refresh_theme()->Result<()> {
+    set_theme(current_theme())?;
     Ok(())
 }
 

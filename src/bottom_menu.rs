@@ -1,8 +1,5 @@
-use crate::{prelude::*, icon::Icon};
-use workflow_ux::result::Result;
-use crate::controls::svg::SvgNode;
-use crate::controls::listener::Listener;
-use crate::find_el;
+use crate::{prelude::*, find_el, icon::Icon, result::Result};
+use crate::controls::{svg::SvgNode, listener::Listener};
 
 
 pub fn create_item<T:Into<String>, I: Into<Icon>>(text:T, icon:I)->Result<BottomMenuItem>{
@@ -39,8 +36,8 @@ impl BottomMenuItem{
             .set_radius("30")
             .set_cpos("0", "38");
 
-        let icon_el = SvgElement::new("use").expect("BottomMenuItem: Unable to create image")
-            .set_href(&icon_.to_string())
+        let icon_el = icon_.svg_element().expect("BottomMenuItem: Unable to create image")
+            //.set_href("#svg-icon-work")//&icon_.to_string())
             .set_pos("-15", "17")
             .set_size("30", "30")
             .set_aspect_ratio("xMidYMid meet");

@@ -1,5 +1,5 @@
 
-use workflow_ux::{document, result::Result};
+use crate::{document, result::Result};
 use web_sys::{Node, SvgElement};
 use wasm_bindgen::JsCast;
 
