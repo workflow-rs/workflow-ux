@@ -33,8 +33,8 @@ impl MenuItem{
             .set_radius("42")
             .set_cpos("0", "0");
 
-        let icon_el = SvgElement::new("image").expect("MenuItem: Unable to create image")
-            .set_href(&icon_.to_string())
+        let icon_el = icon_.svg_element().expect("MenuItem: Unable to create image")
+            //.set_href(&icon_.to_string())
             .set_pos("-17", "-25")
             .set_size("35", "35")
             .set_aspect_ratio("xMidYMid meet");
