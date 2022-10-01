@@ -11,20 +11,26 @@ pub fn view(_attr: TokenStream, item: TokenStream) -> TokenStream {
     view::view(_attr,item)
 }
 
-
 #[proc_macro]
-pub fn menu(item: TokenStream) -> TokenStream {
-    menu::menu(item)
+pub fn section_menu(item: TokenStream) -> TokenStream {
+    menu::section_menu(item)
 }
 
 #[proc_macro]
 pub fn menu_group(item: TokenStream) -> TokenStream {
-    menu::menu_group(item) 
+    menu::menu_group(item)
 }
 
 #[proc_macro]
+pub fn menu_item(item: TokenStream) -> TokenStream {
+    menu::menu_item(item)
+}
+
+
+
+#[proc_macro]
 pub fn popup_menu(item: TokenStream) -> TokenStream {
-    menu::popup_menu(item) 
+    menu::popup_menu(item)
 }
 
 #[proc_macro]

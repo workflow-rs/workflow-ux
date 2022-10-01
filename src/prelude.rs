@@ -54,7 +54,7 @@ pub use web_sys::{
 };
 pub use workflow_core::enums::EnumTrait;
 pub use workflow_core::id::Id;
-pub use crate::menu::{MenuItem,MenuGroup};
+pub use crate::menu::{MenuItem,MenuGroup,SectionMenu};
 pub use crate::app_menu;
 pub use crate::popup_menu::PopupMenu;
 pub use crate::module::{Module,ModuleInterface};

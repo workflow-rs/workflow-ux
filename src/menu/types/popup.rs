@@ -7,6 +7,7 @@ use crate::controls::listener::Listener;
 use std::sync::{MutexGuard, LockResult};
 use crate::menu::MenuCaption;
 
+/*
 #[wasm_bindgen]
 #[derive(Debug)]
 pub struct ElPosition{
@@ -14,38 +15,39 @@ pub struct ElPosition{
     pub x:u16,
     pub y:u16,
 }
+*/
 
 #[derive(Debug, Clone)]
-pub struct MenuItem{
+pub struct PopupMenuItem{
     pub id: u8,
     pub text: String,
     pub element : SvgElement,
-    pub items: Arc<Mutex<BTreeMap<u8, MenuItem>>>,
+    pub items: Arc<Mutex<BTreeMap<u8, PopupMenuItem>>>,
     pub click_listener: Arc<Mutex<Option<Listener<web_sys::MouseEvent>>>>
 }
 
-impl MenuItem{
-    pub fn new<I : Into<Icon>>(parent: &MenuItem, caption: MenuCaption, icon: I) -> Result<Self> {
+impl PopupMenuItem{
+    pub fn new<I : Into<Icon>>(parent: &PopupMenuItem, caption: MenuCaption, icon: I) -> Result<Self> {
         
         let icon_:Icon = icon.into();
 
-        let circle_el = SvgElement::new("circle").expect("MenuItem: Unable to create circle")
+        let circle_el = SvgElement::new("circle").expect("PopupMenuItem: Unable to create circle")
             .set_radius("42")
             .set_cpos("0", "0");
 
-        let icon_el = icon_.svg_element().expect("MenuItem: Unable to create image")
+        let icon_el = icon_.svg_element().expect("PopupMenuItem: Unable to create image")
             //.set_href(&icon_.to_string())
             .set_pos("-17", "-25")
             .set_size("35", "35")
             .set_aspect_ratio("xMidYMid meet");
 
         let text:String = caption.title;
-        let text_el = SvgElement::new("text").expect("MenuItem: Unable to create text")
+        let text_el = SvgElement::new("text").expect("PopupMenuItem: Unable to create text")
             .set_html(&text)
             .set_text_anchor("middle")
             .set_pos("0", "22");
 
-        let element = SvgElement::new("g").expect("MenuItem: Unable to create root")
+        let element = SvgElement::new("g").expect("PopupMenuItem: Unable to create root")
             .set_cls("menu")
             .add_child(&circle_el)
             .add_child(&icon_el)
@@ -83,16 +85,16 @@ impl MenuItem{
             ID
         }
     }
-    pub fn with_callback(self, callback: Box<dyn Fn(&MenuItem) -> Result<()>>) ->Result<Self>{
+    pub fn with_callback(self, callback: Box<dyn Fn(&PopupMenuItem) -> Result<()>>) ->Result<Self>{
         let self_ = self.clone();
         let callback = Listener::new(move|event: web_sys::MouseEvent|->Result<()>{
-            log_trace!("MenuItem::with_callback called");
+            log_trace!("PopupMenuItem::with_callback called");
             event.stop_immediate_propagation();
             
             match callback(&self_) {
                 Ok(_) => {},
                 Err(err) => {
-                    log_error!("Error executing MenuItem callback: {:?}", err);
+                    log_error!("Error executing PopupMenuItem callback: {:?}", err);
                 }
             };
 
@@ -123,7 +125,7 @@ pub fn get_popup_menu()-> Option<Arc<PopupMenu>>{
 #[derive(Debug, Clone)]
 pub struct PopupMenu {
     pub element : Element,
-    pub root: MenuItem,
+    pub root: PopupMenuItem,
     svg: SvgElement,
     circle_el: SvgPathElement,
     circle_proxy_el: SvgElement,
@@ -201,10 +203,10 @@ impl PopupMenu {
 
         parent.append_child(&element)?;
 
-        let root = MenuItem{
-            id: MenuItem::get_id(),
+        let root = PopupMenuItem{
+            id: PopupMenuItem::get_id(),
             text: "root".to_string(),
-            element: SvgElement::new("g").expect("MenuItem: Unable to create root"),
+            element: SvgElement::new("g").expect("PopupMenuItem: Unable to create root"),
             click_listener: Arc::new(Mutex::new(None)),
             items: Arc::new(Mutex::new(BTreeMap::new()))
         };
@@ -243,7 +245,7 @@ impl PopupMenu {
         Ok(())
     }
 
-    fn get_root(&self)->&MenuItem{
+    fn get_root(&self)->&PopupMenuItem{
         &self.root
     }
 
@@ -296,11 +298,11 @@ impl PopupMenu {
         size.ceil() as i64
     }
 
-    pub fn create_item<T:Into<MenuCaption>, I: Into<Icon>>(parent:&MenuItem, text:T, icon:I)->Result<MenuItem>{
-        let item = MenuItem::new(parent, text.into(), icon)?;
+    pub fn create_item<T:Into<MenuCaption>, I: Into<Icon>>(parent:&PopupMenuItem, text:T, icon:I)->Result<PopupMenuItem>{
+        let item = PopupMenuItem::new(parent, text.into(), icon)?;
         Ok(item)
     }
-    pub fn add_item(&self, item: MenuItem)->Result<()>{
+    pub fn add_item(&self, item: PopupMenuItem)->Result<()>{
         //self.svg.append_child(&item.element)?;
         let mut items = self.get_root().items.lock().expect("Unable to lock popup menu items");
         items.insert(item.id, item);

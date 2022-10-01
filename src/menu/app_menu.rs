@@ -2,28 +2,31 @@
 //use workflow_log::log_trace;
 
 use crate::result::Result;
-use crate::menu::MenuGroup;
-use crate::bottom_menu::{BottomMenu, BottomMenuItem};
-use crate::prelude::Element;
-use crate::popup_menu::PopupMenu;
+pub use crate::prelude::Element;
+
+pub use super::{MainMenu};
+pub use super::{PopupMenu, PopupMenuItem};
+pub use super::{BottomMenu, BottomMenuItem};
+
+
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone)]
 pub struct AppMenu {
-    pub main : MenuGroup,
+    pub main : Arc<MainMenu>,
     pub bottom : Arc<Mutex<BottomMenu>>,
     pub popup: Option<Arc<PopupMenu>>
 }
 
 impl AppMenu {
 
-    pub fn element(&self) -> Element {
-        self.main.element().clone()
-    }
+    //pub fn element(&self) -> Element {
+    //    self.main.element().clone()
+    //}
 
-    pub fn new(el: &str, bottom_menu_el: &str, popup_menu_el:Option<&str>) -> Result<Self> {
+    pub fn new(el: &str, sub_menu_el:Option<&str>, bottom_menu_el: &str, popup_menu_el:Option<&str>) -> Result<Self> {
 
-        let main = MenuGroup::from_el(el)?;
+        let main = MainMenu::from_el(el, sub_menu_el, None)?;
         
         let mut popup = None;
         if let Some(popup_menu_el) = popup_menu_el{

@@ -14,13 +14,14 @@ pub mod controls;
 pub mod icon;
 pub mod theme;
 pub mod menu;
-pub mod bottom_menu;
-pub mod popup_menu;
+pub use menu::app_menu;
+pub use menu::main_menu;
+pub use menu::popup_menu;
+pub use menu::bottom_menu;
 pub mod layout;
 pub mod module;
 pub mod application;
 pub mod workspace;
-pub mod app_menu;
 // pub mod enums;
 pub mod view;
 pub mod link;
@@ -86,4 +87,8 @@ pub fn create_el(tag:&str, attrs:Vec<(&str, &str)>, html:Option<&str>)->std::res
     }
 
     Ok(el)
+}
+
+pub fn type_of<T>(_: T) -> String {
+    std::any::type_name::<T>().to_string()
 }

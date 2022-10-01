@@ -75,10 +75,9 @@ impl Parse for Menu {
     }
 }
 
-
-pub fn menu(input: TokenStream) -> TokenStream {
+pub fn section_menu(input: TokenStream) -> TokenStream {
     let menu = parse_macro_input!(input as Menu);
-    let menu_type = Ident::new("MenuItem", Span::call_site());
+    let menu_type = Ident::new("SectionMenu", Span::call_site());
     menu_impl(
         menu_type,
         menu.parent,
@@ -102,11 +101,9 @@ pub fn menu_group(input: TokenStream) -> TokenStream {
     ).into()
 }
 
-pub fn popup_menu(input: TokenStream) -> TokenStream {
+pub fn menu_item(input: TokenStream) -> TokenStream {
     let menu = parse_macro_input!(input as Menu);
-    
-    /*
-    let menu_type = Ident::new("MainMenu", Span::call_site());
+    let menu_type = Ident::new("MenuItem", Span::call_site());
     menu_impl(
         menu_type,
         menu.parent,
@@ -115,7 +112,12 @@ pub fn popup_menu(input: TokenStream) -> TokenStream {
         menu.module_type,
         menu.module_handler_fn
     ).into()
-    */
+}
+
+
+
+pub fn popup_menu(input: TokenStream) -> TokenStream {
+    let menu = parse_macro_input!(input as Menu);
 
     let icon = menu.icon;
     let parent = menu.parent;
@@ -127,7 +129,7 @@ pub fn popup_menu(input: TokenStream) -> TokenStream {
     (quote!{
 
         {
-            workflow_ux::popup_menu::MenuItem::new(&#parent, #title.into(), #icon)?
+            workflow_ux::popup_menu::PopupMenuItem::new(&#parent, #title.into(), #icon)?
             .with_callback(Box::new(move |target|{
                 if let Some(popup_menu) = workflow_ux::popup_menu::get_popup_menu(){
                     popup_menu.close().map_err(|e| { log_error!("unable to close popup menu: {}", e); }).ok();
@@ -164,9 +166,15 @@ fn menu_impl(
             .with_callback(Box::new(move |target|{
                 let target = target.clone();
                 workflow_core::task::wasm::spawn(async move {
-                    #module_type::get().unwrap().#module_handler_fn().await.map_err(|e| { log_error!("{}",e); }).ok();
-                    workflow_log::log_trace!("selecting target element: {:?}", target);
-                    target.select().ok();
+                    match #module_type::get().unwrap().#module_handler_fn().await{
+                        Ok(v)=>{
+                            workflow_log::log_trace!("selecting target element: {:?}", target);
+                            target.select().ok();
+                        }
+                        Err(e)=>{
+                            log_error!("{}",e);
+                        }
+                    };
                 });
                 Ok(())
             }))?
