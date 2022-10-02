@@ -24,6 +24,7 @@ impl Section{
     }
 
     fn add_section_menu(&self,  child: SectionMenu)->Result<SectionMenu>{
+        self.element.class_list().add_1("has-child")?;
         let child_el = &child.element_wrapper.element;
         self.element.append_child(child_el)?;
         if let Some(sub_menu_container) = self.sub_menu_container.as_ref(){
@@ -130,6 +131,7 @@ impl SectionMenu{
     }
 
     pub fn add_child_group(&self,  child: MenuGroup)->Result<MenuGroup>{
+        self.element_wrapper.element.class_list().add_1("has-child")?;
         let child_el = &child.item.element;
         self.sub_ul.append_child(&child_el)?;
         self.sub_ul.append_child(&child.sub_li)?;

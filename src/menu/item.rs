@@ -62,18 +62,7 @@ impl MenuItem {
         element.set_attribute("class", "menu-item")?; // &format!("menu-item {}", cls))?;
 
         let icon : Icon = icon.into();
-        let icon_el = match icon {
-            Icon::Css(name)=>{
-                let icon_el = document().create_element("div")?;
-                icon_el.set_attribute("icon", &name)?;
-                icon_el
-            }
-            _=>{
-                let icon_el = document().create_element("img")?;
-                icon_el.set_attribute("src", &icon.to_string())?;
-                icon_el
-            }
-        };
+        let icon_el = icon.element()?;
         icon_el.set_attribute("class", "icon")?;
 
         let icon_box_el = document().create_element("div")?;

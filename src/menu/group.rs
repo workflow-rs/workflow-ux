@@ -1,6 +1,6 @@
 
 use crate::{icon::Icon, result::Result, prelude::*};
-use super::{select, Menu, MenuCaption, section::SectionMenu};
+use super::{Menu, MenuCaption, section::SectionMenu};
 
 #[derive(Debug, Clone)]
 pub struct MenuGroup {
@@ -13,13 +13,37 @@ pub struct MenuGroup {
 
 impl MenuGroup{
 
+    /*
     pub fn select(&self) -> Result<()> {
         select(&self.item.element)?;
+        Ok(())
+    }
+    */
+
+    pub fn is_active(&self)->Result<bool>{
+        let active = self.item.element.class_list().contains("active");
+        Ok(active)
+    }
+
+    pub fn toggle(&self) -> Result<()> {
+        if self.is_active()?{
+            self.item.element.class_list().remove_1("active")?;
+            self.sub_li.class_list().remove_1("active")?;
+        }else{
+            self.item.element.class_list().add_1("active")?;
+            self.sub_li.class_list().add_1("active")?;
+        }
+        
         Ok(())
     }
 
     pub fn element(&self) -> Element {
         self.item.element.clone()
+    }
+
+    pub fn add_cls(&self, cls:&str) ->Result<()>{
+        self.item.element.class_list().add_1(cls)?;
+        Ok(())
     }
 
     // TODO review: id is not used
@@ -29,18 +53,7 @@ impl MenuGroup{
         li.set_attribute("class", &format!("menu-item menu-group skip-drawer-event"))?;
 
         let icon : Icon = icon.into();
-        let icon_el = match icon {
-            Icon::Css(name)=>{
-                let icon_el = doc.create_element("div")?;
-                icon_el.set_attribute("icon", &name)?;
-                icon_el
-            }
-            _=>{
-                let icon_el = doc.create_element("img")?;
-                icon_el.set_attribute("src", &icon.to_string())?;
-                icon_el
-            }
-        };
+        let icon_el = icon.element()?;
         icon_el.set_attribute("class", "icon skip-drawer-event")?;
         // icon_el.set_attribute("class", "icon")?;
     
@@ -62,13 +75,16 @@ impl MenuGroup{
         icon_box_el.append_child(&short_title_el)?;
         text_box_el.set_inner_html(&caption.title);
 
+        let arrow_el = Icon::css("arrow-down-small").element()?;
+        arrow_el.class_list().add_1("arrow-icon")?;
+
         li.append_child(&icon_box_el)?;
         li.append_child(&text_box_el)?;
+        li.append_child(&arrow_el)?;
 
         let sub_li = doc.create_element("li")?;
-        sub_li.set_attribute("class", "sub")?;
+        sub_li.set_attribute("class", "sub menu-group-items")?;
         let sub_ul = doc.create_element("ul")?;
-        sub_ul.set_attribute("class", "menu-group-items")?;
         sub_li.append_child(&sub_ul)?;
         
         
@@ -80,6 +96,7 @@ impl MenuGroup{
             caption
         })?;
 
+        item.toggle()?;
 
         Ok(item)
 

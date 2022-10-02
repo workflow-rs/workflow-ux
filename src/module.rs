@@ -13,7 +13,6 @@ use downcast::{downcast_sync, AnySync};
 #[async_trait(?Send)]
 pub trait ModuleInterface : AnySync {
     // fn menu(self : Arc<Self>) -> Option<MenuGroup> { None }
-    
     async fn main(self : Arc<Self>) -> Result<()> { Ok(()) }
     async fn load(self : Arc<Self>) -> Result<()> { Ok(()) }
 

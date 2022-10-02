@@ -1,7 +1,8 @@
+//use crate::dom::Element;
 use crate::{document, result::Result, controls::svg::SvgNode};
 use crate::prelude::{Arc, Mutex, Theme};
 use crate::theme::current_theme_folder;
-use web_sys::SvgElement;
+use web_sys::{SvgElement, Element};
 use regex::Regex;
 use std::collections::BTreeMap;
 pub type IconInfoMap = BTreeMap<String, IconInfo>;
@@ -121,6 +122,24 @@ impl Icon{
         let (file_name, id) = self.get_file_name_and_id();
         track_icon(&id, IconInfo::new_svg(file_name));
         Ok(el.set_href(&format!("#svg-icon-{}", id)))
+    }
+    pub fn element(&self)->Result<Element>{
+        let el = match self {
+            Icon::Css(name)=>{
+                let icon_el = document().create_element("div")?;
+                icon_el.set_attribute("icon", &name)?;
+                icon_el.set_attribute("class", "icon")?;
+                icon_el
+            }
+            _=>{
+                let icon_el = document().create_element("img")?;
+                icon_el.set_attribute("src", &self.to_string())?;
+                icon_el.set_attribute("class", "icon")?;
+                icon_el
+            }
+        };
+
+        Ok(el)
     }
 }
 
