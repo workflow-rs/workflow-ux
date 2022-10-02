@@ -3,7 +3,7 @@ use web_sys::Navigator;
 
 #[wasm_bindgen]
 extern "C" {
-    # [wasm_bindgen (js_namespace=window, getter, js_name = navigator , typescript_type = "navigator")]
+    # [wasm_bindgen (js_namespace=window, getter, js_name = navigator)]
     pub fn get_navigator()->Navigator;
 }
 
