@@ -45,7 +45,7 @@ ritehash = "0.2.0"
 regex="1.6.0"
 
 [dependencies.web-sys]
-version = "0.3.56"
+version = "0.3.60"
 features = [
     'console',
     'Document',

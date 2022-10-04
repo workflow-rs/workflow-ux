@@ -30,7 +30,9 @@ impl MainMenu{
     pub fn from_el(el_selector:&str, sub_menu_el_selector:Option<&str>, attributes: Option<&Attributes>)-> Result<Arc<MainMenu>> {
         let element = find_el(el_selector, "MainMenu::from_el()")?;
         let sub_menu_el = if let Some(sub_menu_el_selector) = sub_menu_el_selector {
-            Some(find_el(sub_menu_el_selector, "MainMenu::from_el():sub_menu_el_selector")?)
+            let sub_menu_el = find_el(sub_menu_el_selector, "MainMenu::from_el():sub_menu_el_selector")?;
+            sub_menu_el.set_attribute("data-id", "sub_menus")?;
+            Some(sub_menu_el)
         }else{
             None
         };

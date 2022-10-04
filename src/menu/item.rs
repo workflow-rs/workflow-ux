@@ -6,7 +6,9 @@ use super::{select, Menu, MenuCaption};
 #[derive(Debug, Clone)]
 pub struct MenuItem {
     element_wrapper: ElementWrapper,
-    badge:Option<Element>
+    badge:Option<Element>,
+    _menu_group_id:String,
+    section_menu_id:String,
 }
 
 impl MenuItem {
@@ -16,35 +18,16 @@ impl MenuItem {
         if let Some(drawer) = get_drawer(){
             drawer.close_left_drawer();
         }
+        SectionMenu::select_by_id(&self.section_menu_id)?;
         Ok(())
     }
-
 
     pub fn element(&self) -> Element {
         self.element_wrapper.element.clone()
     }
 
-    pub fn from_id(id: &str) -> Result<MenuItem> {
-        let element = document().get_element_by_id(&id)
-            .ok_or(Error::MissingElement("WorkspaceMenuItem::from_id()".into(),id.into()))?;
-        Ok(MenuItem {
-            element_wrapper: ElementWrapper::new(element),
-            badge: None
-        })
-    }
-
-    pub fn new<I : Into<Icon>>(parent: &MenuGroup, caption: MenuCaption, icon: I) -> Result<Self> {
-        Self::new_with_parent_element(parent.sub_ul.clone(),caption,icon)
-    }
-
-    pub fn new_with_parent_id<I : Into<Icon>>(parent_id : &str, caption : MenuCaption, icon: I) -> Result<Self> {
-        let element = document().get_element_by_id(&parent_id)
-            .ok_or(Error::MissingParent("WorkspaceMenuItem::new_with_id()".into(),parent_id.into()))?;
-        Self::new_with_parent_element(element,caption,icon)
-    }
-
-    pub fn new_with_parent_element<I : Into<Icon>>(parent: Element, caption : MenuCaption, icon: I) -> Result<Self> {
-
+    pub fn new<I : Into<Icon>>(menu_group: &MenuGroup, caption: MenuCaption, icon: I) -> Result<Self> {
+        let parent = menu_group.sub_ul.clone();
         let element = document().create_element("li")?;
 
         let text_box_el = document().create_element("div")?;
@@ -81,6 +64,8 @@ impl MenuItem {
 
         Ok(MenuItem {
             element_wrapper: ElementWrapper::new(element),
+            _menu_group_id: menu_group.id.clone(),
+            section_menu_id: menu_group.section_menu_id.clone(),
             badge: None
         })
     }
@@ -131,6 +116,11 @@ impl MenuItem {
             Ok(())
         })?;
         Ok(self)
+    }
+
+    pub fn activate(&self)-> Result<()> {
+        self.element_wrapper.element.clone().dyn_into::<HtmlElement>()?.click();
+        Ok(())
     }
     
 }

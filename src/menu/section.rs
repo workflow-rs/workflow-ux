@@ -43,6 +43,7 @@ impl Section{
 #[derive(Debug, Clone)]
 pub struct SectionMenu {
     element_wrapper: ElementWrapper,//<li>
+    pub id: String,
     pub sub_li: Element,//<li> wrapper of sub_ul
     pub sub_ul: Element,//<ul> for MenuGroup
     pub caption: MenuCaption,
@@ -51,6 +52,45 @@ pub struct SectionMenu {
 }
 
 impl SectionMenu{
+
+    pub fn select_by_id(id:&str)-> Result<()> {
+        match document().query_selector(&format!("[data-id=\"section_menu_{}\"]", id)){
+            Ok(el_opt)=>{
+                if let Some(el) = el_opt{
+                    select(&el)?;
+                }
+            }
+            Err(e)=>{
+                log_trace!("unable to get section_menu_{}: error:{:?}", id, e);
+            }
+        }
+
+        match document().query_selector("[data-id=\"sub_menus\"]"){
+            Ok(el_opt)=>{
+                if let Some(sub_menus_container) = el_opt{
+                    let sub_menu_id = format!("section_menu_sub_{}", id);
+                    let els = sub_menus_container.query_selector_all(".section-menu-sub")?;
+                    for idx in 0..els.length() {
+                        let sub_menu = els.item(idx).unwrap().dyn_into::<Element>().unwrap();
+                        if let Some(id) = sub_menu.get_attribute("data-id"){
+                            if id.eq(&sub_menu_id){
+                                sub_menu.class_list().add_1("active")?;
+                            }else{
+                                sub_menu.class_list().remove_1("active")?;
+                            }
+                        }else{
+                            sub_menu.class_list().remove_1("active")?;
+                        }
+                    }
+                }
+            }
+            Err(e)=>{
+                log_trace!("unable to get sub-menus: error:{:?}", e);
+            }
+        }
+
+        Ok(())
+    }
 
     pub fn select(&self) -> Result<()> {
         select(&self.element_wrapper.element)?;
@@ -71,9 +111,10 @@ impl SectionMenu{
 
     pub fn new<I : Into<Icon>>(section: &Section, caption: MenuCaption, icon: I) -> Result<SectionMenu> {
         let doc = document();
+        let id = Self::create_id();
         let li = doc.create_element("li")?;
         li.set_attribute("class", &format!("menu-item skip-drawer-event"))?;
-
+        li.set_attribute("data-id", &format!("section_menu_{}", id))?;
         let icon : Icon = icon.into();
         let icon_el = match icon {
             Icon::Css(name)=>{
@@ -113,10 +154,12 @@ impl SectionMenu{
 
         let sub_li = doc.create_element("li")?;
         sub_li.set_attribute("class", "sub section-menu-sub")?;
+        sub_li.set_attribute("data-id", &format!("section_menu_sub_{}", id))?;
         let sub_ul = doc.create_element("ul")?;
         sub_li.append_child(&sub_ul)?;
         
         let item = section.add_section_menu(SectionMenu {
+            id,
             caption,
             element_wrapper: ElementWrapper::new(li),
             sub_ul,
@@ -160,6 +203,14 @@ impl SectionMenu{
             Ok(())
         })?;
         Ok(self)
+    }
+
+    fn create_id()->String{
+        static mut ID:u8 = 0;
+        format!("{}", unsafe{
+            ID = ID+1;
+            ID
+        })
     }
 
 }

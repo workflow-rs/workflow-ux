@@ -4,10 +4,12 @@ use super::{Menu, MenuCaption, section::SectionMenu};
 
 #[derive(Debug, Clone)]
 pub struct MenuGroup {
+    pub id: String,
     pub item : ElementWrapper,//<li>
     pub sub_li: Element,//<li> wrapper of sub_ul
     pub sub_ul: Element,//<ul></ul> for sub-menus
     pub caption: MenuCaption,
+    pub section_menu_id: String,
     pub child_groups: Arc<Mutex<Vec<MenuGroup>>>
 }
 
@@ -49,7 +51,9 @@ impl MenuGroup{
     // TODO review: id is not used
     pub fn new<I : Into<Icon>>(section_menu: &SectionMenu, caption: MenuCaption, icon: I) -> Result<MenuGroup> {
         let doc = document();
+        let id = Self::create_id();
         let li = doc.create_element("li")?;
+        li.set_attribute("data-id", &format!("menu_group_{}", id))?;
         li.set_attribute("class", &format!("menu-item menu-group skip-drawer-event"))?;
 
         let icon : Icon = icon.into();
@@ -89,6 +93,8 @@ impl MenuGroup{
         
         
         let item = section_menu.add_child_group(MenuGroup {
+            id,
+            section_menu_id: section_menu.id.clone(),
             item : ElementWrapper::new(li.clone()),
             sub_ul,
             sub_li,
@@ -122,6 +128,14 @@ impl MenuGroup{
             Ok(())
         })?;
         Ok(self)
+    }
+
+    fn create_id()->String{
+        static mut ID:u8 = 0;
+        format!("{}", unsafe{
+            ID = ID+1;
+            ID
+        })
     }
 
 }
