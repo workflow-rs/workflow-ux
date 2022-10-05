@@ -99,7 +99,7 @@ pub fn declare_module(input: TokenStream) -> TokenStream {
     module::declare_module(input)
 }
 
-#[proc_macro_derive(Module, attributes(RequiredModule))]
+#[proc_macro_derive(Module, attributes(required_module))]
 pub fn derive_module(input: TokenStream) -> TokenStream {
     module::derive_module(input)
 }

@@ -87,31 +87,13 @@ pub fn derive_module(input: TokenStream) -> TokenStream {
         if let Some(i) = a.path.get_ident(){
             let name = i.to_string();
             //println!("attrs::::::{:?}, tokens:{:?}", name, a.tokens);
-            if !name.eq("RequiredModule"){
+            if !name.eq("required_module"){
                 continue;
             }
             let mut tokens = a.tokens.clone().into_iter();
             if let Some(tt) = tokens.next(){
                 if tt.to_string().eq("="){
                     if let Some(tt) = tokens.next(){
-                        //println!("attrs::::::tt {:?}", tt);
-                        /*
-                        let mod_name = match tt{
-                            
-                            proc_macro2::TokenTree::Ident(a)=>a,
-                            proc_macro2::TokenTree::Literal(a)=>{
-                                match a {
-                                    Type(a)=>{
-
-                                    }
-                                }
-                                Ident::new(&a.to_string(), Span::call_site())
-                            }
-                            _=>{
-                                panic!("invalid RequiredModule :{:?}", tt);
-                            }
-                        };
-                        */
                         let mod_name = tt.to_string().replace("\"", "").to_lowercase();
                         required_module_str = format!("_{}", Ident::new(&mod_name, Span::call_site()));
                         //println!("RequiredModule attr found: {}", required_module_str);
