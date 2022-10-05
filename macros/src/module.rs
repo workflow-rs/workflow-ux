@@ -87,7 +87,7 @@ pub fn derive_module(input: TokenStream) -> TokenStream {
         if let Some(i) = a.path.get_ident(){
             let name = i.to_string();
             //println!("attrs::::::{:?}, tokens:{:?}", name, a.tokens);
-            if !name.eq("required_module"){
+            if !name.eq("require_module"){
                 continue;
             }
             let mut tokens = a.tokens.clone().into_iter();
