@@ -1,7 +1,6 @@
 use crate::prelude::*;
-use crate::layout::ElementLayout;
-use workflow_ux::result::Result;
-use workflow_ux::error::Error;
+use crate::result::Result;
+use crate::error::Error;
 
 #[derive(Clone)]
 pub struct Text {
@@ -16,7 +15,7 @@ impl Text {
         self.element.clone()
     }
 
-    pub fn new(pane : &ElementLayout, _attributes: &Attributes, docs : &Docs) -> Result<Text> {  // pane-ctl
+    pub fn new(pane : &ElementLayout, attributes: &Attributes, docs : &Docs) -> Result<Text> {  // pane-ctl
 
         let element = document()
             .create_element("div")?;
@@ -25,6 +24,10 @@ impl Text {
         let content = docs.join("\n");
         let html : String = ::markdown::to_html(&content);
         element.set_inner_html(&html);
+
+        for (k,v) in attributes.iter() {
+            element.set_attribute(k,v)?;
+        }
 
         Ok(Text { 
             layout : pane.clone(),

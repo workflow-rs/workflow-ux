@@ -7,7 +7,7 @@ use syn::{
     Result, parse_macro_input,
     punctuated::Punctuated, Expr, Token, 
     parse::{Parse, ParseStream}, Error,
-    DeriveInput,
+    DeriveInput
 };
 use convert_case::{Case, Casing};
 
@@ -73,7 +73,8 @@ pub fn declare_module(input: TokenStream) -> TokenStream {
     module_impl(
         module.struct_name,
         &module.struct_name_string,
-        module.container_types
+        module.container_types,
+        "".to_string()
     ).into()
 }
 
@@ -81,6 +82,45 @@ pub fn derive_module(input: TokenStream) -> TokenStream {
 
     let ast = parse_macro_input!(input as DeriveInput);
     let struct_name = &ast.ident;
+    let mut required_module_str = "".to_string();
+    for a in &ast.attrs{
+        if let Some(i) = a.path.get_ident(){
+            let name = i.to_string();
+            //println!("attrs::::::{:?}, tokens:{:?}", name, a.tokens);
+            if !name.eq("RequiredModule"){
+                continue;
+            }
+            let mut tokens = a.tokens.clone().into_iter();
+            if let Some(tt) = tokens.next(){
+                if tt.to_string().eq("="){
+                    if let Some(tt) = tokens.next(){
+                        //println!("attrs::::::tt {:?}", tt);
+                        /*
+                        let mod_name = match tt{
+                            
+                            proc_macro2::TokenTree::Ident(a)=>a,
+                            proc_macro2::TokenTree::Literal(a)=>{
+                                match a {
+                                    Type(a)=>{
+
+                                    }
+                                }
+                                Ident::new(&a.to_string(), Span::call_site())
+                            }
+                            _=>{
+                                panic!("invalid RequiredModule :{:?}", tt);
+                            }
+                        };
+                        */
+                        let mod_name = tt.to_string().replace("\"", "").to_lowercase();
+                        required_module_str = format!("_{}", Ident::new(&mod_name, Span::call_site()));
+                        //println!("RequiredModule attr found: {}", required_module_str);
+                    }
+                }
+            }
+        }
+    }
+    //println!("attrs::::::ast.attrs:{:?}", ast.attrs);
     // let struct_params = &ast.ident;
 
     let _fields = if let syn::Data::Struct(syn::DataStruct {
@@ -104,19 +144,20 @@ pub fn derive_module(input: TokenStream) -> TokenStream {
     module_impl(
         path,
         &struct_name_string,
-        None
+        None,
+        required_module_str
     ).into()
 
 }
 
-fn module_impl(module_struct : Expr, module_name : &str, container_types : Option<ExprArray>) -> TokenStream {
+fn module_impl(module_struct : Expr, module_name : &str, container_types : Option<ExprArray>, required_module_str:String) -> TokenStream {
 
     let module_name = module_name//.to_lowercase();
         .from_case(Case::Camel)
         .to_case(Case::Snake);
 
 
-    let module_register_ = Ident::new(&format!("module_register_{}_wasm", module_name), Span::call_site());
+    let module_register_ = Ident::new(&format!("module_register_{}_wasm{}", module_name, required_module_str), Span::call_site());
 
     let container_types = match container_types {
         None => quote!{[]},
