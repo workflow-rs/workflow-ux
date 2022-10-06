@@ -3,6 +3,21 @@ use crate::result::Result;
 
 #[wasm_bindgen]
 extern "C" {
+    /*
+    # [wasm_bindgen (extends = Element , extends = Node , extends = EventTarget , extends = ::js_sys::Object , js_name = Element , typescript_type = "Element")]
+    // "The `ExtendedElement` class.
+    #[derive(Debug, Clone, PartialEq, Eq)]
+    pub type ExtendedElement;
+
+    # [wasm_bindgen (method , structural , js_class = "Element" , js_name = scrollTo)]
+    #[doc = "The `scrollTo()` method."]
+    #[doc = ""]
+    #[doc = "[MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollTo)"]
+    #[doc = ""]
+    #[doc = "*This API requires the following crate features to be activated: `Element`*"]
+    pub fn scroll_to(this: &ExtendedElement, opt:&js_sys::Object);
+    */
+
     # [wasm_bindgen (extends = Element , extends = Node , extends = EventTarget , extends = ::js_sys::Object , js_name = BaseElement , typescript_type = "BaseElement")]
     // "The `BaseElement` class.
     #[derive(Debug, Clone, PartialEq, Eq)]
