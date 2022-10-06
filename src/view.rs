@@ -4,7 +4,7 @@ use crate::{prelude::*, app_menu::AppMenu};
 use crate::{bottom_menu, layout, result::Result};
 use downcast::{downcast_sync, AnySync};
 use workflow_log::log_trace;
-use web_sys::{ScrollBehavior, ScrollToOptions};
+//use web_sys::{ScrollBehavior, ScrollToOptions};
 //use crate::view::base_element::ExtendedElement;
 
 
@@ -92,10 +92,11 @@ impl Container {
 
         self.element.append_child(&incoming.element())?;
 
+        /*
         let mut scroll_opt = ScrollToOptions::new();
         scroll_opt.behavior(ScrollBehavior::Smooth);
         scroll_opt.left(0.0);
-        scroll_opt.top(0.0);
+        scroll_opt.top(10.0);
         /*
         let opt = js_sys::Object::new();
         js_sys::Reflect::set(&opt, &JsValue::from("top"), &JsValue::from(0))?;
@@ -103,7 +104,12 @@ impl Container {
         js_sys::Reflect::set(&opt, &JsValue::from("behavior"), &JsValue::from("smooth"))?;
         self.element.clone().dyn_into::<ExtendedElement>()?.scroll_to(&opt);
         */
+        //multiple scroll_to() just to trigger scroll event
+        log_trace!("self.element.id:{:?}", self.element.get_attribute("class"));
         self.element.scroll_to_with_scroll_to_options(&scroll_opt);
+        scroll_opt.top(0.0);
+        self.element.scroll_to_with_scroll_to_options(&scroll_opt);
+        */
         
 
         Ok(())
