@@ -35,7 +35,7 @@ impl FormControl {
             .create_element("flow-form-control")?;
         element.set_id(self_id);
 
-        element.set_attribute("focusable", "true")?;
+        //element.set_attribute("focusable", "true")?;
         Ok(FormControl {
             element: element,
         })
