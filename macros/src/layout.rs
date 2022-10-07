@@ -900,6 +900,11 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
                 #layout_binding
                 Ok(view)
             }
+            pub fn try_new()-> workflow_ux::result::Result<#struct_name #struct_params> {
+                let el = workflow_ux::document().create_element("div")?;
+                let layout = Self::try_inject(&el)?;
+                Ok(layout)
+            }
             
             pub fn try_inject(parent: &web_sys::Element) -> workflow_ux::result::Result<#struct_name #struct_params> {
                 let root = ElementLayout::try_inject(parent, #layout_style)?; 

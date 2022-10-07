@@ -66,7 +66,7 @@ pub use crate::workspace;
 pub use crate::view::Container;
 pub use crate::find_el;
 pub use crate::panel::*;
-pub use crate::controls::builder::{ItemBuilder, Builder};
+pub use crate::controls::builder::{ListRow, ListBuilder, Builder};
 
 
 pub use crate::application::global as application;

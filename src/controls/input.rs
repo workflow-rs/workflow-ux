@@ -89,6 +89,11 @@ impl Input {
         *self.value.borrow_mut() = value;
         Ok(())
     }
+
+    pub fn mark_invalid(&self, invalid:bool)->Result<()>{
+        self.element().class_list().toggle_with_force("invalid", invalid)?;
+        Ok(())
+    }
     
 
     pub fn init(&mut self)-> Result<()>{
@@ -112,11 +117,11 @@ impl Input {
         {
             let el = element.clone();
             let value = self.value.clone();
-            let listener = Listener::new(move |event:web_sys::CustomEvent| ->Result<()> {
+            let listener = Listener::new(move |_event:web_sys::CustomEvent| ->Result<()> {
 
-                log_trace!("received key event: {:#?}", event);
+                //log_trace!("received key event: {:#?}", event);
                 let new_value = el.value();
-                log_trace!("new_value: {:?}", new_value);
+                //log_trace!("new_value: {:?}", new_value);
                 let mut value = value.borrow_mut();
 
                 *value = new_value;
