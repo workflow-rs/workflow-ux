@@ -43,9 +43,9 @@ impl MenuGroup{
         self.item.element.clone()
     }
 
-    pub fn add_cls(&self, cls:&str) ->Result<()>{
+    pub fn with_class(self, cls:&str) ->Result<Self>{
         self.item.element.class_list().add_1(cls)?;
-        Ok(())
+        Ok(self)
     }
 
     // TODO review: id is not used
