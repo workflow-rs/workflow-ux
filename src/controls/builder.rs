@@ -73,6 +73,15 @@ impl ListRow{
             info_row_el.append_child(&el)?;
         }
 
+        if self.orderable{
+            let el = Icon::css("info-row-order-up").element()?;
+            el.set_attribute("data-action", "order-up")?;
+            info_row_el.append_child(&el)?;
+            let el = Icon::css("info-row-order-down").element()?;
+            el.set_attribute("data-action", "order-down")?;
+            info_row_el.append_child(&el)?;
+        }
+
         if self.editable{
             let el = Icon::css("info-row-edit").element()?;
             el.set_attribute("data-action", "edit")?;
@@ -81,14 +90,6 @@ impl ListRow{
         if self.deletable{
             let el = Icon::css("info-row-delete").element()?;
             el.set_attribute("data-action", "delete")?;
-            info_row_el.append_child(&el)?;
-        }
-        if self.orderable{
-            let el = Icon::css("info-row-order-up").element()?;
-            el.set_attribute("data-action", "order-up")?;
-            info_row_el.append_child(&el)?;
-            let el = Icon::css("info-row-order-down").element()?;
-            el.set_attribute("data-action", "order-down")?;
             info_row_el.append_child(&el)?;
         }
 
@@ -121,16 +122,18 @@ pub trait ListBuilder<I:ListBuilderItem>:Clone{
 
     fn addable(&self, len:usize)->Result<bool>;
 
+    fn form_element(&self)->Result<Element>;
+
     fn edit_form<B:ListBuilder<I>>(
         &mut self,
         builder:&Builder<B, I>,
         data:I
-    )->Result<()>;
+    )->Result<bool>;
 
     fn add_form<B:ListBuilder<I>>(
         &mut self,
         b:&Builder<B, I>
-    )->Result<()>;
+    )->Result<bool>;
 
     fn save<B:ListBuilder<I>>(
         &mut self,
@@ -340,7 +343,10 @@ where B:ListBuilder<I>+'static,
     }
 
     fn on_add_click(&mut self)->Result<()>{
-        self.imp.lock()?.add_form(self)?;
+        let show = self.imp.lock()?.add_form(self)?;
+        if show{
+            self.set_form(&self.imp.lock()?.form_element()?)?;
+        }
         self.set_save_btn_text(&i18n("Add"))?;
         self.inner()?.editing_item = None;
         Ok(())
@@ -427,17 +433,16 @@ where B:ListBuilder<I>+'static,
     }   
 
     fn on_row_edit_click(&mut self, id:String)->Result<()>{
-        //if let Some(data) = self.items.get(id){
-            let data = match self.get_item(id)?{
-                Some(data) =>data,
-                None=>return Ok(())
-            };
-            self.inner()?.editing_item = Some(data.clone());
-            self.set_save_btn_text(&i18n("Update"))?;
-            self.imp.lock()?.edit_form(self, data)?;
-        //}else{
-        //    log_error!("Builder: Unbale to get Info row for uid: {}", id);
-        //}
+        let data = match self.get_item(id)?{
+            Some(data) =>data,
+            None=>return Ok(())
+        };
+        self.inner()?.editing_item = Some(data.clone());
+        self.set_save_btn_text(&i18n("Update"))?;
+        let show = self.imp.lock()?.edit_form(self, data)?;
+        if show{
+            self.set_form(&self.imp.lock()?.form_element()?)?;
+        }
         Ok(())
     }
 
