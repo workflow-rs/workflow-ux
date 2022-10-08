@@ -24,6 +24,7 @@ extern "C" {
 #[derive(Clone)]
 pub struct Input {
     pub layout : ElementLayout,
+    pub attributes: Attributes,
     pub element_wrapper : ElementWrapper,
     value : Rc<RefCell<String>>,
 }
@@ -70,6 +71,7 @@ impl Input {
 
         let mut input = Input { 
             layout,
+            attributes:attributes.clone(),
             element_wrapper: ElementWrapper::new(element),
             value,
         };
