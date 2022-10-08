@@ -468,7 +468,8 @@ where B:ListBuilder<I>+'static,
         }else{
             locked.save_btn.element.set_attribute("hidden", "true")?;
             locked.cancel_btn.element.set_attribute("hidden", "true")?;
-            locked.form_container.element.set_inner_html("");
+            //locked.form_container.element.set_inner_html("");
+            locked.form_container.element.class_list().remove_1("open")?;
         }
         Ok(())
     }
@@ -502,8 +503,10 @@ where B:ListBuilder<I>+'static,
     pub fn set_form(&self, form:&Element)->Result<()>{
         {
             let form_el = &self.inner()?.form_container.element;
+            form_el.class_list().remove_1("open")?;
             form_el.set_inner_html("");
             form_el.append_child(form)?;
+            form_el.class_list().add_1("open")?;
         }
         self.show_add_btn(false)?;
         self.show_save_btn(true)?;
