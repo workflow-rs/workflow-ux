@@ -49,40 +49,19 @@ impl MenuGroup{
     }
 
     // TODO review: id is not used
-    pub fn new<I : Into<Icon>>(section_menu: &SectionMenu, caption: MenuCaption, icon: I) -> Result<MenuGroup> {
+    pub fn new(section_menu: &SectionMenu, caption: MenuCaption) -> Result<MenuGroup> {
         let doc = document();
         let id = Self::create_id();
         let li = doc.create_element("li")?;
         li.set_attribute("data-id", &format!("menu_group_{}", id))?;
         li.set_attribute("class", &format!("menu-item menu-group skip-drawer-event"))?;
 
-        let icon : Icon = icon.into();
-        let icon_el = icon.element()?;
-        icon_el.set_attribute("class", "icon skip-drawer-event")?;
-        // icon_el.set_attribute("class", "icon")?;
-    
-        let icon_box_el = doc.create_element("div")?;
-        icon_box_el.set_attribute("class", "icon-box")?;
-
         let text_box_el = doc.create_element("div")?;
         text_box_el.set_attribute("class", "text-box")?;
-
-        let short_title_el = doc.create_element("span")?;
-        short_title_el.set_attribute("class", "short-title")?;
-        if caption.short.len() > 0{
-            short_title_el.set_inner_html(&caption.short);
-        }else{
-            short_title_el.set_inner_html(&caption.title);
-        }
-
-        icon_box_el.append_child(&icon_el)?;
-        icon_box_el.append_child(&short_title_el)?;
         text_box_el.set_inner_html(&caption.title);
 
         let arrow_el = Icon::css("arrow-down-small").element()?;
         arrow_el.class_list().add_1("arrow-icon")?;
-
-        li.append_child(&icon_box_el)?;
         li.append_child(&text_box_el)?;
         li.append_child(&arrow_el)?;
 

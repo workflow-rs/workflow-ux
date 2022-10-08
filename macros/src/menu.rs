@@ -114,6 +114,44 @@ impl Parse for SectionMenu {
     }
 }
 
+
+#[derive(Debug)]
+struct MenuGroup {
+    parent : Expr,
+    title : Expr
+}
+
+impl Parse for MenuGroup {
+    fn parse(input: ParseStream) -> Result<Self> {
+
+        let usage = "<parent>, <title>";
+
+        let parsed = Punctuated::<Expr, Token![,]>::parse_terminated(input).unwrap();
+        if parsed.len() < 2 {
+            return Err(Error::new_spanned(
+                parsed,
+                format!("not enough arguments - usage: {}", usage)
+            ));
+        } else if parsed.len() > 2 {
+            return Err(Error::new_spanned(
+                parsed,
+                format!("too many arguments - usage: {}", usage)
+            ));
+        }
+        
+        let mut iter = parsed.iter();
+        let parent = iter.next().clone().unwrap().clone();
+        let title = iter.next().clone().unwrap().clone();
+
+        let menu = Self {
+            parent,
+            title
+        };
+        Ok(menu)
+    }
+}
+
+
 pub fn section_menu(input: TokenStream) -> TokenStream {
     let menu = parse_macro_input!(input as SectionMenu);
     let menu_type = Ident::new("SectionMenu", Span::call_site());
@@ -126,14 +164,13 @@ pub fn section_menu(input: TokenStream) -> TokenStream {
 }
 
 pub fn menu_group(input: TokenStream) -> TokenStream {
-    let menu = parse_macro_input!(input as Menu);
+    let menu = parse_macro_input!(input as MenuGroup);
     let menu_type = Ident::new("MenuGroup", Span::call_site());
     let parent = menu.parent;
     let title = menu.title;
-    let icon = menu.icon;
     (quote!{
 
-        workflow_ux::menu::#menu_type::new(&#parent,#title.into(),#icon)?
+        workflow_ux::menu::#menu_type::new(&#parent,#title.into())?
         .with_callback(Box::new(move |target|{
             target.toggle().ok();
             Ok(())

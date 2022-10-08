@@ -38,14 +38,15 @@ impl MenuItem {
         subtitle_el.set_attribute("class", "sub-title")?;
         if caption.subtitle.len() > 0 {
             subtitle_el.set_inner_html(&caption.subtitle);
-        }else{
-            subtitle_el.set_inner_html("Default Subtitle");
+        }
+        if caption.tooltip.len() > 0 {
+            element.set_attribute("title", &caption.tooltip)?;
         }
         text_box_el.append_child(&subtitle_el)?;
 
-        let short_title_el = document().create_element("span")?;
-        short_title_el.set_attribute("class", "short-title")?;
-        short_title_el.set_inner_html(&caption.short);
+        //let short_title_el = document().create_element("span")?;
+        //short_title_el.set_attribute("class", "short-title")?;
+        //short_title_el.set_inner_html(&caption.short);
 
         element.set_attribute("class", "menu-item")?; // &format!("menu-item {}", cls))?;
 
@@ -56,7 +57,7 @@ impl MenuItem {
         let icon_box_el = document().create_element("div")?;
         icon_box_el.set_attribute("class", "icon-box")?;
         icon_box_el.append_child(&icon_el)?;
-        icon_box_el.append_child(&short_title_el)?;
+        //icon_box_el.append_child(&short_title_el)?;
 
         element.append_child(&icon_box_el)?;
         element.append_child(&text_box_el)?;
