@@ -3,6 +3,9 @@ use ahash::AHashMap;
 use workflow_ux::result::Result;
 use workflow_ux::error::Error;
 use workflow_log::{log_trace, log_warning, log_error};
+use url::Url;
+// use web_sys::{Window,Location};
+use crate::window;
 
 #[derive(Clone)]
 pub struct Application {
@@ -45,6 +48,15 @@ impl Application {
     pub fn element(&self) -> Element {
         // Ok((*self.element).clone())
         (*self.element).clone()
+    }
+
+    pub fn location(&self) -> Url {
+        Url::parse(
+            window()
+            .location()
+            .href()
+            .expect("Unable to get application location").as_str()
+        ).expect("Unable to parse application location")
     }
 
     fn load_module(&self, pkg:&JsValue,name:&str,module_load_fn_name:&JsValue) -> Result<JsValue> {

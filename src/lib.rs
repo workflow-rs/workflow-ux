@@ -52,7 +52,8 @@ pub mod hash {
 use web_sys::{
     Window,
     Document,
-    Element
+    Element,
+    Location
 };
 
 pub fn document() -> Document {
@@ -63,6 +64,10 @@ pub fn document() -> Document {
 
 pub fn window() -> Window {
     web_sys::window().expect("no global `window` exists")
+}
+
+pub fn location() -> Location {
+    window().location()
 }
 
 pub fn find_el(selector:&str, error_msg:&str)->std::result::Result<Element, error::Error>{
