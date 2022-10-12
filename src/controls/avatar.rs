@@ -179,7 +179,7 @@ impl Avatar{
     )->Result<Input>{
         let mut field_attr = attr.clone();
         field_attr.insert("label".to_string(), i18n(label));
-        field_attr.insert("input_type".to_string(), input_type.to_string());
+        field_attr.insert("type".to_string(), input_type.to_string());
         let field = Input::new(pane, &field_attr, docs)?;
         parent.append_child(&field.element())?;
 
@@ -282,7 +282,7 @@ impl Avatar{
             let this = self.clone();
             locked.text_field_handler = Some(FunctionDebounce::new_with_str(500, Box::new(move|text:String|{
                 //log_trace!("set_robotext: {:?}", text);
-                this.set_robotext(text, None)?;
+                this.set_robotext(Self::build_sha256_hash(text)?, None)?;
                 Ok(())
             })));
             let this = self.clone();
@@ -408,7 +408,7 @@ impl Avatar{
                 self.set_hash_type(&hash_type)?;
             }
             AvatarProvider::Robohash=>{
-                self.text_field.set_value(text_value.clone())?;
+                self.text_field.set_value("".to_string())?;
                 let mut set = Some("set2".to_string());
                 if let Some(text) = parts.next(){
                     set = Some(text.to_string());
@@ -636,11 +636,11 @@ impl Avatar{
     }
 
     pub fn update_image(&self)->Result<()>{
-        self.image.set_src_and_fallback(&self.build_url(100)?, &self.inner()?.fallback)?;
+        self.image.set_src_and_fallback(&self.build_url(300)?, &self.inner()?.fallback)?;
         Ok(())
     }
 
-    pub fn build_url(&self, size:u8)->Result<String>{
+    pub fn build_url(&self, size:u16)->Result<String>{
 
         let locked = self.inner()?;
         let params = &locked.params;
