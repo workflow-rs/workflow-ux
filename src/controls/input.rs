@@ -40,6 +40,14 @@ impl Input {
         self.element_wrapper.element.set_attribute("label", value)?;
         Ok(())
     }
+    pub fn show(&self)->Result<()>{
+        self.element_wrapper.element.remove_attribute("hidden")?;
+        Ok(())
+    }
+    pub fn hide(&self)->Result<()>{
+        self.element_wrapper.element.set_attribute("hidden", "true")?;
+        Ok(())
+    }
 
     pub fn element(&self) -> FlowInputBase {
         self.element_wrapper.element.clone().dyn_into::<FlowInputBase>().expect("Unable to cast element to FlowInputBase")

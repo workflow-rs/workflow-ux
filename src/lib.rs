@@ -31,6 +31,7 @@ pub mod panel;
 pub mod app_drawer;
 pub mod form_footer;
 pub mod user_agent;
+pub mod task;
 
 pub mod macros {
     pub use workflow_ux_macros::*;

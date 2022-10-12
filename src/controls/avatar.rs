@@ -1,14 +1,12 @@
 
-use std::sync::LockResult;
+use std::sync::{MutexGuard, LockResult};
 use std::collections::BTreeMap;
 
 use crate::prelude::*;
 use crate::result::Result;
 use crate::image::Image;
 use crate::controls::prelude::*;
-//use crate::icon::Icon;
-//use crate::controls::listener::Listener;
-use std::sync::MutexGuard;
+use crate::task::FunctionDebounce;
 use workflow_core::describe_enum;
 use sha2::{Digest, Sha256};
 use md5;
@@ -31,7 +29,10 @@ pub struct AvatarInner{
     pub attributes:Attributes,
     pub docs: Docs,
     pub changeable:bool,
-    pub fallback:String
+    pub fallback:String,
+    pub email_field_handler: Option<FunctionDebounce>,
+    pub text_field_handler: Option<FunctionDebounce>,
+    pub url_field_handler: Option<FunctionDebounce>
 }
 
 #[derive(Clone)]
@@ -39,7 +40,9 @@ pub struct Avatar {
     pub element : Element,
     pub image:Image,
     form_container: Element,
+    email_field:Input,
     text_field:Input,
+    url_field:Input,
     md5_radio:Element,
     sha256_radio:Element,
     hash_containers:ElementWrapper,
@@ -90,19 +93,38 @@ impl Avatar{
         let provider_select = Select::<AvatarProvider>::new(pane, &provider_attr, docs)?;
         form.append_child(&provider_select.element())?;
 
-        let mut text_field_attr = attr.clone();
-        text_field_attr.insert("placeholder".to_string(), i18n("Email address"));
-        text_field_attr.insert("data-for".to_string(), "hash".to_string());
-        let text_field = Input::new(pane, &text_field_attr, docs)?;
-        form.append_child(&text_field.element())?;
+        let email_field = Self::create_input_field(
+            pane,
+            attr,
+            docs,
+            &form,
+            "Enter Email address",
+            "email"
+        )?;
+        let text_field = Self::create_input_field(
+            pane,
+            attr,
+            docs,
+            &form,
+            "Enter Robotext",
+            "text"
+        )?;
+        let url_field = Self::create_input_field(
+            pane,
+            attr,
+            docs,
+            &form,
+            "Enter URL",
+            "url"
+        )?;
 
         let hash_containers = create_el(
             "div",
             vec![("class", "hash-containers"), ("data-for", "hash")],
             None
         )?;
-        let md5_radio = Self::create_hash_field(pane, attr, docs, &hash_containers, &radio_name, "md5")?;
-        let sha256_radio = Self::create_hash_field(pane, attr, docs, &hash_containers, &radio_name, "sha256")?;
+        let md5_radio = Self::create_hash_field(&hash_containers, &radio_name, "md5")?;
+        let sha256_radio = Self::create_hash_field(&hash_containers, &radio_name, "sha256")?;
         form.append_child(&hash_containers)?;
         
         //buttons
@@ -117,7 +139,9 @@ impl Avatar{
             element,
             image,
             form_container:form,
+            email_field,
             text_field,
+            url_field,
             md5_radio,
             sha256_radio,
             hash_containers:ElementWrapper::new(hash_containers),
@@ -134,6 +158,9 @@ impl Avatar{
                 value:String::new(),
                 changeable:true,
                 fallback,
+                email_field_handler:None,
+                text_field_handler:None,
+                url_field_handler:None
             }))
         };
 
@@ -142,10 +169,24 @@ impl Avatar{
         Ok(control)
     }
 
-    fn create_hash_field(
+    fn create_input_field(
         pane:&ElementLayout,
-        attributes:&Attributes,
+        attr:&Attributes,
         docs:&Docs,
+        parent:&Element,
+        label:&str,
+        input_type:&str
+    )->Result<Input>{
+        let mut field_attr = attr.clone();
+        field_attr.insert("label".to_string(), i18n(label));
+        field_attr.insert("input_type".to_string(), input_type.to_string());
+        let field = Input::new(pane, &field_attr, docs)?;
+        parent.append_child(&field.element())?;
+
+        Ok(field)
+    }
+
+    fn create_hash_field(
         parent:&Element,
         radio_name:&str,
         hash_type:&str
@@ -163,12 +204,13 @@ impl Avatar{
             ],
             None
         )?;
-        let mut attr = attributes.clone();
-        attr.insert("readonly".to_string(), "true".to_string());
-        attr.insert("label".to_string(), hash_type.to_uppercase());
-        let field = Input::new(pane, &attr, docs)?;
+        let field = create_el(
+            "flow-input",
+            vec![("readonly", "true"), ("label", &hash_type.to_uppercase())],
+            None
+        )?;
         container.append_child(&radio)?;
-        container.append_child(&field.element())?;
+        container.append_child(&field)?;
         parent.append_child(&container)?;
 
         Ok(radio)
@@ -213,28 +255,49 @@ impl Avatar{
             Ok(())
         })?;
 
-        let this = self.clone();
-        self.text_field.on_change(Box::new(move |text|{
-            let provider  = {this.inner()?.provider.clone()};
-            match provider {
-                AvatarProvider::Gravatar | AvatarProvider::Libravatar=>{
-                    this.update_hashes(text)?;
-                }
-                AvatarProvider::Robohash=>{
-                    this.set_robotext(text, None)?;
-                }
-                AvatarProvider::Custom=>{
-                    this.set_custom_url(text)?;
-                }
-            }
-            
+        let inner = self.inner.clone();
+        self.email_field.on_change(Box::new(move |text|{
+            inner.lock()?.email_field_handler.as_ref().unwrap().execute_with_str(text)?;
             Ok(())
         }));
+        let inner = self.inner.clone();
+        self.text_field.on_change(Box::new(move |text|{
+            inner.lock()?.text_field_handler.as_ref().unwrap().execute_with_str(text)?;
+            Ok(())
+        }));
+        let inner = self.inner.clone();
+        self.url_field.on_change(Box::new(move |text|{
+            inner.lock()?.url_field_handler.as_ref().unwrap().execute_with_str(text)?;
+            Ok(())
+        }));
+
+        {
+            let mut locked = self.inner()?;
+            let this = self.clone();
+            locked.email_field_handler = Some(FunctionDebounce::new_with_str(500, Box::new(move|email:String|{
+                //log_trace!("update_hashes: {:?}", email);
+                this.update_hashes(email)?;
+                Ok(())
+            })));
+            let this = self.clone();
+            locked.text_field_handler = Some(FunctionDebounce::new_with_str(500, Box::new(move|text:String|{
+                //log_trace!("set_robotext: {:?}", text);
+                this.set_robotext(text, None)?;
+                Ok(())
+            })));
+            let this = self.clone();
+            locked.url_field_handler = Some(FunctionDebounce::new_with_str(500, Box::new(move|url:String|{
+                //log_trace!("set_custom_url: {:?}", url);
+                this.set_custom_url(url)?;
+                Ok(())
+            })));
+        }
 
         self.show_save_btn(false)?;
         self.update_image()?;
         let changeable = {self.inner()?.changeable};
         self.show_change_btn(changeable)?;
+        self.set_hash_type("md5")?;
 
         Ok(self)
     }
@@ -337,14 +400,11 @@ impl Avatar{
     
         match provider {
             AvatarProvider::Gravatar | AvatarProvider::Libravatar=>{
-                log_trace!("set_hash_input_value AAAAA: {}", text_value);
                 self.text_field.set_value("".to_string())?;
-                //self.update_hashes("".to_string())?;
                 self.set_hash_input_value("md5", "".to_string())?;
                 self.set_hash_input_value("sha256", "".to_string())?;
                 let hash_type = if text_value.len() == 32 {"md5"}else{"sha256"};
                 self.set_hash_input_value(hash_type, text_value)?;
-                log_trace!("set_hash_input_value BBBB");
                 self.set_hash_type(&hash_type)?;
             }
             AvatarProvider::Robohash=>{
@@ -413,30 +473,33 @@ impl Avatar{
     }
 
     fn set_provider(&self, provider:AvatarProvider)->Result<()>{
-        {
+        let changed = {
             let mut locked = self.inner()?;
             let old = locked.provider.clone();
-            if old.as_str() == provider.as_str(){
-                return Ok(())
-            }
             locked.provider = provider.clone();
-        }
+            old.as_str() != provider.as_str()
+        };
         match provider {
             AvatarProvider::Gravatar | AvatarProvider::Libravatar=>{
-                //self.text_field.set_placeholder(&i18n("Enter Email address"))?;
-                self.text_field.set_label(&i18n("Enter Email address"))?;
+                self.email_field.show()?;
+                self.text_field.hide()?;
+                self.url_field.hide()?;
                 self.hash_containers.element.remove_attribute("hidden")?;
-                self.update_hashes(self.text_field.value())?;
+                if changed{
+                    self.update_hashes(self.text_field.value())?;
+                }
             }
             AvatarProvider::Robohash=>{
+                self.email_field.hide()?;
+                self.text_field.show()?;
+                self.url_field.hide()?;
                 self.hash_containers.element.set_attribute("hidden", "true")?;
-                //self.text_field.set_placeholder(&i18n("Enter Robo text"))?;
-                self.text_field.set_label(&i18n("Enter Robo text"))?;
             }
             AvatarProvider::Custom=>{
+                self.email_field.hide()?;
+                self.text_field.hide()?;
+                self.url_field.show()?;
                 self.hash_containers.element.set_attribute("hidden", "true")?;
-                //self.text_field.set_placeholder(&i18n("Enter Custom URL"))?;
-                self.text_field.set_label(&i18n("Enter Custom URL"))?;
             }
         }
         self.update_image()?;
@@ -496,7 +559,6 @@ impl Avatar{
         }else{
             self.save_btn.element.set_attribute("hidden", "true")?;
             self.cancel_btn.element.set_attribute("hidden", "true")?;
-            //locked.form_container.element.set_inner_html("");
             self.form_container.class_list().remove_1("open")?;
         }
         Ok(())
@@ -592,13 +654,13 @@ impl Avatar{
                 if hash.len() == 0{
                     return Ok(locked.fallback.clone());
                 }
-                format!("https://s.gravatar.com/avatar/{hash}?s={size}")
+                format!("https://s.gravatar.com/avatar/{hash}?s={size}&d=404")
             }
             AvatarProvider::Libravatar=>{
                 if hash.len() == 0{
                     return Ok(locked.fallback.clone());
                 }
-                format!("https://libravatar.org/avatar/{hash}?s={size}")
+                format!("https://libravatar.org/avatar/{hash}?s={size}&d=404")
             }
             AvatarProvider::Robohash=>{
                 let set = match params.get("robo-set"){
