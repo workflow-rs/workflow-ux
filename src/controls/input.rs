@@ -27,9 +27,19 @@ pub struct Input {
     pub attributes: Attributes,
     pub element_wrapper : ElementWrapper,
     value : Rc<RefCell<String>>,
+    on_change_cb:Rc<RefCell<Option<Callback<String>>>>,
 }
 
 impl Input {
+
+    pub fn set_placeholder(&self, value:&str)->Result<()>{
+        self.element_wrapper.element.set_attribute("placeholder", value)?;
+        Ok(())
+    }
+    pub fn set_label(&self, value:&str)->Result<()>{
+        self.element_wrapper.element.set_attribute("label", value)?;
+        Ok(())
+    }
 
     pub fn element(&self) -> FlowInputBase {
         self.element_wrapper.element.clone().dyn_into::<FlowInputBase>().expect("Unable to cast element to FlowInputBase")
@@ -74,6 +84,7 @@ impl Input {
             attributes:attributes.clone(),
             element_wrapper: ElementWrapper::new(element),
             value,
+            on_change_cb:Rc::new(RefCell::new(None))
         };
 
         input.init()?;
@@ -103,6 +114,7 @@ impl Input {
         {
             let el = element.clone();
             let value = self.value.clone();
+            let cb_opt = self.on_change_cb.clone();
             self.element_wrapper.on("changed", move |event| -> Result<()> {
 
                 log_trace!("received changed event: {:?}", event);
@@ -110,7 +122,10 @@ impl Input {
                 log_trace!("new_value: {:?}", new_value);
                 let mut value = value.borrow_mut();
 
-                *value = new_value;
+                *value = new_value.clone();
+                if let Some(cb) =  &mut*cb_opt.borrow_mut(){
+                    return Ok(cb(new_value)?);
+                }
 
                 Ok(())
 
@@ -119,6 +134,7 @@ impl Input {
         {
             let el = element.clone();
             let value = self.value.clone();
+            let cb_opt = self.on_change_cb.clone();
             let listener = Listener::new(move |_event:web_sys::CustomEvent| ->Result<()> {
 
                 //log_trace!("received key event: {:#?}", event);
@@ -126,7 +142,10 @@ impl Input {
                 //log_trace!("new_value: {:?}", new_value);
                 let mut value = value.borrow_mut();
 
-                *value = new_value;
+                *value = new_value.clone();
+                if let Some(cb) =  &mut*cb_opt.borrow_mut(){
+                    return Ok(cb(new_value)?);
+                }
                 Ok(())
             });
             self.element_wrapper.element.add_event_listener_with_callback("keyup", listener.into_js())?;
@@ -135,6 +154,10 @@ impl Input {
         }
 
         Ok(())
+    }
+
+    pub fn on_change(&self, callback:Callback<String>){
+        *self.on_change_cb.borrow_mut() = Some(callback);
     }
 }
 

@@ -1,9 +1,23 @@
 // use web_sys::Element;
-use workflow_ux::prelude::*;
+use crate::prelude::*;
+//use crate::result::Result;
 
 pub trait Control {
     fn element(&self) -> Element;
 }
+/*
+pub struct ControlCss{
+    uid:String,
+    content:String
+}
+pub trait ControlBase {
+    fn css()->ControlCss;
+    fn ensure_css()->Result<()>{
+
+        Ok(())
+    }
+}
+*/
 
 pub struct ElementBindingContext<'refs> {
     pub layout : &'refs ElementLayout,

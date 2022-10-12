@@ -26,3 +26,4 @@ pub mod listener;
 pub mod element_wrapper;
 pub mod helper;
 pub mod builder;
+pub mod avatar;

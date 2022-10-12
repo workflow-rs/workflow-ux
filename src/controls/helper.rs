@@ -45,4 +45,7 @@ impl FieldHelper{
         el.set_attribute(name, &v)?;
         Ok(v)
     }
+    pub fn clean_value_for_attr(value: &str)-> Result<String>{
+        Ok(value.replace("\"", "&quot;").replace("'", "&quot;"))
+    }
 }
