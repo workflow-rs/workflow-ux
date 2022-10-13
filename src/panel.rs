@@ -62,6 +62,7 @@ pub struct InfoRow{
     pub value: OptString,
     pub editable: OptBool,
     pub deletable: OptBool,
+    pub right_arrow: OptBool,
     pub left_icon: OptString,
     pub right_icon: OptString,
     pub right_icon_el: Arc<Mutex<Option<Element>>>,
@@ -112,6 +113,11 @@ impl InfoRow{
         if self.editable.is_true(){
             let el = Icon::css("info-row-edit").element()?;
             el.set_attribute("data-action", "edit")?;
+            info_row_el.append_child(&el)?;
+        }
+        if self.right_arrow.is_true(){
+            let el = Icon::css("info-row-arrow-right").element()?;
+            el.set_attribute("data-action", "open")?;
             info_row_el.append_child(&el)?;
         }
 

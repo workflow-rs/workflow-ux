@@ -50,6 +50,7 @@ pub mod hash {
 //     workflow_ux::application::global().expect("Missing global application object").workspace()
 // }
 
+use wasm_bindgen::JsValue;
 use web_sys::{
     Window,
     Document,
@@ -82,10 +83,25 @@ pub fn find_el(selector:&str, error_msg:&str)->std::result::Result<Element, erro
 
 pub fn create_el(tag:&str, attrs:Vec<(&str, &str)>, html:Option<&str>)->std::result::Result<Element, error::Error>{
     let doc = document();
-    let el = doc.create_element(tag)?;
+    let mut tag_name = tag;
+    let mut classes:Option<js_sys::Array> = None;
+    if tag_name.contains("."){
+        let mut parts = tag_name.split(".");
+        let tag = parts.next().unwrap();
+        let array = js_sys::Array::new();
+        for a in parts{
+            array.push(&JsValue::from(a));
+        }
+        classes = Some(array);
+        tag_name = tag;
+    }
+    let el = doc.create_element(tag_name)?;
 
     for (name, value) in attrs{
         el.set_attribute(name, value)?;
+    }
+    if let Some(classes) = classes{
+        el.class_list().add(&classes)?;
     }
 
     if let Some(html) = html{
