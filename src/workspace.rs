@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use crate::view::Container;
+use crate::view::{ContainerStack, Container};
 use crate::result::Result;
 use crate::find_el;
 use crate::app_menu::AppMenu;
@@ -9,6 +9,7 @@ pub struct Workspace {
     pub menu : Arc<AppMenu>,
     pub status: Arc<Container>,
     pub main : Arc<Container>,
+    pub sidebar : Arc<ContainerStack>,
 }
 
 impl Workspace {
@@ -16,6 +17,7 @@ impl Workspace {
         header_el: &str,
         status_el: &str,
         main_el:&str,
+        sidebar_el: &str,
         menu: Arc<AppMenu>
         //menu_el: &str,
         //bottom_menu_el: &str
@@ -32,11 +34,15 @@ impl Workspace {
         let main_ele = find_el(main_el, "missing workspace main element")?;
         let main = Arc::new(Container::new(main_ele, Some(menu.clone())));
 
+        let sidebar_ele = find_el(sidebar_el, "missing workspace sidebar element")?;
+        let sidebar = Arc::new(ContainerStack::new(sidebar_ele));
+
         let workspace = Workspace {
             header,
             menu,
             status,
             main,
+            sidebar
         };
 
         Ok(workspace)
@@ -56,6 +62,10 @@ impl Workspace {
 
     pub fn main(&self) -> Arc<Container> {
         self.main.clone()
+    }
+
+    pub fn sidebar(&self) -> Arc<ContainerStack> {
+        self.sidebar.clone()
     }
 
 }

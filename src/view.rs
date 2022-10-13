@@ -6,7 +6,37 @@ use downcast::{downcast_sync, AnySync};
 use workflow_log::log_trace;
 //use web_sys::{ScrollBehavior, ScrollToOptions};
 //use crate::view::base_element::ExtendedElement;
+#[derive(Clone)]
+pub struct ContainerStack {
+    element: Element,
+    views : Arc<RwLock<Vec<Arc<dyn View>>>>
+}
 
+impl ContainerStack {
+    pub fn new(element: Element) -> Self {
+        let _ = element.set_attribute("data-container-type", "stack");
+        Self {
+            element,
+            views : Arc::new(RwLock::new(Vec::new()))
+        }
+    }
+
+    pub fn element(&self) -> Element {
+        self.element.clone()
+    }
+
+    pub async fn append_view(self : &Arc<Self>, incoming : Arc<dyn View>) -> Result<()> {
+        (*self.views.write().await).push(incoming.clone());
+        self.element.append_child(&incoming.element())?;
+        Ok(())
+    }
+}
+
+impl Into<Element> for ContainerStack {
+    fn into(self) -> Element {
+        self.element.clone()
+    }
+}
 
 #[derive(Clone)]
 pub struct Container {

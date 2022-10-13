@@ -63,7 +63,7 @@ pub use crate::docs::Docs;
 pub use crate::view;
 pub use crate::bottom_menu::{BottomMenu, BottomMenuItem};
 pub use crate::workspace;
-pub use crate::view::Container;
+pub use crate::view::{ContainerStack, Container};
 pub use crate::find_el;
 pub use crate::panel::*;
 pub use crate::controls::builder::{ListRow, ListBuilderItem, ListBuilder, Builder};
