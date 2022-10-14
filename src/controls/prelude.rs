@@ -17,5 +17,5 @@ pub use crate::controls::{
     terminal::Terminal,
     avatar::Avatar
 };
-pub use crate::form::{FormHandlers, FormResult};
+pub use crate::form::{FormHandler, FormData, FormDataValue};
 pub type UXResult<T> = workflow_ux::result::Result<T>;

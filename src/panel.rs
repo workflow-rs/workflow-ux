@@ -14,6 +14,11 @@ impl OptString{
     }
 }
 
+impl From<Option<String>> for OptString{
+    fn from(value: Option<String>) -> Self {
+        Self(value)
+    }
+}
 impl From<String> for OptString{
     fn from(str: String) -> Self {
         Self(Some(str))

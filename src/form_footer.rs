@@ -95,7 +95,7 @@ impl FormFooter {
 
     pub fn bind_layout<F:, D>(&mut self, struct_name:String, view:Arc<Layout<F, D>>)->Result<()>
     where 
-    F : FormHandlers + Elemental + Send + 'static,
+    F : FormHandler + Elemental + Send + 'static,
     D : Send + 'static
     {
         let layout_clone = view.layout();

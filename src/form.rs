@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use workflow_ux::result::Result;
 use async_trait::async_trait;
 
@@ -19,18 +21,66 @@ where T:Into<String>{
     }
 }
 
-pub struct FormResult{
-
+#[derive(Debug)]
+pub enum FormDataValue{
+    String(String),
+    //Pubkey(String),
+    //Usize(usize)
+    List(Vec<String>)
 }
 
-impl FormResult{
+#[derive(Debug)]
+pub struct FormData{
+    pub id: Option<String>,
+    pub values:BTreeMap<String, FormDataValue>
+}
+
+impl FormData{
+    pub fn new(id:Option<String>)->Self{
+        Self { id, values: BTreeMap::new() }
+    }
+
+    pub fn id(&self)->Option<String>{
+        self.id.clone()
+    }
+    pub fn with_id(&mut self, id:Option<String>){
+        self.id = id;
+    }
+
+    pub fn insert(&mut self, name:&str, value:FormDataValue){
+        self.values.insert(name.to_string(), value);
+    }
+    pub fn insert_string(&mut self, name:&str, value:String){
+        self.values.insert(name.to_string(), FormDataValue::String(value));
+    }
+    pub fn insert_list(&mut self, name:&str, list:Vec<String>){
+        self.values.insert(name.to_string(), FormDataValue::List(list));
+    }
+
+    pub fn get_string(&self, name:&str)->Option<String>{
+        if let Some(value) = self.values.get(name){
+            match value{
+                FormDataValue::String(s)=>{
+                    return Some(s.clone());
+                },
+                _=>{
+                    return None;
+                }
+            }
+        }
+
+        None
+    }
     pub fn empty()->Self{
-        FormResult{}
+        Self {
+            id: None,
+            values:BTreeMap::new()
+        }
     }
 }
 
 #[async_trait]
-pub trait FormHandlers{
+pub trait FormHandler{
     async fn load(&mut self)->Result<()>;
-    async fn submit(&mut self)->Result<FormResult>;
+    async fn submit(&mut self)->Result<()>;
 }
