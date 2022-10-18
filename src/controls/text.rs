@@ -1,6 +1,7 @@
 use crate::prelude::*;
 use crate::result::Result;
 use crate::error::Error;
+use crate::markdown::markdown_to_html;
 
 #[derive(Clone)]
 pub struct Text {
@@ -22,7 +23,7 @@ impl Text {
         element.set_attribute("docs", "consume")?;
 
         let content = docs.join("\n");
-        let html : String = ::markdown::to_html(&content);
+        let html : String = markdown_to_html(&content);//::markdown::to_html(&content);
         element.set_inner_html(&html);
 
         for (k,v) in attributes.iter() {

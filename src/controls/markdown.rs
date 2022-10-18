@@ -2,7 +2,7 @@ use crate::prelude::*;
 use crate::layout::ElementLayout;
 use workflow_ux::result::Result;
 use workflow_ux::error::Error;
-// use ::markdown::to_html as markdown_to_html;
+use crate::markdown::markdown_to_html;
 
 #[derive(Clone)]
 pub struct Markdown {
@@ -22,7 +22,7 @@ impl Markdown {
         element.set_attribute("docs", "consume")?;
 
         let content = docs.join("\n\r");
-        let html : String = ::markdown::to_html(&content);
+        let html : String = markdown_to_html(&content);
         element.set_inner_html(&html);
 
         Ok(Markdown { 
@@ -45,7 +45,7 @@ impl<'refs> TryFrom<ElementBindingContext<'refs>> for Markdown {
 
         if ctx.docs.len() != 0 {
             let content = ctx.docs.join("\n");
-            let html : String = ::markdown::to_html(&content);
+            let html : String = markdown_to_html(&content);
             ctx.element.set_inner_html(&html);
         }
 

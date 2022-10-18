@@ -33,6 +33,7 @@ pub mod form_footer;
 pub mod user_agent;
 pub mod task;
 pub mod dialog;
+pub mod markdown;
 
 pub mod macros {
     pub use workflow_ux_macros::*;

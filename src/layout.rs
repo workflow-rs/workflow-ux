@@ -15,6 +15,7 @@ use workflow_ux::prelude::*;
 
 use crate::attributes::Attributes;
 use crate::docs::Docs;
+use crate::markdown::markdown_to_html;
 use crate::controls::{form::FormControl, stage_footer};
 
 use web_sys::{
@@ -219,9 +220,7 @@ impl ElementLayout {
                 if disposition.is_none() || disposition.unwrap() != "consume" {
                     let mut markdown = docs.join("\n");
                     if parse_doc{
-                        markdown = ::markdown::to_html(&markdown)
-                                    .replace("<a href='#", "<a href ='#")
-                                    .replace("<a href=", "<a target=\"_blank\" href=");
+                        markdown = markdown_to_html(&markdown);
                     }
                     //log_trace!("parse_doc: {parse_doc}, {markdown}");
                     form_control.set_info(&markdown)?;
