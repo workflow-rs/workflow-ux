@@ -18,7 +18,7 @@ extern "C" {
 #[derive(Clone)]
 pub struct Radio<E> {
     element_wrapper : ElementWrapper,
-    value : Rc<RefCell<String>>,
+    value : Arc<Mutex<String>>,
     change_callback : OptionalCallback<String>,
     p:PhantomData<E>
 }
@@ -58,7 +58,7 @@ where E: EnumTrait<E> + 'static + Display
 
         element.set_attribute("selected", init_value.as_str())?;
         
-        let value = Rc::new(RefCell::new(init_value.clone()));
+        let value = Arc::new(Mutex::new(init_value.clone()));
 
         let pane_inner = layout
             .inner()
@@ -69,7 +69,7 @@ where E: EnumTrait<E> + 'static + Display
         let mut radio = Radio {
             element_wrapper: ElementWrapper::new(element),
             value,
-            change_callback:Rc::new(RefCell::new(None)),
+            change_callback:Arc::new(Mutex::new(None)),
             p:PhantomData
         };
         radio.init()?;
@@ -96,9 +96,9 @@ where E: EnumTrait<E> + 'static + Display
             //    log_trace!("op: {}", op);
             //}
 
-            *value.borrow_mut() = new_value.clone();
+            *value.lock().unwrap() = new_value.clone();
         
-            if let Some(cb) = calback.borrow_mut().as_mut(){
+            if let Some(cb) = calback.lock().unwrap().as_mut(){
                 cb(new_value)?;
             }
 
@@ -109,16 +109,16 @@ where E: EnumTrait<E> + 'static + Display
     }
 
     pub fn value(&self) -> String {
-        self.value.borrow().clone()
+        self.value.lock().unwrap().clone()
     }
 
     pub fn set_value(&mut self, value:String)->Result<()>{
         self.element_wrapper.element.set_attribute("selected", value.as_str())?;
-        *self.value.borrow_mut() = value;
+        *self.value.lock().unwrap() = value;
         Ok(())
     }
 
     pub fn on_change(&self, callback:Callback<String>){
-        *self.change_callback.borrow_mut() = Some(callback);
+        *self.change_callback.lock().unwrap() = Some(callback);
     }
 }

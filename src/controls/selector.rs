@@ -18,9 +18,9 @@ extern "C" {
 #[derive(Clone)]
 pub struct Selector<E> {
     pub element_wrapper : ElementWrapper,
-    value : Rc<RefCell<String>>,
+    value : Arc<Mutex<String>>,
     p:PhantomData<E>,
-    on_change_cb:Rc<RefCell<Option<CallbackNoArgs>>>,
+    on_change_cb:Arc<Mutex<Option<CallbackNoArgs>>>,
 }
 
 impl<E> Selector<E>
@@ -69,7 +69,7 @@ where E: EnumTrait<E>+Display
             }
             element.set_attribute(k,v)?;
         }
-        let value = Rc::new(RefCell::new(init_value));
+        let value = Arc::new(Mutex::new(init_value));
 
         let pane_inner = layout
             .inner()
@@ -80,7 +80,7 @@ where E: EnumTrait<E>+Display
             element_wrapper: ElementWrapper::new(element),
             value,
             p:PhantomData,
-            on_change_cb:Rc::new(RefCell::new(None))
+            on_change_cb:Arc::new(Mutex::new(None))
         };
 
         control.init()?;
@@ -102,12 +102,12 @@ where E: EnumTrait<E>+Display
             if let Some(op) = E::from_str(new_value.as_str()){
                 log_trace!("op: {}", op);
             }
-            let mut value = value.borrow_mut();
+            let mut value = value.lock().unwrap();
             log_trace!("Selector:current value: {:?}", new_value);
 
             *value = new_value;
 
-            if let Some(cb) =  &mut*cb_opt.borrow_mut(){
+            if let Some(cb) =  cb_opt.lock().unwrap().as_mut(){
                 return Ok(cb()?);
             }
             
@@ -119,10 +119,10 @@ where E: EnumTrait<E>+Display
     }
 
     pub fn value(&self) -> String {
-        self.value.borrow().clone()
+        self.value.lock().unwrap().clone()
     }
 
     pub fn on_change(&self, callback:CallbackNoArgs){
-        *self.on_change_cb.borrow_mut() = Some(callback);
+        *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 }

@@ -585,6 +585,7 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
     let mut layout_binding = quote!{};
     let impl_def = quote!{
         unsafe impl #struct_params Send for #struct_name #struct_params{}
+        unsafe impl #struct_params Sync for #struct_name #struct_params{}
     };
     let layout_style = match layout {
         Layout::Form => {
@@ -608,7 +609,7 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
 
             layout_binding = quote! ({
                 let layout_clone = view.layout();
-                let mut locked = layout_clone.lock().await;//.expect(&format!("Unable to lock form {} for footer binding.", #struct_name_string));
+                let mut locked = layout_clone.lock().expect(&format!("Unable to lock form {} for footer binding.", #struct_name_string));
                 locked._footer.bind_layout(#struct_name_string.to_string(), view.clone())?;
             });
 

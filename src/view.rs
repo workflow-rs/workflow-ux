@@ -161,7 +161,7 @@ impl Into<Element> for Container {
 
 
 
-#[async_trait(?Send)]
+#[async_trait]
 pub trait View : Sync + Send + AnySync{
     fn element(&self) -> Element;
     //  {
@@ -276,7 +276,7 @@ type EvictFn = Box<dyn Fn() -> Result<()>>;
 type DropFn = Box<dyn Fn()>;
 // type EvictFn = Box<dyn Fn()>;
 
-type AsyncMutex<A> = async_std::sync::Mutex<A>;
+type AsyncMutex<A> = std::sync::Mutex<A>;
 pub struct Layout<F,D> {
     layout : Arc<AsyncMutex<F>>,
     data : Arc<Mutex<Option<D>>>,
@@ -337,7 +337,7 @@ unsafe impl<F,D> Send for Layout<F,D> { }
 unsafe impl<F,D> Sync for Layout<F,D> { }
 
 
-#[async_trait(?Send)]
+#[async_trait]
 impl<F,D> View for Layout<F,D> 
 where 
     F : layout::Elemental + 'static,

@@ -19,8 +19,8 @@ extern "C" {
 pub struct Textarea {
     pub layout : ElementLayout,
     pub element_wrapper : ElementWrapper,
-    value : Rc<RefCell<String>>,
-    on_change_cb:Rc<RefCell<Option<CallbackNoArgs>>>,
+    value : Arc<Mutex<String>>,
+    on_change_cb:Arc<Mutex<Option<CallbackNoArgs>>>,
 }
 
 //impl FieldHelpers for Textarea{}
@@ -49,7 +49,7 @@ impl Textarea {
         }
 
 
-        let value = Rc::new(RefCell::new(init_value));
+        let value = Arc::new(Mutex::new(init_value));
 
         let pane_inner = layout.inner().ok_or(JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
@@ -58,7 +58,7 @@ impl Textarea {
             layout : layout.clone(),
             element_wrapper: ElementWrapper::new(element),
             value,
-            on_change_cb:Rc::new(RefCell::new(None))
+            on_change_cb:Arc::new(Mutex::new(None))
         };
 
         control.init()?;
@@ -74,8 +74,8 @@ impl Textarea {
             let new_value = el.value();
             log_trace!("new value: {:?}", new_value);
 
-            *value.borrow_mut() = new_value;
-            if let Some(cb) =  &mut*cb_opt.borrow_mut(){
+            *value.lock().unwrap() = new_value;
+            if let Some(cb) =  &mut*cb_opt.lock().unwrap(){
                 return Ok(cb()?);
             }
 
@@ -86,18 +86,18 @@ impl Textarea {
     }
 
     pub fn value(&self) -> String {
-        self.value.borrow().clone()
+        self.value.lock().unwrap().clone()
     }
 
     pub fn set_value<T: Into<String>>(&self, value:T)->Result<()>{
         let value = value.into();
         FieldHelper::set_value_attr(&self.element_wrapper.element, &value)?;
-        *self.value.borrow_mut() = value;
+        *self.value.lock().unwrap() = value;
         Ok(())
     }
     
     pub fn on_change(&self, callback:CallbackNoArgs){
-        *self.on_change_cb.borrow_mut() = Some(callback);
+        *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 
 }

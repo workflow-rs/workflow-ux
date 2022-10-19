@@ -71,13 +71,13 @@ pub use crate::controls::builder::{ListRow, ListBuilderItem, ListBuilder, Builde
 
 pub use crate::application::global as application;
 
-pub use async_trait::async_trait;
-
+pub use crate::async_trait::async_trait;
+pub use ::async_trait::{async_trait_without_send, async_trait_with_send};
 pub use workflow_ux_macros::Module;
 pub use workflow_ux_macros::declare_module;
 
 
 pub type Callback<E> = Box<dyn FnMut(E)->crate::result::Result<()>>;
 pub type CallbackNoArgs = Box<dyn FnMut()->crate::result::Result<()>>;
-pub type OptionalCallback<T> = Rc<RefCell<Option<Callback<T>>>>;
-pub type OptionalCallbackNoArgs = Rc<RefCell<Option<CallbackNoArgs>>>;
+pub type OptionalCallback<T> = Arc<Mutex<Option<Callback<T>>>>;
+pub type OptionalCallbackNoArgs = Arc<Mutex<Option<CallbackNoArgs>>>;

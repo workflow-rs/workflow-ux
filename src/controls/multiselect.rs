@@ -39,8 +39,8 @@ impl FlowMultiMenuBase{
 #[derive(Clone)]
 pub struct MultiSelect<E> {
     pub element_wrapper : ElementWrapper,
-    values : Rc<RefCell<Vec<String>>>,
-    on_change_cb: Rc<RefCell<Option<Callback<Vec<String>>>>>,
+    values : Arc<Mutex<Vec<String>>>,
+    on_change_cb: Arc<Mutex<Option<Callback<Vec<String>>>>>,
     p:PhantomData<E>
 }
 
@@ -79,7 +79,7 @@ where E: EnumTrait<E>
         for (k,v) in attributes.iter() {
             element.set_attribute(k,v)?;
         }
-        let values:Rc<RefCell<Vec<String>>> = Rc::new(RefCell::new(vec![]));
+        let values:Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(vec![]));
 
         let pane_inner = layout
             .inner()
@@ -89,7 +89,7 @@ where E: EnumTrait<E>
         let mut control = MultiSelect {
             element_wrapper: ElementWrapper::new(element),
             values,
-            on_change_cb:Rc::new(RefCell::new(None)),
+            on_change_cb:Arc::new(Mutex::new(None)),
             p:PhantomData
         };
         control.init_events()?;
@@ -104,10 +104,10 @@ where E: EnumTrait<E>
             log_trace!("MultiSelect: select event: {:?}", event);
             let items:Vec<String> = serde_wasm_bindgen::from_value(el.value())?;
             log_trace!("MultiSelect: current_values: {:?}", items);
-            let mut values = values.borrow_mut();
+            let mut values = values.lock().unwrap();
             *values = items.clone();
 
-            if let Some(cb) = &mut*cb_opt.borrow_mut(){
+            if let Some(cb) = cb_opt.lock().unwrap().as_mut(){
                 cb(items)?;
             };
 
@@ -119,10 +119,10 @@ where E: EnumTrait<E>
     }
 
     pub fn values(&self) -> Vec<String> {
-        self.values.borrow().clone()
+        self.values.lock().unwrap().clone()
     }
 
     pub fn on_change(&self, callback:Callback<Vec<String>>){
-        *self.on_change_cb.borrow_mut() = Some(callback);
+        *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 }

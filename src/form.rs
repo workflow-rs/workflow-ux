@@ -1,7 +1,7 @@
 use std::collections::BTreeMap;
 
 use workflow_ux::result::Result;
-use async_trait::async_trait;
+use crate::async_trait::async_trait;
 
 pub struct Category{
     pub key:String,
@@ -81,6 +81,6 @@ impl FormData{
 
 #[async_trait]
 pub trait FormHandler{
-    async fn load(&mut self)->Result<()>;
-    async fn submit(&mut self)->Result<()>;
+    async fn load(&self)->Result<()>;
+    async fn submit(&self)->Result<()>;
 }

@@ -5,8 +5,8 @@ use workflow_ux::result::Result;
 pub struct Checkbox {
     pub layout : ElementLayout,
     pub element_wrapper : ElementWrapper,
-    value : Rc<RefCell<bool>>,
-    on_change_cb:Rc<RefCell<Option<CallbackNoArgs>>>,
+    value : Arc<Mutex<bool>>,
+    on_change_cb:Arc<Mutex<Option<CallbackNoArgs>>>,
 }
 
 impl Checkbox {
@@ -24,13 +24,13 @@ impl Checkbox {
                 element.set_attribute(k,v)?;
             }
         }
-        let value = Rc::new(RefCell::new(false));
+        let value = Arc::new(Mutex::new(false));
 
         let mut control = Checkbox { 
             layout : pane.clone(),
             element_wrapper: ElementWrapper::new(element),
             value,
-            on_change_cb:Rc::new(RefCell::new(None))
+            on_change_cb:Arc::new(Mutex::new(None))
         };
 
         control.init()?;
@@ -47,9 +47,9 @@ impl Checkbox {
             let new_value = el.get_attribute("checked").is_some();
             log_trace!("new value: {:?}", new_value);
 
-            *value.borrow_mut() = new_value;
+            *value.lock().unwrap() = new_value;
 
-            if let Some(cb) =  &mut*cb_opt.borrow_mut(){
+            if let Some(cb) =  cb_opt.lock().unwrap().as_mut(){
                 return Ok(cb()?);
             }
 
@@ -61,10 +61,10 @@ impl Checkbox {
     }
 
     pub fn value(&self) -> bool {
-        *self.value.borrow()
+        *self.value.lock().unwrap()
     }
 
     pub fn on_change(&self, callback:CallbackNoArgs){
-        *self.on_change_cb.borrow_mut() = Some(callback);
+        *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 }

@@ -34,6 +34,7 @@ pub mod user_agent;
 pub mod task;
 pub mod dialog;
 pub mod markdown;
+pub mod async_trait;
 
 pub mod macros {
     pub use workflow_ux_macros::*;

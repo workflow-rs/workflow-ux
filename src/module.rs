@@ -7,16 +7,24 @@ use derivative::Derivative;
 use ahash::AHashMap;
 use workflow_ux::result::Result;
 use workflow_ux::error::Error;
-use async_trait::async_trait;
+//use crate::async_trait::async_trait;
+use crate::prelude::async_trait_without_send;
+
 use downcast::{downcast_sync, AnySync};
 
-#[async_trait(?Send)]
+#[async_trait_without_send]
 pub trait ModuleInterface : AnySync {
     // fn menu(self : Arc<Self>) -> Option<MenuGroup> { None }
-    async fn main(self : Arc<Self>) -> Result<()> { Ok(()) }
-    async fn load(self : Arc<Self>) -> Result<()> { Ok(()) }
+    async fn main(self : Arc<Self>) -> Result<()> {
+        Ok(())
+    }
+    async fn load(self : Arc<Self>) -> Result<()> {
+        Ok(())
+    }
 
-    async fn evict(self : Arc<Self>, _container : &Arc<view::Container>, _view : Arc<dyn view::View>) -> Result<()> { Ok(()) }
+    async fn evict(self : Arc<Self>, _container : &Arc<view::Container>, _view : Arc<dyn view::View>) -> Result<()> {
+        Ok(())
+    }
 
     // TODO - generate and inject HTML into the render view
     // async fn render(self : Arc<Self>, _account : &AccountDataReference) -> Result<()> { Ok(()) }

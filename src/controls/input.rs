@@ -26,8 +26,8 @@ pub struct Input {
     pub layout : ElementLayout,
     pub attributes: Attributes,
     pub element_wrapper : ElementWrapper,
-    value : Rc<RefCell<String>>,
-    on_change_cb:Rc<RefCell<Option<Callback<String>>>>,
+    value : Arc<Mutex<String>>,
+    on_change_cb:Arc<Mutex<Option<Callback<String>>>>,
 }
 
 impl Input {
@@ -85,14 +85,14 @@ impl Input {
                 init_value = v.to_string();
             }
         }
-        let value = Rc::new(RefCell::new(init_value));
+        let value = Arc::new(Mutex::new(init_value));
 
         let mut input = Input { 
             layout,
             attributes:attributes.clone(),
             element_wrapper: ElementWrapper::new(element),
             value,
-            on_change_cb:Rc::new(RefCell::new(None))
+            on_change_cb:Arc::new(Mutex::new(None))
         };
 
         input.init()?;
@@ -101,13 +101,13 @@ impl Input {
     }
 
     pub fn value(&self) -> String {
-        self.value.borrow().clone()
+        (*self.value.lock().unwrap()).clone()
     }
 
     pub fn set_value<T: Into<String>>(&self, value:T)->Result<()>{
         let value = value.into();
         FieldHelper::set_value_attr(&self.element_wrapper.element, &value)?;
-        *self.value.borrow_mut() = value;
+        *self.value.lock().unwrap() = value;
         Ok(())
     }
 
@@ -128,10 +128,10 @@ impl Input {
                 log_trace!("received changed event: {:?}", event);
                 let new_value = el.value();
                 log_trace!("new_value: {:?}", new_value);
-                let mut value = value.borrow_mut();
+                let mut value = value.lock().unwrap();
 
                 *value = new_value.clone();
-                if let Some(cb) =  &mut*cb_opt.borrow_mut(){
+                if let Some(cb) =  &mut*cb_opt.lock().unwrap(){
                     return Ok(cb(new_value)?);
                 }
 
@@ -148,10 +148,10 @@ impl Input {
                 //log_trace!("received key event: {:#?}", event);
                 let new_value = el.value();
                 //log_trace!("new_value: {:?}", new_value);
-                let mut value = value.borrow_mut();
+                let mut value = value.lock().unwrap();
 
                 *value = new_value.clone();
-                if let Some(cb) =  &mut*cb_opt.borrow_mut(){
+                if let Some(cb) =  &mut*cb_opt.lock().unwrap(){
                     return Ok(cb(new_value)?);
                 }
                 Ok(())
@@ -165,7 +165,7 @@ impl Input {
     }
 
     pub fn on_change(&self, callback:Callback<String>){
-        *self.on_change_cb.borrow_mut() = Some(callback);
+        *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 }
 

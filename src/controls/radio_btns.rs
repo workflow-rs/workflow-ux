@@ -17,8 +17,8 @@ extern "C" {
 #[derive(Clone)]
 pub struct RadioBtns<E> {
     pub element_wrapper : ElementWrapper,
-    value : Rc<RefCell<String>>,
-    on_change_cb:Rc<RefCell<Option<Callback<E>>>>,
+    value : Arc<Mutex<String>>,
+    on_change_cb:Arc<Mutex<Option<Callback<E>>>>,
     p:PhantomData<E>
 }
 
@@ -51,7 +51,7 @@ where E: EnumTrait<E>+'static+Display
         for (k,v) in attributes.iter() {
             element.set_attribute(k,v)?;
         }
-        let value = Rc::new(RefCell::new(init_value));
+        let value = Arc::new(Mutex::new(init_value));
 
         let pane_inner = layout
             .inner()
@@ -61,7 +61,7 @@ where E: EnumTrait<E>+'static+Display
         let mut btns = RadioBtns::<E>{
             element_wrapper: ElementWrapper::new(element),
             value,
-            on_change_cb:Rc::new(RefCell::new(None)),
+            on_change_cb:Arc::new(Mutex::new(None)),
             p:PhantomData
         };
 
@@ -83,12 +83,12 @@ where E: EnumTrait<E>+'static+Display
             if let Some(variant) = E::from_str(new_value.as_str()){
                 log_trace!("variant: {}", variant);
 
-                let mut value = value.borrow_mut();
+                let mut value = value.lock().unwrap();
                 log_trace!("new value: {:?}, old value: {}", new_value, value);
 
                 *value = new_value;
 
-                if let Some(cb) =  &mut*cb_opt.borrow_mut(){
+                if let Some(cb) =  cb_opt.lock().unwrap().as_mut(){
                     return Ok(cb(variant)?);
                 }
             }
@@ -99,10 +99,10 @@ where E: EnumTrait<E>+'static+Display
     }
 
     pub fn value(&self) -> String {
-        self.value.borrow().clone()
+        self.value.lock().unwrap().clone()
     }
 
     pub fn on_change(&self, callback:Callback<E>){
-        *self.on_change_cb.borrow_mut() = Some(callback);
+        *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 }

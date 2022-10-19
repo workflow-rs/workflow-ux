@@ -38,7 +38,7 @@ impl Action {
 
         let mut action = Action{
             element_wrapper: ElementWrapper::new( element ),
-            callback : Rc::new(RefCell::new(None))
+            callback : Arc::new(Mutex::new(None))
         };
 
         action.init()?;
@@ -47,7 +47,7 @@ impl Action {
     }
 
     pub fn with_callback(&self, callback : CallbackNoArgs) -> &Self {
-        *self.callback.borrow_mut() = Some(callback);
+        *self.callback.lock().unwrap() = Some(callback);
         self
     }
 
@@ -55,7 +55,7 @@ impl Action {
         let cb_opt = self.callback.clone();
         self.element_wrapper.on_click(move |event| -> Result<()> {
             log_trace!("action button received mouse event: {:#?}", event);
-            if let Some(cb) = &mut*cb_opt.borrow_mut(){
+            if let Some(cb) = cb_opt.lock().unwrap().as_mut(){
                 cb()?;
             };
             Ok(())

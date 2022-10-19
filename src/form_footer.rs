@@ -35,7 +35,7 @@ pub struct FormFooter{
     submit_btn: ElementWrapper
 }
 
-unsafe impl Send for FormFooter{}
+//unsafe impl Send for FormFooter{}
 
 impl FormFooter {
     pub fn new(
@@ -93,22 +93,49 @@ impl FormFooter {
         Ok(())
     }
 
+    //#[cfg(target_arch = "wasm32")]
+    pub fn on_submit<F>(&self, layout:Arc<Mutex<F>>, struct_name:String)
+    where 
+    F : FormHandler + Elemental + Send + Clone + 'static
+    {
+        
+        /*let action = {
+            let mut locked = layout
+                .lock().expect(&format!("Unable to lock form {} for footer submit action.", &struct_name));
+            locked.submit()
+        };*/
+
+        let locked = { layout
+            .lock().expect(&format!("Unable to lock form {} for footer submit action.", &struct_name))
+            .clone()
+        };
+
+        workflow_core::task::spawn(async move{
+            let action = locked.submit();
+            action.await
+        })
+    }
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn on_submit1<F>(&self, _layout:Arc<Mutex<F>>, _struct_name:String)
+    where 
+    F : FormHandler + Elemental + Send + 'static
+    {
+        //
+    }
+
+
+
     pub fn bind_layout<F:, D>(&mut self, struct_name:String, view:Arc<Layout<F, D>>)->Result<()>
     where 
-    F : FormHandler + Elemental + Send + 'static,
+    F : FormHandler + Elemental + Send + Clone + 'static,
     D : Send + 'static
     {
         let layout_clone = view.layout();
+        let this = self.clone();
         self.submit_btn.on_click(move|_|->Result<()>{
-            let unlocked = layout_clone.clone();
             let struct_name = struct_name.clone();
-            workflow_core::task::spawn(async move{
-                let mut locked = unlocked.lock().await;
-                    //.expect(&format!("Unable to lock form {} for footer submit action.", &struct_name));
-                locked.submit().await.map_err(|err|{
-                    workflow_log::log_trace!("Form ({}) submit() error: {:?}", &struct_name, err);
-                })
-            });
+            let layout = layout_clone.clone();
+            this.on_submit(layout, struct_name);
             Ok(())
         })?;
 

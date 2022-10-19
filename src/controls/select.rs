@@ -48,8 +48,8 @@ impl FlowMenuBase{
 #[derive(Clone)]
 pub struct Select<E> {
     pub element_wrapper : ElementWrapper,
-    value : Rc<RefCell<String>>,
-    on_change_cb: Rc<RefCell<Option<Callback<String>>>>,
+    value : Arc<Mutex<String>>,
+    on_change_cb: Arc<Mutex<Option<Callback<String>>>>,
     p:PhantomData<E>
 }
 
@@ -87,8 +87,8 @@ where E: EnumTrait<E>
 
         let control = Select {
             element_wrapper : ElementWrapper::new(element.clone()),
-            value : Rc::new(RefCell::new(value)),
-            on_change_cb:Rc::new(RefCell::new(None)),
+            value : Arc::new(Mutex::new(value)),
+            on_change_cb: Arc::new(Mutex::new(None)),
             p:PhantomData
         };
 
@@ -123,7 +123,7 @@ where E: EnumTrait<E>
                 element.set_attribute(k,v)?;
             }
         }
-        let value = Rc::new(RefCell::new(init_value));
+        let value = Arc::new(Mutex::new(init_value));
 
         let pane_inner = layout
             .inner()
@@ -133,7 +133,7 @@ where E: EnumTrait<E>
         let mut control = Select {
             element_wrapper:ElementWrapper::new(element),
             value,
-            on_change_cb:Rc::new(RefCell::new(None)),
+            on_change_cb:Arc::new(Mutex::new(None)),
             p:PhantomData
         };
 
@@ -149,9 +149,9 @@ where E: EnumTrait<E>
 
             log_trace!("Select: {:?}", event);
             let new_value = el.value();
-            let mut value = value.borrow_mut();
+            let mut value = value.lock().unwrap();
             *value = new_value.clone();
-            if let Some(cb) = &mut*cb_opt.borrow_mut(){
+            if let Some(cb) = cb_opt.lock().unwrap().as_mut(){
                 cb(new_value)?;
             }
 
@@ -163,13 +163,13 @@ where E: EnumTrait<E>
     }
 
     pub fn value(&self) -> String {
-        self.value.borrow().clone()
+        self.value.lock().unwrap().clone()
     }
 
     pub fn set_value<T: Into<String>>(&self, value:T)->Result<()>{
         let value = value.into();
         FieldHelper::set_attr(&self.element_wrapper.element, "selected", &value)?;
-        *self.value.borrow_mut() = value.clone();
+        *self.value.lock().unwrap() = value.clone();
 
         //if let Some(cb) = &mut*self.on_change_cb.borrow_mut(){
             //cb(value)?;
@@ -182,7 +182,7 @@ where E: EnumTrait<E>
     }
 
     pub fn on_change(&self, callback:Callback<String>){
-        *self.on_change_cb.borrow_mut() = Some(callback);
+        *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 
     pub fn change_options<T:Into<String>>(&self, options:Vec<(T, T)>)->Result<()>{

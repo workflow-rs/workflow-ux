@@ -62,6 +62,8 @@ pub enum Error {
     TimerError(#[from] workflow_wasm::timers::Error)
 }
 
+unsafe impl Send for Error{}
+
 impl From<JsValue> for Error {  
     fn from(val: JsValue) -> Self {
         Self::JsValue(val)

@@ -6,8 +6,8 @@ use workflow_html::{html, Render};
 pub struct TokenSelector{
     pub layout: ElementLayout,
     pub element_wrapper : ElementWrapper,
-    value : Rc<RefCell<String>>,
-    on_change_cb: Rc<RefCell<Option<Callback<String>>>>
+    value : Arc<Mutex<String>>,
+    on_change_cb: Arc<Mutex<Option<Callback<String>>>>
 }
 
 
@@ -45,7 +45,7 @@ impl TokenSelector{
             
 
         let init_value: String = String::from("");
-        let value = Rc::new(RefCell::new(init_value));
+        let value = Arc::new(Mutex::new(init_value));
 
         let pane_inner = layout
             .inner()
@@ -56,7 +56,7 @@ impl TokenSelector{
             layout:layout.clone(),
             element_wrapper: ElementWrapper::new(element),
             value,
-            on_change_cb: Rc::new(RefCell::new(None))
+            on_change_cb: Arc::new(Mutex::new(None))
         };
 
         control.init_events()?;
@@ -71,9 +71,9 @@ impl TokenSelector{
 
             log_trace!("Select: {:?}", event);
             let new_value = el.value();
-            let mut value = value.borrow_mut();
+            let mut value = value.lock().unwrap();
             *value = new_value.clone();
-            if let Some(cb) = &mut*cb_opt.borrow_mut(){
+            if let Some(cb) = cb_opt.lock().unwrap().as_mut(){
                 cb(new_value)?;
             }
 
@@ -85,9 +85,9 @@ impl TokenSelector{
     }
 
     pub fn value(&self) -> String {
-        self.value.borrow().clone()
+        self.value.lock().unwrap().clone()
     }
     pub fn on_change(&self, callback:Callback<String>){
-        *self.on_change_cb.borrow_mut() = Some(callback);
+        *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 }

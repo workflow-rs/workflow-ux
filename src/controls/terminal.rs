@@ -29,7 +29,7 @@ extern "C" {
 #[derive(Clone)]
 pub struct Terminal {
     pub element_wrapper : ElementWrapper,
-    value : Rc<RefCell<String>>,
+    value : Arc<Mutex<String>>,
 }
 
 
@@ -52,7 +52,7 @@ impl Terminal {
             element.set_attribute(k,v)?;
         }
 
-        let value = Rc::new(RefCell::new(init_value));
+        let value = Arc::new(Mutex::new(init_value));
         let pane_inner = layout.inner().ok_or(JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
         let mut terminal = Terminal {
@@ -98,7 +98,7 @@ impl Terminal {
     }
 
     pub fn value(&self) -> String {
-        self.value.borrow().clone()
+        self.value.lock().unwrap().clone()
     }
 
     pub fn write<T:Into<String>>(&self, str:T)->Result<()>{
