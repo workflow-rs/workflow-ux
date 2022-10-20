@@ -34,7 +34,12 @@ pub mod user_agent;
 pub mod task;
 pub mod dialog;
 pub mod markdown;
-pub mod async_trait;
+pub use workflow_core::{
+    async_trait,
+    async_trait_without_send,
+    async_trait_with_send,
+    workflow_async_trait
+};
 
 pub mod macros {
     pub use workflow_ux_macros::*;

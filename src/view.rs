@@ -4,6 +4,7 @@ use crate::{prelude::*, app_menu::AppMenu};
 use crate::{bottom_menu, layout, result::Result};
 use downcast::{downcast_sync, AnySync};
 use workflow_log::log_trace;
+
 //use web_sys::{ScrollBehavior, ScrollToOptions};
 //use crate::view::base_element::ExtendedElement;
 #[derive(Clone)]
@@ -161,7 +162,7 @@ impl Into<Element> for Container {
 
 
 
-#[async_trait]
+#[workflow_async_trait]
 pub trait View : Sync + Send + AnySync{
     fn element(&self) -> Element;
     //  {
@@ -337,7 +338,7 @@ unsafe impl<F,D> Send for Layout<F,D> { }
 unsafe impl<F,D> Sync for Layout<F,D> { }
 
 
-#[async_trait]
+#[workflow_async_trait]
 impl<F,D> View for Layout<F,D> 
 where 
     F : layout::Elemental + 'static,

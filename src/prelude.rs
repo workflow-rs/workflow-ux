@@ -52,6 +52,12 @@ pub use web_sys::{
     SvgElement,
     SvgPathElement
 };
+pub use workflow_core::{
+    async_trait,
+    async_trait_with_send,
+    async_trait_without_send,
+    workflow_async_trait
+};
 pub use workflow_core::enums::EnumTrait;
 pub use workflow_core::id::Id;
 pub use crate::menu::{MenuItem,MenuGroup,SectionMenu};
@@ -71,8 +77,6 @@ pub use crate::controls::builder::{ListRow, ListBuilderItem, ListBuilder, Builde
 
 pub use crate::application::global as application;
 
-// pub use crate::async_trait::async_trait;
-// pub use workflow_async_trait::{async_trait_without_send, async_trait_with_send};
 pub use workflow_ux_macros::Module;
 pub use workflow_ux_macros::declare_module;
 

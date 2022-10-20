@@ -1,7 +1,6 @@
 use std::collections::BTreeMap;
-
-use workflow_ux::result::Result;
-use crate::async_trait::async_trait;
+use crate::result::Result;
+use crate::workflow_async_trait;
 
 pub struct Category{
     pub key:String,

@@ -7,8 +7,7 @@ use derivative::Derivative;
 use ahash::AHashMap;
 use workflow_ux::result::Result;
 use workflow_ux::error::Error;
-//use crate::async_trait::async_trait;
-use crate::prelude::async_trait_without_send;
+use workflow_core::async_trait_without_send;
 
 use downcast::{downcast_sync, AnySync};
 
