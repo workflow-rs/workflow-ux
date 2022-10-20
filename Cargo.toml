@@ -25,6 +25,7 @@ workflow-i18n = { path = "../workflow-i18n" }
 workflow-log = { path = "../workflow-log" }
 workflow-html = { path = "../workflow-html" }
 workflow-wasm = { path = "../workflow-wasm" }
+workflow-async-trait = { path = "../workflow-async-trait" }
 
 workflow-ux-macros = { path = "macros" }
 
@@ -34,7 +35,6 @@ serde-wasm-bindgen = "0.4"
 js-sys = "0.3.56"
 async-std = "1.11.0"
 #async-trait = "0.1.56"
-async-trait = { path = "../async-trait" }
 convert_case = "0.5.0"
 pulldown-cmark = "0.9.2"
 downcast = "0.11.0"
