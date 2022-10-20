@@ -79,7 +79,7 @@ impl FormData{
     }
 }
 
-#[async_trait]
+#[workflow_async_trait]
 pub trait FormHandler{
     async fn load(&self)->Result<()>;
     async fn submit(&self)->Result<()>;

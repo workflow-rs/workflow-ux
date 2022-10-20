@@ -71,8 +71,8 @@ pub use crate::controls::builder::{ListRow, ListBuilderItem, ListBuilder, Builde
 
 pub use crate::application::global as application;
 
-pub use crate::async_trait::async_trait;
-pub use ::async_trait::{async_trait_without_send, async_trait_with_send};
+// pub use crate::async_trait::async_trait;
+// pub use workflow_async_trait::{async_trait_without_send, async_trait_with_send};
 pub use workflow_ux_macros::Module;
 pub use workflow_ux_macros::declare_module;
 

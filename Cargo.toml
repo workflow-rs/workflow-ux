@@ -25,7 +25,7 @@ workflow-i18n = { path = "../workflow-i18n" }
 workflow-log = { path = "../workflow-log" }
 workflow-html = { path = "../workflow-html" }
 workflow-wasm = { path = "../workflow-wasm" }
-workflow-async-trait = { path = "../workflow-async-trait" }
+# workflow-async-trait = { path = "../workflow-async-trait" }
 
 workflow-ux-macros = { path = "macros" }
 
