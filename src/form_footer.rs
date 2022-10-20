@@ -93,17 +93,10 @@ impl FormFooter {
         Ok(())
     }
 
-    //#[cfg(target_arch = "wasm32")]
     pub fn on_submit<F>(&self, layout:Arc<Mutex<F>>, struct_name:String)
     where 
     F : FormHandler + Elemental + Send + Clone + 'static
     {
-        
-        /*let action = {
-            let mut locked = layout
-                .lock().expect(&format!("Unable to lock form {} for footer submit action.", &struct_name));
-            locked.submit()
-        };*/
 
         let locked = { layout
             .lock().expect(&format!("Unable to lock form {} for footer submit action.", &struct_name))
@@ -114,13 +107,6 @@ impl FormFooter {
             let action = locked.submit();
             action.await
         })
-    }
-    #[cfg(not(target_arch = "wasm32"))]
-    pub fn on_submit1<F>(&self, _layout:Arc<Mutex<F>>, _struct_name:String)
-    where 
-    F : FormHandler + Elemental + Send + 'static
-    {
-        //
     }
 
 

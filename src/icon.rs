@@ -161,6 +161,11 @@ impl ToString for Icon {
         }
     }
 }
+impl From<Icon> for String{
+    fn from(icon: Icon) -> Self {
+        icon.to_string()
+    }
+}
 
 pub fn update_theme() -> Result<()> {
     let icon_root = icon_root();
