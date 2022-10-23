@@ -2,13 +2,15 @@ use core::fmt;
 use std::{sync::{Arc, Mutex, MutexGuard, LockResult}, collections::BTreeMap};
 use crate::prelude::*;
 use crate::result::Result;
+use crate::error::Error;
 use workflow_html::{html, Render, Hooks, Renderables, ElementResult, Html};
 use workflow_core::id::Id;
+use workflow_core::channel::oneshot;
 
 static mut DIALOGES : Option<BTreeMap<String, Dialog>> = None;
 
 
-pub type Callback = Box<dyn FnMut(Dialog, DialogButton)->Result<()>>;
+pub type Callback = Box<dyn FnMut(Dialog, Button)->Result<()>>;
 
 pub enum ButtonClass{
     Primary,
@@ -32,7 +34,7 @@ impl ButtonClass{
 
 //#[describe_enum]
 #[derive(Clone)]
-pub enum DialogButton{
+pub enum Button{
     Ok,
     Cancel,
     Done,
@@ -56,7 +58,7 @@ pub enum DialogButton{
     __WithClass(String, String)
 }
 
-impl DialogButton{
+impl Button{
 
     pub fn with_class(&self, class:ButtonClass)->Self{
         let (name, _cls) = self.name_and_class();
@@ -146,7 +148,7 @@ impl DialogButton{
     }
 }
 
-impl fmt::Display for DialogButton{
+impl fmt::Display for Button{
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.name_and_class().0)
     }
@@ -154,7 +156,7 @@ impl fmt::Display for DialogButton{
 
 #[derive(Clone)]
 pub struct DialogButtonData{
-    pub btn:DialogButton,
+    pub btn:Button,
     pub class:Option<String>
 }
 
@@ -167,8 +169,8 @@ impl DialogButtonData{
     }
 }
 
-impl From<DialogButton> for DialogButtonData{
-    fn from(btn: DialogButton) -> Self {
+impl From<Button> for DialogButtonData{
+    fn from(btn: Button) -> Self {
         Self{
             btn,
             class: None
@@ -176,8 +178,8 @@ impl From<DialogButton> for DialogButtonData{
     }
 }
 
-impl From<(DialogButton, &str)> for DialogButtonData{
-    fn from(info: (DialogButton, &str)) -> Self {
+impl From<(Button, &str)> for DialogButtonData{
+    fn from(info: (Button, &str)) -> Self {
         Self{
             btn: info.0,
             class: Some(info.1.to_string())
@@ -283,7 +285,7 @@ pub struct Dialog{
 
 impl Dialog{
     pub fn new()->Result<Self>{
-        Ok(Self::create::<DialogButton, DialogButton, DialogButton>(None, &[], &[], &[DialogButton::Ok])?)
+        Ok(Self::create::<Button, Button, Button>(None, &[], &[], &[Button::Ok])?)
     }
 
     pub fn new_with_body_and_buttons<A,B,C>(body:Html, left_btns:&[A], center_btns:&[B], right_btns:&[C])->Result<Self>
@@ -365,7 +367,7 @@ impl Dialog{
         let btn = target.closest("[data-action]")?;
         if let Some(btn) = btn{
             let action = btn.get_attribute("data-action").unwrap();
-            match DialogButton::from_str(&action){
+            match Button::from_str(&action){
                 Some(btn)=>{
                     log_trace!("dialog calling callback....");
                     (self.callback.lock()?)(self.clone(), btn)?;
@@ -404,7 +406,7 @@ impl Dialog{
         Ok(self.inner()?.as_ref().unwrap().btns.clone())
     }
 
-    pub fn change_buttons(&self, left:&[DialogButton], center:&[DialogButton], right:&[DialogButton])->Result<()>{
+    pub fn change_buttons(&self, left:&[Button], center:&[Button], right:&[Button])->Result<()>{
         let btns = DialogButtons::new(left, center, right);
         let btn_container = self.btn_container()?;
         btn_container.set_inner_html("");
@@ -462,6 +464,22 @@ fn get_list()->&'static mut BTreeMap<String, Dialog>{
             unsafe{DIALOGES.as_mut()}.unwrap()
         }
     }
+}
+
+pub async fn async_dialog_with_html(title:&str, msg:Html) -> Result<Button> {
+
+    let (sender,receiver) = oneshot();
+    let dialog = Dialog::new()?;
+    dialog.set_title(title)?;
+    dialog.set_html_msg(msg)?;
+    dialog.with_callback(Box::new(move |_dialog, btn|{
+        sender.try_send(btn).unwrap();
+        Ok(())
+    }))?.show()?;
+    // dialog.show()?;
+    let btn = receiver.recv().await
+        .map_err(|e| Error::DialogError(e.to_string()))?;
+    Ok(btn)
 }
 
 pub fn show_dialog(title:&str, msg:&str)->Result<Dialog>{

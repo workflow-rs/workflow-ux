@@ -59,7 +59,10 @@ pub enum Error {
     UnableToGetBody,
 
     #[error("Timer error: {0}")]
-    TimerError(#[from] workflow_wasm::timers::Error)
+    TimerError(#[from] workflow_wasm::timers::Error),
+
+    #[error("Dialog error: {0}")]
+    DialogError(String),
 }
 
 unsafe impl Send for Error{}
