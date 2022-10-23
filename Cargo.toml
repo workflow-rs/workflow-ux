@@ -81,5 +81,6 @@ features = [
     'MutationObserverInit',
     'MutationRecord',
     'Navigator',
-    'Location'
+    'Location',
+    'Storage',
 ]

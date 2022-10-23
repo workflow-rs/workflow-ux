@@ -6,6 +6,7 @@ pub mod prelude;
 
 pub mod error;
 pub mod result;
+pub mod utils;
 pub mod dom;
 pub mod attributes;
 pub mod docs;
@@ -58,67 +59,4 @@ pub mod hash {
 //     workflow_ux::application::global().expect("Missing global application object").workspace()
 // }
 
-use wasm_bindgen::JsValue;
-use web_sys::{
-    Window,
-    Document,
-    Element,
-    Location
-};
-
-pub fn document() -> Document {
-    let window = web_sys::window().expect("no global `window` exists");
-    let document = window.document().expect("unable to get `document` node");
-    document
-}
-
-pub fn window() -> Window {
-    web_sys::window().expect("no global `window` exists")
-}
-
-pub fn location() -> Location {
-    window().location()
-}
-
-pub fn find_el(selector:&str, error_msg:&str)->std::result::Result<Element, error::Error>{
-    let element = match document().query_selector(selector).expect(&error::Error::MissingElement(error_msg.into(), selector.into() ).to_string()){
-        Some(el)=>el,
-        None=>return Err(error::Error::MissingElement(error_msg.into(), selector.into() ))
-    };
-
-    Ok(element)
-}
-
-pub fn create_el(tag:&str, attrs:Vec<(&str, &str)>, html:Option<&str>)->std::result::Result<Element, error::Error>{
-    let doc = document();
-    let mut tag_name = tag;
-    let mut classes:Option<js_sys::Array> = None;
-    if tag_name.contains("."){
-        let mut parts = tag_name.split(".");
-        let tag = parts.next().unwrap();
-        let array = js_sys::Array::new();
-        for a in parts{
-            array.push(&JsValue::from(a));
-        }
-        classes = Some(array);
-        tag_name = tag;
-    }
-    let el = doc.create_element(tag_name)?;
-
-    for (name, value) in attrs{
-        el.set_attribute(name, value)?;
-    }
-    if let Some(classes) = classes{
-        el.class_list().add(&classes)?;
-    }
-
-    if let Some(html) = html{
-        el.set_inner_html(html);
-    }
-
-    Ok(el)
-}
-
-pub fn type_of<T>(_: T) -> String {
-    std::any::type_name::<T>().to_string()
-}
+pub use utils::*;
