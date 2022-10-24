@@ -4,6 +4,7 @@ use std::sync::PoisonError;
 use workflow_i18n::Error as i18nError;
 use serde_wasm_bindgen::Error as SerdeError;
 use thiserror::Error;
+use workflow_core::channel::{SendError,RecvError};
 
 #[macro_export]
 macro_rules! error {
@@ -29,6 +30,12 @@ pub enum Error {
 
     #[error("PoisonError: {0:?}")]
     PoisonError(String),
+
+    #[error("Channel send error: {0}")]
+    ChannelSendError(String),
+
+    #[error("Channel receive error: {0}")]
+    ChannelReceiveError(String),
 
     #[error("Parent element not found {0:?}")]
     ParentNotFound(web_sys::Element),
@@ -116,6 +123,17 @@ impl From<web_sys::Element> for Error {
     }
 }
 
+impl<T> From<SendError<T>> for Error {
+    fn from(error: SendError<T>) -> Error {
+        Error::ChannelSendError(format!("{:?}",error))
+    }
+}
+
+impl From<RecvError> for Error {
+    fn from(error: RecvError) -> Error {
+        Error::ChannelReceiveError(format!("{:?}",error))
+    }
+}
 
 
 
