@@ -128,7 +128,7 @@ impl Avatar{
         form.append_child(&hash_containers)?;
         
         //buttons
-        let change_btn = create_el("flow-btn", vec![("class", "change")], Some(&i18n("Set")))?;
+        let change_btn = create_el("flow-btn", vec![("class", "change")], Some(&i18n("Edit")))?;
         action_container.append_child(&change_btn)?;
         let cancel_btn = create_el("flow-btn", vec![("class", "cancel")], Some(&i18n("Cancel")))?;
         action_container.append_child(&cancel_btn)?;
