@@ -147,7 +147,7 @@ impl Container {
     }
 
     #[allow(dead_code)]
-    async fn view(&self) -> Option<Arc<dyn View>> {
+    pub async fn view(&self) -> Option<Arc<dyn View>> {
         self.view.read().await.clone()
     }
 }
@@ -182,6 +182,9 @@ pub trait View : Sync + Send + AnySync{
     fn drop(&self) { }
 
     fn bottom_menus(&self)->Option<Vec<bottom_menu::BottomMenuItem>>{
+        None
+    }
+    fn trigger(&self)->Option<ViewTrigger>{
         None
     }
 
@@ -385,20 +388,38 @@ impl<F,D> Drop for Layout<F,D>
     }
 }
 
+#[derive(Clone)]
+pub enum ViewTrigger{
+    Create(String),
+    Update(String),
+    Delete(String),
+    Custom(String)
+}
+unsafe impl Send for ViewTrigger { }
+unsafe impl Sync for ViewTrigger { }
 
 pub struct Html {
     element : Element,
     module : Option<Arc<dyn ModuleInterface>>,
     _html: workflow_html::Html,
-    menus:Option<Vec<bottom_menu::BottomMenuItem>>
+    menus:Option<Vec<bottom_menu::BottomMenuItem>>,
+    trigger: Option<ViewTrigger>
 }
 
 impl Html {
     pub fn try_new(
         module : Option<Arc<dyn ModuleInterface>>,
-        html : workflow_html::Html, //&(Vec<Element>, BTreeMap<String, Element>),
+        html : workflow_html::Html,
     ) -> Result<Arc<dyn View>> {
-        let view = Self::create(module, html, None)?;
+        let view = Self::create(module, html, None, None)?;
+        Ok(Arc::new(view))
+    }
+    pub fn try_new_with_trigger(
+        module : Option<Arc<dyn ModuleInterface>>,
+        html : workflow_html::Html,
+        trigger:ViewTrigger
+    ) -> Result<Arc<dyn View>> {
+        let view = Self::create(module, html, None, Some(trigger))?;
         Ok(Arc::new(view))
     }
 
@@ -407,14 +428,15 @@ impl Html {
         html : workflow_html::Html,
         menus:Vec<bottom_menu::BottomMenuItem>
     )-> Result<Arc<dyn View>> {
-        let view = Self::create(module, html, Some(menus))?;
+        let view = Self::create(module, html, Some(menus), None)?;
         Ok(Arc::new(view))
     }
 
     pub fn create(
         module : Option<Arc<dyn ModuleInterface>>,
         html : workflow_html::Html,
-        menus:Option<Vec<bottom_menu::BottomMenuItem>>
+        menus:Option<Vec<bottom_menu::BottomMenuItem>>,
+        trigger:Option<ViewTrigger>
     )-> Result<Html> {
         let element = document().create_element("workspace-view")?;
         html.inject_into(&element)?;
@@ -423,7 +445,8 @@ impl Html {
             element,
             module,
             _html:html,
-            menus
+            menus,
+            trigger
         };
 
         Ok(view)
@@ -449,5 +472,9 @@ impl View for Html {
 
     fn bottom_menus(&self)->Option<Vec<bottom_menu::BottomMenuItem>>{
         self.menus.clone()
+    }
+
+    fn trigger(&self)->Option<ViewTrigger>{
+        self.trigger.clone()
     }
 }
