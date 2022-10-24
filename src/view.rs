@@ -150,6 +150,10 @@ impl Container {
     pub async fn view(&self) -> Option<Arc<dyn View>> {
         self.view.read().await.clone()
     }
+
+    pub fn try_view(&self) -> Result<Option<Arc<dyn View>>> {
+        Ok(self.view.try_read().ok_or("Unabel to lock view")?.clone())
+    }
 }
 
 impl Into<Element> for Container {
