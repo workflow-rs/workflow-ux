@@ -1,6 +1,9 @@
 use workflow_ux::error::Error;
 use workflow_ux::result::Result;
 use wasm_bindgen::JsValue;
+//use workflow_html::{html, Html, Render};
+use crate::markdown::markdown_to_html;
+use crate::controls::md::MD;
 use web_sys::{
     Window,
     Document,
@@ -69,3 +72,22 @@ pub fn create_el(tag:&str, attrs:Vec<(&str, &str)>, html:Option<&str>) -> Result
 pub fn type_of<T>(_: T) -> String {
     std::any::type_name::<T>().to_string()
 }
+
+pub fn markdown(str:&str)->crate::result::Result<MD>{
+    let body = markdown_to_html(str);
+    /*
+    //let stream: proc_macro2::TokenStream = str.parse().unwrap();
+    //let str = format!("{}", str);
+    let res = str_to_html!(
+        {println!("{}", str)}
+    );
+    workflow_log::log_trace!("resresres: {}", res);
+    */
+
+    //workflow_log::log_trace!("html body: {}", body);
+
+    Ok(MD::new(body)?)
+
+    //Ok(html!{<MD body />}?)
+}
+
