@@ -1,7 +1,7 @@
 use workflow_ux::error::Error;
 use workflow_ux::result::Result;
 use wasm_bindgen::JsValue;
-//use workflow_html::{html, Html, Render};
+use workflow_html::{html, Html, Render};
 use crate::markdown::markdown_to_html;
 use crate::controls::md::MD;
 use web_sys::{
@@ -73,7 +73,7 @@ pub fn type_of<T>(_: T) -> String {
     std::any::type_name::<T>().to_string()
 }
 
-pub fn markdown(str:&str)->crate::result::Result<MD>{
+pub fn markdown(str:&str)->crate::result::Result<Html>{
     let body = markdown_to_html(str);
     /*
     //let stream: proc_macro2::TokenStream = str.parse().unwrap();
@@ -86,8 +86,8 @@ pub fn markdown(str:&str)->crate::result::Result<MD>{
 
     //workflow_log::log_trace!("html body: {}", body);
 
-    Ok(MD::new(body)?)
+    //Ok(MD::new(body)?)
 
-    //Ok(html!{<MD body />}?)
+    Ok(html!{<MD body />}?)
 }
 
