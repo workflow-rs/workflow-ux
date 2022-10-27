@@ -10,7 +10,7 @@ pub fn markdown_to_html(str:&str)->String{
 
     let mut options = Options::empty();
     options.insert(Options::ENABLE_STRIKETHROUGH);
-    let parser = Parser::new_ext(str, options);
+    let parser = Parser::new_ext(&str, options);
 
     let parser = parser.map(|event| match event {
         //Event::Text(text) => Event::Text(text.replace("abbr", "abbreviation").into()),

@@ -482,3 +482,45 @@ impl View for Html {
         self.trigger.clone()
     }
 }
+
+pub struct MetaView<D:Clone>{
+    pub view:Arc<dyn View>,
+    pub meta:Option<D>
+}
+
+unsafe impl<D: Clone> Send for MetaView<D> { }
+unsafe impl<D: Clone> Sync for MetaView<D> { }
+
+
+impl<D> MetaView<D>
+where D : Clone + 'static{
+    pub fn try_new(
+        view : Arc<dyn View>,
+        meta: Option<D>
+    ) -> Result<Arc<dyn View>> {
+        Ok(Arc::new(Self{
+            view, meta
+        }))
+    }
+
+    pub fn meta(&self)->Option<D>{
+        self.meta.clone()
+    }
+}
+
+
+impl<D> View for MetaView<D>
+where D : Clone + 'static{
+    fn element(&self) -> Element {
+        self.view.element()
+    }
+
+    fn module(&self) -> Option<Arc<dyn ModuleInterface>> {
+        self.view.module()
+    }
+
+    fn typeid(&self) -> TypeId {
+        TypeId::of::<Self>()
+    }
+}
+
