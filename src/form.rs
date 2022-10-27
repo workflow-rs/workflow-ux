@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
 use crate::result::Result;
-use crate::workflow_async_trait;
+use crate::async_trait_without_send;
 use paste::paste;
+//use workflow_core::async_trait_with_send;
 use std::str;
 
 pub struct Category{
@@ -112,7 +113,7 @@ impl FormData{
     }
 }
 
-#[workflow_async_trait]
+#[async_trait_without_send]
 pub trait FormHandler{
     async fn load(&self)->Result<()>;
     async fn submit(&self)->Result<()>;

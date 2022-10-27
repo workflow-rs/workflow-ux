@@ -95,7 +95,7 @@ impl FormFooter {
 
     pub fn on_submit<F>(&self, layout:Arc<Mutex<F>>, struct_name:String)
     where 
-    F : FormHandler + Elemental + Send + Clone + 'static
+    F : FormHandler + Elemental + Clone + 'static
     {
 
         let locked = { layout
@@ -103,7 +103,7 @@ impl FormFooter {
             .clone()
         };
 
-        workflow_core::task::spawn(async move{
+        workflow_core::task::wasm::spawn(async move{
             let action = locked.submit();
             action.await
         })
