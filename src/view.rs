@@ -2,7 +2,7 @@ use std::{sync::{Arc, Mutex}, any::TypeId};
 
 use crate::{prelude::*, app_menu::AppMenu};
 use crate::{bottom_menu, layout, result::Result};
-use downcast::{downcast_sync, AnySync, DowncastSync};
+use downcast::{downcast_sync, AnySync};
 use workflow_log::log_trace;
 
 //use web_sys::{ScrollBehavior, ScrollToOptions};
@@ -154,6 +154,18 @@ impl Container {
     pub fn try_view(&self) -> Result<Option<Arc<dyn View>>> {
         Ok(self.view.try_read().ok_or("Unabel to lock view")?.clone())
     }
+
+    pub fn meta<M>(&self)
+    -> Result<Arc<M>> 
+    where M: AnySync
+    {
+        let view = self.try_view()?
+            .ok_or("Unable to get current view")?;
+        let meta_view = view.downcast_arc::<MetaView>()?;
+        let meta = meta_view.meta()?;
+        Ok(meta)
+    }    
+
 }
 
 impl Into<Element> for Container {
@@ -178,16 +190,19 @@ pub trait View : Sync + Send + AnySync {
         None
     }
 
-    fn with_meta(
-        self : Arc<Self>,
-        meta: Arc<dyn AnySync>,
-    ) 
-    -> Result<Arc<dyn View>> 
-    where Self: Sized
-    {
-        let meta_view = MetaView::try_new(self, meta)?;
-        Ok(meta_view)
-    }
+    // fn with_meta(
+    //     self : Arc<Self>,
+    //     meta: Arc<dyn Meta>,
+    //     // meta: Arc<dyn AnySync>,
+    // ) 
+    // -> Result<Arc<dyn View>> 
+    // // where Self: Sized
+    // {
+    //     let view : Arc<dyn View> = self;
+    //     // let view : Arc<dyn View> = self.clone();
+    //     let meta_view = MetaView::try_new(self, meta)?;
+    //     Ok(meta_view)
+    // }
 
     // fn meta<M>(
     //     self : Arc<Self>,
@@ -209,6 +224,15 @@ pub trait View : Sync + Send + AnySync {
 }
 
 downcast_sync!(dyn View);
+
+pub fn into_meta_view(view : Arc<dyn View>, meta: Arc<dyn Meta>) -> Result<Arc<dyn View>> {
+
+    // let view : Arc<dyn View> = self.clone();
+    // let view : Arc<dyn View> = self.clone();
+    let meta_view = MetaView::try_new(view, meta)?;
+    Ok(meta_view)
+
+}
 
 pub fn get_meta<M>(view : Arc<dyn View>)
 -> Result<Arc<M>> 
@@ -505,17 +529,18 @@ impl View for Html {
 }
 
 
-// pub trait Meta : AnySync {
-//     // type Data;
-//     // fn get(&self) -> Option<Arc<Self::Data>>;
-// }
+pub trait Meta : AnySync {
+    // type Data;
+    // fn get(&self) -> Option<Arc<Self::Data>>;
+}
 
-// downcast_sync!(dyn Meta);
+downcast_sync!(dyn Meta);
 
 // pub struct MetaView<D:Clone>{
 pub struct MetaView{
     pub view:Arc<dyn View>,
-    pub meta:Arc<dyn AnySync>
+    pub meta:Arc<dyn Meta>
+    // pub meta:Arc<dyn AnySync>
 }
 
 // unsafe impl<D: Clone> Send for MetaView<D> { }
@@ -525,15 +550,20 @@ unsafe impl Sync for MetaView { }
 
 impl MetaView
 {
-    pub fn try_new<V>(
-        view : Arc<V>,
-        meta: Arc<dyn AnySync>
+    // pub fn try_new<V>(
+    //     view : Arc<V>,
+    pub fn try_new(
+        view : Arc<dyn View>,
+        meta: Arc<dyn Meta>
+        // meta: Arc<dyn AnySync>
     ) -> Result<Arc<dyn View>> 
-    where V: View
+    // where V: View
     {
-        Ok(Arc::new(Self{
+        let view: Arc<dyn View> = Arc::new(Self{
             view, meta
-        }))
+        });
+
+        Ok(view)
     }
 
     // pub fn meta(&self)->Option<Arc<dyn AnySync>>{
