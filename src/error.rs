@@ -1,3 +1,4 @@
+use downcast::DowncastError;
 use wasm_bindgen::JsValue;
 //, convert::{WasmAbi, IntoWasmAbi, FromWasmAbi}};
 use std::sync::PoisonError;
@@ -70,6 +71,9 @@ pub enum Error {
 
     #[error("Dialog error: {0}")]
     DialogError(String),
+
+    #[error("Downcast error: {0}")]
+    Downcast(String),
 }
 
 unsafe impl Send for Error{}
@@ -135,6 +139,11 @@ impl From<RecvError> for Error {
     }
 }
 
+impl<T> From<DowncastError<T>> for Error {
+    fn from(error: DowncastError<T>) -> Error {
+        Error::Downcast(format!("{:?}",error))
+    }
+}
 
 
 // impl WasmAbi for Error {}

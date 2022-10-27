@@ -167,30 +167,31 @@ impl Into<Element> for Container {
 
 
 #[workflow_async_trait]
-pub trait View : Sync + Send + AnySync{
+pub trait View : Sync + Send + AnySync {
     fn element(&self) -> Element;
-    //  {
-    //     self.element.clone()
-    // }
-
     fn module(&self) -> Option<Arc<dyn ModuleInterface>>;
-
     fn typeid(&self) -> TypeId;
-
-    // fn eviction_dis(&self) -> Eviction { Eviction::Allow }
-
     async fn evict(self : Arc<Self>) -> Result<()> { Ok(()) }
-    // async fn evict2(&mut self) -> Result<()> { Ok(()) }
-    // fn cleanup(&self) -> Result<()> { Ok(()) }
-
     fn drop(&self) { }
 
     fn bottom_menus(&self)->Option<Vec<bottom_menu::BottomMenuItem>>{
         None
     }
-    fn trigger(&self)->Option<ViewTrigger>{
-        None
+
+    fn with_meta(
+        self : Arc<Self>,
+        meta: Arc<dyn AnySync>,
+    ) 
+    -> Result<Arc<dyn View>> 
+    where Self: Sized
+    {
+        let meta_view = MetaView::try_new(self, meta)?;
+        Ok(meta_view)
     }
+
+    // fn trigger(&self)->Option<ViewTrigger>{
+    //     None
+    // }
 
     // fn drop(&self) -> Result<()> { Ok(()) }
     //  {
@@ -392,22 +393,22 @@ impl<F,D> Drop for Layout<F,D>
     }
 }
 
-#[derive(Clone)]
-pub enum ViewTrigger{
-    Create(String),
-    Update(String),
-    Delete(String),
-    Custom(String)
-}
-unsafe impl Send for ViewTrigger { }
-unsafe impl Sync for ViewTrigger { }
+// #[derive(Clone)]
+// pub enum ViewTrigger{
+//     Create(String),
+//     Update(String),
+//     Delete(String),
+//     Custom(String)
+// }
+// unsafe impl Send for ViewTrigger { }
+// unsafe impl Sync for ViewTrigger { }
 
 pub struct Html {
     element : Element,
     module : Option<Arc<dyn ModuleInterface>>,
     _html: workflow_html::Html,
     menus:Option<Vec<bottom_menu::BottomMenuItem>>,
-    trigger: Option<ViewTrigger>
+    // trigger: Option<ViewTrigger>
 }
 
 impl Html {
@@ -415,24 +416,26 @@ impl Html {
         module : Option<Arc<dyn ModuleInterface>>,
         html : workflow_html::Html,
     ) -> Result<Arc<dyn View>> {
-        let view = Self::create(module, html, None, None)?;
+        // let view = Self::create(module, html, None, None)?;
+        let view = Self::create(module, html, None)?;
         Ok(Arc::new(view))
     }
-    pub fn try_new_with_trigger(
-        module : Option<Arc<dyn ModuleInterface>>,
-        html : workflow_html::Html,
-        trigger:ViewTrigger
-    ) -> Result<Arc<dyn View>> {
-        let view = Self::create(module, html, None, Some(trigger))?;
-        Ok(Arc::new(view))
-    }
+    // pub fn try_new_with_trigger(
+    //     module : Option<Arc<dyn ModuleInterface>>,
+    //     html : workflow_html::Html,
+    //     // trigger:ViewTrigger
+    // ) -> Result<Arc<dyn View>> {
+    //     let view = Self::create(module, html, None, Some(trigger))?;
+    //     Ok(Arc::new(view))
+    // }
 
     pub fn try_new_with_menus(
         module : Option<Arc<dyn ModuleInterface>>,
         html : workflow_html::Html,
         menus:Vec<bottom_menu::BottomMenuItem>
     )-> Result<Arc<dyn View>> {
-        let view = Self::create(module, html, Some(menus), None)?;
+        let view = Self::create(module, html, Some(menus))?;
+        // let view = Self::create(module, html, Some(menus), None)?;
         Ok(Arc::new(view))
     }
 
@@ -440,7 +443,7 @@ impl Html {
         module : Option<Arc<dyn ModuleInterface>>,
         html : workflow_html::Html,
         menus:Option<Vec<bottom_menu::BottomMenuItem>>,
-        trigger:Option<ViewTrigger>
+        // trigger:Option<ViewTrigger>
     )-> Result<Html> {
         let element = document().create_element("workspace-view")?;
         html.inject_into(&element)?;
@@ -450,7 +453,7 @@ impl Html {
             module,
             _html:html,
             menus,
-            trigger
+            // trigger
         };
 
         Ok(view)
@@ -478,39 +481,64 @@ impl View for Html {
         self.menus.clone()
     }
 
-    fn trigger(&self)->Option<ViewTrigger>{
-        self.trigger.clone()
-    }
+    // fn trigger(&self)->Option<ViewTrigger>{
+    //     self.trigger.clone()
+    // }
 }
 
-pub struct MetaView<D:Clone>{
+
+// pub trait Meta : AnySync {
+//     // type Data;
+//     // fn get(&self) -> Option<Arc<Self::Data>>;
+// }
+
+// downcast_sync!(dyn Meta);
+
+// pub struct MetaView<D:Clone>{
+pub struct MetaView{
     pub view:Arc<dyn View>,
-    pub meta:Option<D>
+    pub meta:Arc<dyn AnySync>
 }
 
-unsafe impl<D: Clone> Send for MetaView<D> { }
-unsafe impl<D: Clone> Sync for MetaView<D> { }
+// unsafe impl<D: Clone> Send for MetaView<D> { }
+// unsafe impl<D: Clone> Sync for MetaView<D> { }
+unsafe impl Send for MetaView { }
+unsafe impl Sync for MetaView { }
 
-
-impl<D> MetaView<D>
-where D : Clone + 'static{
-    pub fn try_new(
-        view : Arc<dyn View>,
-        meta: Option<D>
-    ) -> Result<Arc<dyn View>> {
+impl MetaView
+{
+    pub fn try_new<V>(
+        view : Arc<V>,
+        meta: Arc<dyn AnySync>
+    ) -> Result<Arc<dyn View>> 
+    where V: View
+    {
         Ok(Arc::new(Self{
             view, meta
         }))
     }
 
-    pub fn meta(&self)->Option<D>{
-        self.meta.clone()
+    // pub fn meta(&self)->Option<Arc<dyn AnySync>>{
+    //     self.meta.clone()
+    // }
+
+    
+    pub fn meta<M : AnySync>(&self)->Result<Arc<M>> {
+        // self.meta.clone()
+        let meta = self.meta.clone();
+        let data = meta.downcast_arc::<M>()?;
+        Ok(data)
     }
+
+
 }
 
 
-impl<D> View for MetaView<D>
-where D : Clone + 'static{
+// impl<D> View for MetaView<D>
+#[workflow_async_trait]
+impl View for MetaView
+// where D : Clone + 'static{
+{
     fn element(&self) -> Element {
         self.view.element()
     }
@@ -522,5 +550,11 @@ where D : Clone + 'static{
     fn typeid(&self) -> TypeId {
         TypeId::of::<Self>()
     }
+
+    async fn evict(self : Arc<Self>) -> Result<()> {
+        self.view.clone().evict().await
+    }
+
+
 }
 
