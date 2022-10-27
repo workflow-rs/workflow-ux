@@ -6,6 +6,7 @@ use workflow_i18n::Error as i18nError;
 use serde_wasm_bindgen::Error as SerdeError;
 use thiserror::Error;
 use workflow_core::channel::{SendError,RecvError};
+use std::io::Error as IoError;
 
 #[macro_export]
 macro_rules! error {
@@ -74,9 +75,18 @@ pub enum Error {
 
     #[error("Downcast error: {0}")]
     Downcast(String),
+
+    #[error("IoError error: {0}")]
+    IoError(IoError)
 }
 
 unsafe impl Send for Error{}
+
+impl From<IoError> for Error {
+    fn from(error: IoError) -> Error {
+        Self::IoError(error)
+    }
+}
 
 impl From<JsValue> for Error {  
     fn from(val: JsValue) -> Self {

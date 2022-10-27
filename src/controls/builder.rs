@@ -242,6 +242,11 @@ where B:ListBuilder<I>+'static,
         Ok(())
     }
 
+    pub fn value(&self)->Result<Vec<I>>{
+        let items = self.inner()?.list_items.clone();
+        Ok(items)
+    }
+
     pub fn items_len(&self)->Result<usize>{
         Ok(self.inner()?.list_items.len())
     }

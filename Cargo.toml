@@ -49,6 +49,7 @@ url = "2.3.1"
 sha2="0.10.6"
 md5="0.7.0"
 paste = "1.0"
+borsh = "0.9.1"
 
 [dependencies.web-sys]
 version = "0.3.60"

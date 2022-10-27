@@ -2,7 +2,8 @@ use std::collections::BTreeMap;
 use crate::result::Result;
 use crate::async_trait_without_send;
 use paste::paste;
-//use workflow_core::async_trait_with_send;
+use borsh::ser::BorshSerialize;
+use borsh::de::BorshDeserialize;
 use std::str;
 
 pub struct Category{
@@ -34,7 +35,8 @@ pub enum FormDataValue{
 
     //Pubkey(String),
     //Usize(usize)
-    List(Vec<String>)
+    List(Vec<String>),
+    Object(Vec<u8>)
 }
 
 macro_rules! num_fields {
@@ -88,6 +90,30 @@ impl FormData{
     }
     pub fn add_list(&mut self, name:&str, list:Vec<String>){
         self.values.insert(name.to_string(), FormDataValue::List(list));
+    }
+
+    pub fn add_object(&mut self, name:&str, obj:impl BorshSerialize)->Result<()>{
+        let mut data = Vec::new();
+        obj.serialize(&mut data)?;
+        self.values.insert(name.to_string(), FormDataValue::Object(data));
+        Ok(())
+    }
+
+    pub fn get_object<D:BorshDeserialize>(&self, name:&str)->Result<Option<D>>{
+        if let Some(value) = self.values.get(name){
+            match value{
+                FormDataValue::Object(list)=>{
+                    let data = &mut &list.clone()[0..];
+                    let obj = D::deserialize(data)?;
+                    return Ok(Some(obj));
+                },
+                _=>{
+
+                }
+            }
+        }
+
+        Ok(None)
     }
 
     pub fn get_string(&self, name:&str)->Option<String>{
