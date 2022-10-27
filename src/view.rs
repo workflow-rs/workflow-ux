@@ -2,7 +2,7 @@ use std::{sync::{Arc, Mutex}, any::TypeId};
 
 use crate::{prelude::*, app_menu::AppMenu};
 use crate::{bottom_menu, layout, result::Result};
-use downcast::{downcast_sync, AnySync};
+use downcast::{downcast_sync, AnySync, DowncastSync};
 use workflow_log::log_trace;
 
 //use web_sys::{ScrollBehavior, ScrollToOptions};
@@ -189,6 +189,15 @@ pub trait View : Sync + Send + AnySync {
         Ok(meta_view)
     }
 
+    // fn meta<M>(
+    //     self : Arc<Self>,
+    // ) -> Result<Arc<M>> 
+    // where Self: Sized + AnySync// + DowncastSync
+    // {
+    //     let meta_view = self.downcast_arc::<MetaView>()?;
+
+    // }
+
     // fn trigger(&self)->Option<ViewTrigger>{
     //     None
     // }
@@ -200,6 +209,15 @@ pub trait View : Sync + Send + AnySync {
 }
 
 downcast_sync!(dyn View);
+
+pub fn get_meta<M>(view : Arc<dyn View>)
+-> Result<Arc<M>> 
+where M: AnySync
+{
+    let meta_view = view.downcast_arc::<MetaView>()?;
+    let meta = meta_view.meta()?;
+    Ok(meta)
+}
 
 // unsafe impl Sync for dyn View {} 
 
