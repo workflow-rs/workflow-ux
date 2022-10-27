@@ -190,45 +190,11 @@ pub trait View : Sync + Send + AnySync {
         None
     }
 
-    // fn with_meta(
-    //     self : Arc<Self>,
-    //     meta: Arc<dyn Meta>,
-    //     // meta: Arc<dyn AnySync>,
-    // ) 
-    // -> Result<Arc<dyn View>> 
-    // // where Self: Sized
-    // {
-    //     let view : Arc<dyn View> = self;
-    //     // let view : Arc<dyn View> = self.clone();
-    //     let meta_view = MetaView::try_new(self, meta)?;
-    //     Ok(meta_view)
-    // }
-
-    // fn meta<M>(
-    //     self : Arc<Self>,
-    // ) -> Result<Arc<M>> 
-    // where Self: Sized + AnySync// + DowncastSync
-    // {
-    //     let meta_view = self.downcast_arc::<MetaView>()?;
-
-    // }
-
-    // fn trigger(&self)->Option<ViewTrigger>{
-    //     None
-    // }
-
-    // fn drop(&self) -> Result<()> { Ok(()) }
-    //  {
-    //     self.module.clone()
-    // }
 }
 
 downcast_sync!(dyn View);
 
 pub fn into_meta_view(view : Arc<dyn View>, meta: Arc<dyn Meta>) -> Result<Arc<dyn View>> {
-
-    // let view : Arc<dyn View> = self.clone();
-    // let view : Arc<dyn View> = self.clone();
     let meta_view = MetaView::try_new(view, meta)?;
     Ok(meta_view)
 
@@ -242,8 +208,6 @@ where M: AnySync
     let meta = meta_view.meta()?;
     Ok(meta)
 }
-
-// unsafe impl Sync for dyn View {} 
 
 pub struct Default {
     element : Element,
@@ -285,7 +249,6 @@ pub struct Data<D> {
 }
 
 impl<D> Data<D> {
-    // pub fn try_new(module : Arc<dyn ModuleInterface>) -> Result<Arc<dyn View>> {
     pub fn try_new(module : Option<Arc<dyn ModuleInterface>>, data : D) -> Result<Arc<Data<D>>> {
         let view = Data::<D> { 
             element : document().create_element("workspace-view")?,
@@ -319,13 +282,8 @@ where D : 'static
     }
 }
 
-
-//     pub fn callback(self, callback: Box<dyn Fn() -> Result<()>>) -> Result<Self> {
-
-
 type EvictFn = Box<dyn Fn() -> Result<()>>;
 type DropFn = Box<dyn Fn()>;
-// type EvictFn = Box<dyn Fn()>;
 
 type AsyncMutex<A> = std::sync::Mutex<A>;
 pub struct Layout<F,D> {
@@ -406,7 +364,6 @@ where
         TypeId::of::<Data<F>>()
     }
 
-    // async fn evict(self : Arc<Layout<F,D>>) -> Result<()> {
     async fn evict(self : Arc<Layout<F,D>>) -> Result<()> {
         let evict = self.evict.lock()?;
         match &*evict {
@@ -435,22 +392,11 @@ impl<F,D> Drop for Layout<F,D>
     }
 }
 
-// #[derive(Clone)]
-// pub enum ViewTrigger{
-//     Create(String),
-//     Update(String),
-//     Delete(String),
-//     Custom(String)
-// }
-// unsafe impl Send for ViewTrigger { }
-// unsafe impl Sync for ViewTrigger { }
-
 pub struct Html {
     element : Element,
     module : Option<Arc<dyn ModuleInterface>>,
     _html: workflow_html::Html,
-    menus:Option<Vec<bottom_menu::BottomMenuItem>>,
-    // trigger: Option<ViewTrigger>
+    menus:Option<Vec<bottom_menu::BottomMenuItem>>
 }
 
 impl Html {
@@ -458,18 +404,9 @@ impl Html {
         module : Option<Arc<dyn ModuleInterface>>,
         html : workflow_html::Html,
     ) -> Result<Arc<dyn View>> {
-        // let view = Self::create(module, html, None, None)?;
         let view = Self::create(module, html, None)?;
         Ok(Arc::new(view))
     }
-    // pub fn try_new_with_trigger(
-    //     module : Option<Arc<dyn ModuleInterface>>,
-    //     html : workflow_html::Html,
-    //     // trigger:ViewTrigger
-    // ) -> Result<Arc<dyn View>> {
-    //     let view = Self::create(module, html, None, Some(trigger))?;
-    //     Ok(Arc::new(view))
-    // }
 
     pub fn try_new_with_menus(
         module : Option<Arc<dyn ModuleInterface>>,
@@ -477,15 +414,13 @@ impl Html {
         menus:Vec<bottom_menu::BottomMenuItem>
     )-> Result<Arc<dyn View>> {
         let view = Self::create(module, html, Some(menus))?;
-        // let view = Self::create(module, html, Some(menus), None)?;
         Ok(Arc::new(view))
     }
 
     pub fn create(
         module : Option<Arc<dyn ModuleInterface>>,
         html : workflow_html::Html,
-        menus:Option<Vec<bottom_menu::BottomMenuItem>>,
-        // trigger:Option<ViewTrigger>
+        menus:Option<Vec<bottom_menu::BottomMenuItem>>
     )-> Result<Html> {
         let element = document().create_element("workspace-view")?;
         html.inject_into(&element)?;
