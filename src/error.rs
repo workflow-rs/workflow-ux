@@ -7,6 +7,7 @@ use serde_wasm_bindgen::Error as SerdeError;
 use thiserror::Error;
 use workflow_core::channel::{SendError,RecvError};
 use std::io::Error as IoError;
+use core::num::{ParseIntError, ParseFloatError};
 
 #[macro_export]
 macro_rules! error {
@@ -77,10 +78,28 @@ pub enum Error {
     Downcast(String),
 
     #[error("IoError error: {0}")]
-    IoError(IoError)
+    IoError(IoError),
+
+    #[error("ParseFloatError error: {0}")]
+    ParseFloatError(ParseFloatError),
+
+    #[error("ParseIntError error: {0}")]
+    ParseIntError(ParseIntError)
 }
 
 unsafe impl Send for Error{}
+
+impl From<ParseIntError> for Error {
+    fn from(error: ParseIntError) -> Error {
+        Self::ParseIntError(error)
+    }
+}
+
+impl From<ParseFloatError> for Error {
+    fn from(error: ParseFloatError) -> Error {
+        Self::ParseFloatError(error)
+    }
+}
 
 impl From<IoError> for Error {
     fn from(error: IoError) -> Error {

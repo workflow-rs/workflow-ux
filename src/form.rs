@@ -27,11 +27,14 @@ where T:Into<String>{
 #[derive(Debug)]
 pub enum FormDataValue{
     String(String),
+    Bool(bool),
     U8(u8),
     U16(u16),
     U32(u32),
     U64(u64),
     U128(u128),
+    F32(f32),
+    F64(f64),
 
     //Pubkey(String),
     //Usize(usize)
@@ -39,7 +42,7 @@ pub enum FormDataValue{
     Object(Vec<u8>)
 }
 
-macro_rules! num_fields {
+macro_rules! define_fields {
     ($($ident:ident)+)=>{
         paste!{
             $(
@@ -85,9 +88,7 @@ impl FormData{
     pub fn add(&mut self, name:&str, value:FormDataValue){
         self.values.insert(name.to_string(), value);
     }
-    pub fn add_string(&mut self, name:&str, value:String){
-        self.values.insert(name.to_string(), FormDataValue::String(value));
-    }
+
     pub fn add_list(&mut self, name:&str, list:Vec<String>){
         self.values.insert(name.to_string(), FormDataValue::List(list));
     }
@@ -115,22 +116,26 @@ impl FormData{
 
         Ok(None)
     }
-
-    pub fn get_string(&self, name:&str)->Option<String>{
-        if let Some(value) = self.values.get(name){
-            match value{
-                FormDataValue::String(s)=>{
-                    return Some(s.clone());
-                },
-                _=>{
+    pub fn add_string(&mut self, name: &str, value: String) {
+        self.values
+            .insert(name.to_string(), FormDataValue::String(value));
+    }
+    pub fn get_string(&self, name: &str) -> Option<String> {
+        if let Some(value) = self.values.get(name) {
+            match value {
+                FormDataValue::String(value) => {
+                    return Some(value.clone());
+                }
+                _ => {
                     return None;
                 }
             }
         }
-
         None
     }
-    num_fields!(U8 U16 U32 U64 U128);
+
+    define_fields!(U8 U16 U32 U64 U128 F32 F64 Bool);
+
     pub fn empty()->Self{
         Self {
             id: None,
