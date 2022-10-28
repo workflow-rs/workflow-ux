@@ -592,7 +592,7 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
             layout_loading = quote! {layout.load().await?;};
 
             init_extra_props = quote! {
-                _footer: workflow_ux::form_footer::FormFooter,
+                pub _footer: workflow_ux::form_footer::FormFooter,
             };
             field_idents.push(Ident::new("_footer", Span::call_site()));
             field_initializers.push(quote! {

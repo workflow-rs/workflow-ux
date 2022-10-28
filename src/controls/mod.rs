@@ -28,3 +28,4 @@ pub mod helper;
 pub mod builder;
 pub mod avatar;
 pub mod md;
+pub mod id;

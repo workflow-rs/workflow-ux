@@ -15,7 +15,8 @@ pub use crate::controls::{
     base_element::BaseElement,
     element_wrapper::BaseElementTrait,
     terminal::Terminal,
-    avatar::Avatar
+    avatar::Avatar,
+    id::HiddenId
 };
 pub use crate::form::{FormHandler, FormData, FormDataValue};
 pub type UXResult<T> = workflow_ux::result::Result<T>;
