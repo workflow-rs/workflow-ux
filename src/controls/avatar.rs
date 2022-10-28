@@ -403,7 +403,7 @@ impl Avatar{
                 self.text_field.set_value("".to_string())?;
                 self.set_hash_input_value("md5", "".to_string())?;
                 self.set_hash_input_value("sha256", "".to_string())?;
-                let hash_type = if text_value.len() == 32 {"md5"}else{"sha256"};
+                let hash_type = if text_value.len() == 32 || text_value.len() == 0 {"md5"}else{"sha256"};
                 self.set_hash_input_value(hash_type, text_value)?;
                 self.set_hash_type(&hash_type)?;
             }
