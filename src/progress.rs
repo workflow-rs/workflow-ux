@@ -2,13 +2,16 @@ use std::sync::atomic::{AtomicBool,Ordering};
 use workflow_ux::prelude::*;
 use workflow_ux::result::Result;
 use workflow_core::id::Id;
+// use workflow_ux::view;
 use workflow_ux::view::*;
+//{Meta,View,Html,into_meta_view,get_meta};
 
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Progress {
     id : Id,
     aborted : Arc<AtomicBool>,
+    view : Arc<Mutex<Option<Arc<dyn view::View>>>>,
 }
 
 impl Meta for Progress { }
@@ -22,11 +25,21 @@ impl PartialEq for Progress {
 }
 
 impl Progress {
-    pub fn new() -> Self {
-        Self { 
+    pub fn new(html: workflow_html::Html) -> Result<Arc<Self>> {
+
+        let html_view = Html::try_new(None, html)?;
+        let progress = Arc::new(Progress { 
             id : Id::new(),
             aborted : Arc::new(AtomicBool::new(false)),
-        }
+            view : Arc::new(Mutex::new(None))
+        });
+        let view = into_meta_view(html_view,progress.clone())?;
+        progress.view.lock().unwrap().replace(view);
+        Ok(progress)
+    }
+
+    pub fn view(self: &Arc<Self>) -> Result<Arc<dyn View>> {
+        Ok(self.view.lock()?.as_ref().unwrap().clone())
     }
 
     // utility function to get progress from a supplied view
@@ -37,33 +50,6 @@ impl Progress {
         }
     }
 
-    // convert view into meta view with progress as meta
-    pub fn attach(self: Arc<Self>, view : &Arc<dyn View>) -> Result<Arc<dyn View>> {
-        self.activate_with_view(view);
-        into_meta_view(view.clone(),self.clone())
-    } 
-
-    // pub fn load(self: Arc<Self>, container: &Arc<Container>) -> Result<Arc<dyn View>> {
-    //     self.activate_with_container(container);
-    //     into_meta_view(container.view(),self.clone())
-    // } 
-
-    pub fn activate_with_view(&self, _view: &Arc<dyn View>) {
-        // TODO - add class or load view 
-    }
-
-    // pub fn activate_with_container(&self, container: &Arc<Container>) {
-    //     let view = container.view();
-    //     // TODO - add class or load view 
-    // }
-
-    // pub fn deactivate(&self, container: &Arc<Container>) {
-    //     // TODO - remove class
-    // }
-
-    pub fn deactivate(&self, _view: &Arc<dyn View>) {
-        // TODO - remove class
-    }
 
     // TODO call this with current main view before evicting it
     pub fn abort(view: &Arc<dyn View>) {
@@ -80,7 +66,6 @@ impl Progress {
                 if progress.aborted.load(Ordering::SeqCst) {
                     false
                 } else {
-                    self.deactivate(view);
                     true
                 }
             },
