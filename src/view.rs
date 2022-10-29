@@ -1,4 +1,4 @@
-use std::{sync::{Arc, Mutex}, any::TypeId, collections::BTreeMap};
+use std::{sync::{Arc, Mutex,RwLock}, any::TypeId, collections::BTreeMap};
 
 use crate::{prelude::*, app_menu::AppMenu};
 use crate::{bottom_menu, layout, result::Result};
@@ -27,7 +27,7 @@ impl ContainerStack {
     }
 
     pub async fn append_view(self : &Arc<Self>, incoming : Arc<dyn View>) -> Result<()> {
-        (*self.views.write().await).push(incoming.clone());
+        (*self.views.write()?).push(incoming.clone());
         self.element.append_child(&incoming.element())?;
         Ok(())
     }
@@ -82,7 +82,7 @@ impl Container {
     /// safely evicted allowing the owning module to query user for confirmation
     /// if necessary.
     pub async fn swap_from(self : &Arc<Self>) -> Result<Option<Arc<dyn View>>> {
-        let previous = self.view.read().await.clone();
+        let previous = self.view.read()?.clone();
         match &previous {
             None => { 
                 // log_trace!("swap_from(): there is no previous view");
@@ -108,8 +108,8 @@ impl Container {
     /// TODO: implement transition between views
     pub async fn swap_to(self : &Arc<Self>, incoming : Arc<dyn View>) -> Result<()> {
         
-        let previous = self.view.read().await.clone();
-        *self.view.write().await = Some(incoming.clone());
+        let previous = self.view.read()?.clone();
+        *self.view.write()? = Some(incoming.clone());
 
         if let Some(previous) = previous {
             let el = previous.element();
@@ -147,19 +147,20 @@ impl Container {
     }
 
     #[allow(dead_code)]
-    pub async fn view(&self) -> Option<Arc<dyn View>> {
-        self.view.read().await.clone()
+    // pub async fn view(&self) -> Option<Arc<dyn View>> {
+    pub fn view(&self) -> Option<Arc<dyn View>> {
+        self.view.read().expect("Unable to lock view").clone()
     }
 
-    pub fn try_view(&self) -> Result<Option<Arc<dyn View>>> {
-        Ok(self.view.try_read().ok_or("Unabel to lock view")?.clone())
-    }
+    // pub fn try_view(&self) -> Result<Option<Arc<dyn View>>> {
+    //     Ok(self.view.try_read().ok_or("Unabel to lock view")?.clone())
+    // }
 
     pub fn meta<M>(&self)
     -> Result<Arc<M>> 
     where M: AnySync
     {
-        let view = self.try_view()?
+        let view = self.view()
             .ok_or("Unable to get current view")?;
         let meta_view = view.downcast_arc::<MetaView>()?;
         let meta = meta_view.meta()?;

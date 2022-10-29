@@ -34,6 +34,7 @@ pub mod form_footer;
 pub mod user_agent;
 pub mod task;
 pub mod dialog;
+pub mod progress;
 pub mod markdown;
 pub use workflow_core::{
     async_trait,
