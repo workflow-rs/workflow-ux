@@ -46,6 +46,9 @@ pub struct Container {
     app_menu: Option<Arc<AppMenu>>
 }
 
+unsafe impl Sync for Container { }
+unsafe impl Send for Container { }
+
 impl Container {
     pub fn new(element: Element, app_menu:Option<Arc<AppMenu>>) -> Self {
         Container {

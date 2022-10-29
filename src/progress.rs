@@ -12,6 +12,7 @@ pub struct Progress {
     id : Id,
     aborted : Arc<AtomicBool>,
     view : Arc<Mutex<Option<Arc<dyn view::View>>>>,
+    container : Arc<Container>,
 }
 
 impl Meta for Progress { }
@@ -25,22 +26,28 @@ impl PartialEq for Progress {
 }
 
 impl Progress {
-    pub fn new(html: workflow_html::Html) -> Result<Arc<Self>> {
+    pub async fn try_load(html: workflow_html::Html, container : Arc<Container>) -> Result<Arc<Self>> {
+
+        container.swap_from().await?;
 
         let html_view = Html::try_new(None, html)?;
         let progress = Arc::new(Progress { 
             id : Id::new(),
             aborted : Arc::new(AtomicBool::new(false)),
-            view : Arc::new(Mutex::new(None))
+            view : Arc::new(Mutex::new(None)),
+            container: container.clone()
         });
         let view = into_meta_view(html_view,progress.clone())?;
-        progress.view.lock().unwrap().replace(view);
+        progress.view.lock().unwrap().replace(view.clone());
+
+        container.swap_to(view).await?;
+
         Ok(progress)
     }
 
-    pub fn view(self: &Arc<Self>) -> Result<Arc<dyn View>> {
-        Ok(self.view.lock()?.as_ref().unwrap().clone())
-    }
+    // pub fn view(self: &Arc<Self>) -> Result<Arc<dyn View>> {
+    //     Ok(self.view.lock()?.as_ref().unwrap().clone())
+    // }
 
     // utility function to get progress from a supplied view
     fn from_view(view: &Arc<dyn View>) -> Option<Arc<Progress>> {
@@ -50,8 +57,6 @@ impl Progress {
         }
     }
 
-
-    // TODO call this with current main view before evicting it
     pub fn abort(view: &Arc<dyn View>) {
         let current = Progress::from_view(view);
         if let Some(progress) = current {
@@ -59,9 +64,12 @@ impl Progress {
         }
     }
 
-    pub fn ok(&self, view: &Arc<dyn View>) -> bool {
-        let current = Progress::from_view(view);
-        match current {
+    pub fn aborted(self: &Arc<Self>) -> Result<bool> {
+        let current = self.container.view()
+            .ok_or("Current view is missing")?;
+        
+        let current = Progress::from_view(&current);
+        let ok = match current {
             Some(progress) if progress.id == self.id => {
                 if progress.aborted.load(Ordering::SeqCst) {
                     false
@@ -70,7 +78,18 @@ impl Progress {
                 }
             },
             _ => false
+        };
+
+        Ok(!ok)
+    }
+
+    pub fn close(self : &Arc<Self>) -> Result<()> {
+        if self.aborted()? {
+            Err("View aborted".into())
+        } else {
+            Ok(())
         }
     }
+    
 }
 
