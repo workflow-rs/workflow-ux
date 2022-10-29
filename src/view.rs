@@ -94,6 +94,10 @@ impl Container {
                     // TODO query module for view eviction etc.
                     module.evict(self, previous.clone()).await?;
                     previous.clone().evict().await?;
+
+                    // check and abort view progress if present
+                    Progress::abort(previous);
+
                     log_trace!("swap_from(): finishing...");
                     Ok(Some(previous.clone()))
                 } else {
