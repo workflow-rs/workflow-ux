@@ -288,6 +288,10 @@ impl Dialog{
         Ok(Self::create::<Button, Button, Button>(None, &[], &[], &[Button::Ok])?)
     }
 
+    pub fn new_without_buttons()->Result<Self>{
+        Ok(Self::create::<Button, Button, Button>(None, &[], &[], &[])?)
+    }
+
     pub fn new_with_body_and_buttons<A,B,C>(body:Html, left_btns:&[A], center_btns:&[B], right_btns:&[C])->Result<Self>
     where A:Into<DialogButtonData>+Clone,
     B:Into<DialogButtonData>+Clone,
@@ -386,9 +390,8 @@ impl Dialog{
         Ok(self)
     }
 
-    pub fn close(&self)->Result<()>{
-        self.hide()?;
-        self.remove_from_list()?;
+    pub fn close(self)->Result<()>{
+        self.hide()?.remove_from_list()?;
         Ok(())
     }
 
@@ -414,19 +417,19 @@ impl Dialog{
         Ok(())
     }
 
-    pub fn set_title(&self, title:&str)->Result<()>{
+    pub fn set_title(self, title:&str)->Result<Self>{
         self.title_container()?.set_inner_html(title);
-        Ok(())
+        Ok(self)
     }
-    pub fn set_msg(&self, msg:&str)->Result<()>{
+    pub fn set_msg(self, msg:&str)->Result<Self>{
         self.body_container()?.set_inner_html(msg);
-        Ok(())
+        Ok(self)
     }
-    pub fn set_html_msg(&self, msg:Html)->Result<()>{
+    pub fn set_html_msg(self, msg:Html)->Result<Self>{
         let el = self.body_container()?;
         msg.inject_into(&el)?;
         self.inner()?.as_mut().unwrap().msg = Some(msg);
-        Ok(())
+        Ok(self)
     }
 
     fn add_to_list(&self)->Result<()>{
@@ -441,14 +444,14 @@ impl Dialog{
         Ok(())
     }
 
-    pub fn show(&self)->Result<()>{
+    pub fn show(self)->Result<Self>{
         self.element.class_list().add_1("open")?;
         self.add_to_list()?;
-        Ok(())
+        Ok(self)
     }
-    pub fn hide(&self)->Result<()>{
+    pub fn hide(self)->Result<Self>{
         self.element.class_list().remove_1("open")?;
-        Ok(())
+        Ok(self)
     }
 
 }
@@ -469,13 +472,13 @@ fn get_list()->&'static mut BTreeMap<String, Dialog>{
 pub async fn async_dialog_with_html(title:&str, msg:Html) -> Result<Button> {
 
     let (sender,receiver) = oneshot();
-    let dialog = Dialog::new()?;
-    dialog.set_title(title)?;
-    dialog.set_html_msg(msg)?;
-    dialog.with_callback(Box::new(move |_dialog, btn|{
-        sender.try_send(btn).unwrap();
-        Ok(())
-    }))?.show()?;
+    let _dialog = Dialog::new()?
+        .set_title(title)?
+        .set_html_msg(msg)?
+        .with_callback(Box::new(move |_dialog, btn|{
+            sender.try_send(btn).unwrap();
+            Ok(())
+        }))?.show()?;
     // dialog.show()?;
     let btn = receiver.recv().await
         .map_err(|e| Error::DialogError(e.to_string()))?;
@@ -483,18 +486,18 @@ pub async fn async_dialog_with_html(title:&str, msg:Html) -> Result<Button> {
 }
 
 pub fn show_dialog(title:&str, msg:&str)->Result<Dialog>{
-    let dialog = Dialog::new()?;
-    dialog.set_title(title)?;
-    dialog.set_msg(msg)?;
-    dialog.show()?;
+    let dialog = Dialog::new()?
+        .set_title(title)?
+        .set_msg(msg)?
+        .show()?;
     Ok(dialog)
 }
 
 pub fn show_dialog_with_html(title:&str, msg:Html)->Result<Dialog>{
-    let dialog = Dialog::new()?;
-    dialog.set_title(title)?;
-    dialog.set_html_msg(msg)?;
-    dialog.show()?;
+    let dialog = Dialog::new()?
+        .set_title(title)?
+        .set_html_msg(msg)?
+        .show()?;
     Ok(dialog)
 }
 

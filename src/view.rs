@@ -1,4 +1,4 @@
-use std::{sync::{Arc, Mutex}, any::TypeId};
+use std::{sync::{Arc, Mutex}, any::TypeId, collections::BTreeMap};
 
 use crate::{prelude::*, app_menu::AppMenu};
 use crate::{bottom_menu, layout, result::Result};
@@ -395,7 +395,8 @@ impl<F,D> Drop for Layout<F,D>
 pub struct Html {
     element : Element,
     module : Option<Arc<dyn ModuleInterface>>,
-    _html: workflow_html::Html,
+    html: workflow_html::Html,
+    html_list: Arc<Mutex<BTreeMap<Id, workflow_html::Html>>>,
     menus:Option<Vec<bottom_menu::BottomMenuItem>>
 }
 
@@ -425,15 +426,29 @@ impl Html {
         let element = document().create_element("workspace-view")?;
         html.inject_into(&element)?;
 
+        let html_list = BTreeMap::new();
+
         let view = Html { 
             element,
             module,
-            _html:html,
-            menus,
-            // trigger
+            html,
+            html_list:Arc::new(Mutex::new(html_list)),
+            menus
         };
 
         Ok(view)
+    }
+
+    pub fn add_html(&self, id:Id, html:workflow_html::Html)->Result<()>{
+        self.html_list.lock()?.insert(id, html);
+        Ok(())
+    }
+    pub fn remove_html(&self, id:&Id)->Result<()>{
+        self.html_list.lock()?.remove(id);
+        Ok(())
+    }
+    pub fn html(&self)->&workflow_html::Html{
+        &self.html
     }
 
 }
