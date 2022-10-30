@@ -31,7 +31,7 @@ impl Default for PaginationOptions{
         Self{
             first:"FIRST".to_string(),
             last:"LAST".to_string(),
-            prev:"PREVIOUS".to_string(),
+            prev:"PREV".to_string(),
             next:"NEXT".to_string(),
         }
     }
