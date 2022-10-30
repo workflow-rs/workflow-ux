@@ -11,7 +11,7 @@ pub use wasm_bindgen::prelude::*;
 pub use wasm_bindgen::JsCast;
 // pub use workflow_ux::*;
 // pub use crate::dom::{document,get_element_by_id};
-pub use workflow_i18n::i18n;
+pub use workflow_i18n::{i18n, dict as i18n_dict};
 pub use workflow_log::{log_trace,log_warning,log_error};
 pub use crate::{document,window};
 pub use crate::theme::*;
