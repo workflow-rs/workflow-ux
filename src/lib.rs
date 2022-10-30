@@ -36,6 +36,7 @@ pub mod task;
 pub mod dialog;
 pub mod progress;
 pub mod markdown;
+pub mod pagination;
 pub use workflow_core::{
     async_trait,
     async_trait_without_send,
