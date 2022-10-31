@@ -6,6 +6,7 @@ use crate::error::Error;
 use workflow_html::{html, Render, Hooks, Renderables, ElementResult, Html};
 use workflow_core::id::Id;
 use workflow_core::channel::oneshot;
+use crate::icon::Icon;
 
 static mut DIALOGES : Option<BTreeMap<String, Dialog>> = None;
 
@@ -272,7 +273,9 @@ pub struct DialogInner{
     _body:Html,
     title:Element,
     body:Element,
-    btns:Element
+    btns:Element,
+    close_icon:Element,
+    modal:bool
 }
 
 #[derive(Clone)]
@@ -328,8 +331,24 @@ impl Dialog{
     fn init(self, body_html:Option<Html>, btns:DialogButtons)->Result<Self>{
         
         let this = self.clone();
+        let this2 = self.clone();
+        let this3 = self.clone();
         let body = html!{
+            <div class="workflow-dialog-mask"
+                !click={
+                    this2.on_mask_click(_event, _target).map_err(|e|{
+                        log_trace!("error: {}", e);
+                    }).ok();
+                }
+            ></div>
             <div class="workflow-dialog-inner">
+                <div @close_icon hidden="true" class="icon dialog-close-icon" icon={Icon::css("close")}
+                    !click={
+                        this3.clone().close().map_err(|e|{
+                            log_trace!("close: {}", e);
+                        }).ok();
+                    }
+                ></div>
                 <h2 class="title" @title></h2>
                 <div class="body" @body>
                     {body_html}
@@ -355,7 +374,9 @@ impl Dialog{
             msg:None,
             title: hooks.get("title").unwrap().clone(),
             body: hooks.get("body").unwrap().clone(),
-            btns: hooks.get("btns").unwrap().clone()
+            btns: hooks.get("btns").unwrap().clone(),
+            close_icon: hooks.get("close_icon").unwrap().clone(),
+            modal: true
         };
 
         {
@@ -364,6 +385,35 @@ impl Dialog{
         }
 
         Ok(self)
+    }
+
+    pub fn with_modal(self, modal:bool)->Result<Self>{
+        self.inner()?.as_mut().unwrap().modal = modal;
+        Ok(self)
+    }
+    pub fn with_class(self, class:&str)->Result<Self>{
+        self.element.class_list().add_1(class)?;
+        Ok(self)
+    }
+    pub fn with_close_icon(self, show:bool)->Result<Self>{
+        {
+            let inner = self.inner()?;
+            let inner = inner.as_ref().unwrap();
+            if show{
+                inner.close_icon.remove_attribute("hidden")?;
+            }else{
+                inner.close_icon.set_attribute("hidden", "true")?;
+            }
+        }
+        Ok(self)
+    }
+    
+
+    fn on_mask_click(&self, _event:web_sys::MouseEvent, _target:Element)->Result<()>{
+        if !self.inner()?.as_ref().unwrap().modal{
+            self.clone().close()?;
+        }
+        Ok(())
     }
 
     fn on_btn_click(&self, event:web_sys::MouseEvent, target:Element)->Result<()>{
