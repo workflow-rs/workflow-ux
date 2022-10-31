@@ -349,7 +349,7 @@ impl Dialog{
                         }).ok();
                     }
                 ></div>
-                <h2 class="title" @title></h2>
+                <div class="head"><h2 class="title" @title></h2></div>
                 <div class="body" @body>
                     {body_html}
                 </div>
