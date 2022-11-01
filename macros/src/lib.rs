@@ -37,6 +37,10 @@ pub fn popup_menu(item: TokenStream) -> TokenStream {
 pub fn link(item: TokenStream) -> TokenStream {
     link::link_with_callback(item)
 }
+#[proc_macro]
+pub fn menu_link(item: TokenStream) -> TokenStream {
+    link::menu_link_with_callback(item)
+}
 
 #[proc_macro]
 pub fn link_with_callback(item: TokenStream) -> TokenStream {

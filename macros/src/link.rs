@@ -137,6 +137,32 @@ pub fn link_with_callback(input: TokenStream) -> TokenStream {
     }).into()
 }
 
+pub fn menu_link_with_callback(input: TokenStream) -> TokenStream {
+    let link = parse_macro_input!(input as LinkWithCallback);
+
+    let text = link.text;
+    // let cls = link.cls;
+    let module_type = link.module_type;
+    let menu = link.module_handler_fn;
+
+    (quote!{
+
+        {
+            workflow_ux::link::Link::new_for_callback(#text)?
+            .with_callback(Box::new(move ||{
+                // let target = target.clone();
+                //workflow_core::task::wasm::spawn(async move {
+                    #module_type::get().unwrap().menu.#menu.activate()
+                    .map_err(|e| {
+                        log_error!("menu activate: {}",e);
+                    }).ok();
+                //});
+                Ok(())
+            }))?
+        }
+    }).into()
+}
+
 
 
 
