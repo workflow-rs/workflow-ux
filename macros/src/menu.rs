@@ -203,7 +203,6 @@ pub fn popup_menu(input: TokenStream) -> TokenStream {
     let module_type = menu.module_type;
     let module_handler_fn = menu.module_handler_fn;
 
-
     (quote!{
 
         {
@@ -214,7 +213,10 @@ pub fn popup_menu(input: TokenStream) -> TokenStream {
                 }
                 let target = target.clone();
                 workflow_core::task::wasm::spawn(async move {
-                    #module_type::get().unwrap().#module_handler_fn().await.map_err(|e| { log_error!("{}",e); }).ok();
+                    #module_type::get().unwrap().#module_handler_fn()
+                    .await.map_err(|e| {
+                        log_error!("{}",e);
+                    }).ok();
                     //workflow_log::log_trace!("selecting target element: {:?}", target);
                     //target.select().ok();
                 });
@@ -225,6 +227,43 @@ pub fn popup_menu(input: TokenStream) -> TokenStream {
 
     }).into()
 }
+
+pub fn popup_menu_link(input: TokenStream) -> TokenStream {
+    let menu = parse_macro_input!(input as Menu);
+
+    let icon = menu.icon;
+    let parent = menu.parent;
+    let title = menu.title;
+    let module_type = menu.module_type;
+    let menu = menu.module_handler_fn;
+
+    (quote!{
+
+        {
+            workflow_ux::popup_menu::PopupMenuItem::new(&#parent, #title.into(), #icon)?
+            .with_callback(Box::new(move |target|{
+                if let Some(popup_menu) = workflow_ux::popup_menu::get_popup_menu(){
+                    popup_menu.close().map_err(|e| {
+                        log_error!("unable to close popup menu: {}", e);
+                    }).ok();
+                }
+                let target = target.clone();
+                workflow_core::task::wasm::spawn(async move {
+                    #module_type::get().unwrap().menu.#menu.activate()
+                    .map_err(|e| {
+                        log_error!("{}",e);
+                    }).ok();
+                    //workflow_log::log_trace!("selecting target element: {:?}", target);
+                    //target.select().ok();
+                });
+                Ok(())
+            }))?
+        }
+
+
+    }).into()
+}
+
 
 fn menu_impl(
     menu_type : Ident,
