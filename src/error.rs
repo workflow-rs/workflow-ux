@@ -8,6 +8,7 @@ use thiserror::Error;
 use workflow_core::channel::{SendError,RecvError};
 use std::io::Error as IoError;
 use core::num::{ParseIntError, ParseFloatError};
+use hex::FromHexError;
 
 #[macro_export]
 macro_rules! error {
@@ -84,10 +85,21 @@ pub enum Error {
     ParseFloatError(ParseFloatError),
 
     #[error("ParseIntError error: {0}")]
-    ParseIntError(ParseIntError)
+    ParseIntError(ParseIntError),
+
+    #[error("FromHexError error: {0}")]
+    FromHexError(FromHexError)
+    
 }
 
 unsafe impl Send for Error{}
+
+
+impl From<FromHexError> for Error {
+    fn from(error: FromHexError) -> Error {
+        Self::FromHexError(error)
+    }
+}
 
 impl From<ParseIntError> for Error {
     fn from(error: ParseIntError) -> Error {

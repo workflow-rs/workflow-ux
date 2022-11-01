@@ -10,8 +10,17 @@ use crate::task::FunctionDebounce;
 use workflow_core::describe_enum;
 use sha2::{Digest, Sha256};
 use md5;
+use hex;
 
 use super::input::FlowInputBase;
+
+#[derive(Clone, Debug)]
+pub enum AvatarValue{
+    Gravatar(Vec<u8>),
+    Libravatar(Vec<u8>),
+    Robohash(Vec<u8>),
+    Url(String)
+}
 
 #[derive(Clone)]
 #[describe_enum]
@@ -25,7 +34,7 @@ pub enum AvatarProvider{
 pub struct AvatarInner{
     pub provider: AvatarProvider,
     pub params: BTreeMap<&'static str, String>,
-    pub value: String,
+    pub value: Option<AvatarValue>,
     pub attributes:Attributes,
     pub docs: Docs,
     pub changeable:bool,
@@ -155,7 +164,7 @@ impl Avatar{
                 docs: docs.clone(),
                 provider: AvatarProvider::Gravatar,
                 params: BTreeMap::new(),
-                value:String::new(),
+                value: None,
                 changeable:true,
                 fallback,
                 email_field_handler:None,
@@ -322,7 +331,7 @@ impl Avatar{
     }
 
     fn on_change_click(&self)->Result<()>{
-        let updating = {self.inner()?.value.contains("|")};
+        let updating = {self.inner()?.value.is_some()};
         self.open_form(updating)?;
         Ok(())
     }
@@ -350,10 +359,11 @@ impl Avatar{
         }
         Ok(())
     }
-    fn set_inner_value(&self, value:String)->Result<()>{
-        self.inner()?.value = value.clone();
+    fn set_inner_value(&self, value:Option<AvatarValue>)->Result<()>{
+        let is_some = value.is_some();
+        self.inner()?.value = value;
 
-        if value.contains("|") {
+        if is_some {
             self.change_btn.element.set_inner_html(&i18n("Change"));
         }else{
             self.change_btn.element.set_inner_html(&i18n("Set"));
@@ -362,69 +372,74 @@ impl Avatar{
     }
     fn save(&self)->Result<bool>{
         if let Some(value) = self.serialize_value()?{
-            log_trace!("[Avatar]: value: {}", value);
-            self.set_inner_value(value)?;
+            log_trace!("[Avatar]: value: {:?}", value);
+            self.set_inner_value(Some(value))?;
             return Ok(true);
         }
         Ok(false)
     }
 
-    pub fn value(&self) -> Result<String> {
+    pub fn value(&self) -> Result<Option<AvatarValue>> {
         Ok(self.inner()?.value.clone())
     }
-    pub fn set_value(&self, value:String)->Result<()>{
+    pub fn set_value(&self, value:Option<AvatarValue>)->Result<()>{
         if let Some(clean) = self.deserialize_value(value)?{
-            self.set_inner_value(clean)?;
+            self.set_inner_value(Some(clean))?;
         }
         
         Ok(())
     }
 
-    fn deserialize_value(&self, value:String)->Result<Option<String>>{
-        let mut value = value;
-        if value.len() == 0{
-            value = "Gravatar".to_string();
-        }
-        let mut parts = value.split("|");
-        let p = if let Some(p) = parts.next(){p}else{return Ok(None)};
-        let provider = if let Some(p) = AvatarProvider::from_str(p){p}else{return Ok(None)};
-        log_trace!("deserialize_value: provider.as_str(): {}", provider.as_str());
-        self.provider_select.set_value(provider.as_str())?;
-        self.set_provider(provider.clone())?;
-        
-        let text_value = if let Some(text) = parts.next(){
-            text.to_string()
-        }else{
-            "".to_string()
+    fn deserialize_value(&self, value:Option<AvatarValue>)->Result<Option<AvatarValue>>{
+        let set_provider = |provider:AvatarProvider|->Result<()>{
+            self.provider_select.set_value(provider.as_str())?;
+            self.set_provider(provider.clone())?;
+            Ok(())
         };
-    
-        match provider {
-            AvatarProvider::Gravatar | AvatarProvider::Libravatar=>{
-                self.text_field.set_value("".to_string())?;
-                self.set_hash_input_value("md5", "".to_string())?;
-                self.set_hash_input_value("sha256", "".to_string())?;
-                let hash_type = if text_value.len() == 32 || text_value.len() == 0 {"md5"}else{"sha256"};
-                self.set_hash_input_value(hash_type, text_value)?;
-                self.set_hash_type(&hash_type)?;
+
+        let set_hash = |hash:Vec<u8>|->Result<()>{
+            let text_value = hex::encode(hash);
+            self.text_field.set_value("".to_string())?;
+            self.set_hash_input_value("md5", "".to_string())?;
+            self.set_hash_input_value("sha256", "".to_string())?;
+            let hash_type = if text_value.len() == 32 || text_value.len() == 0 {"md5"}else{"sha256"};
+            self.set_hash_input_value(hash_type, text_value)?;
+            self.set_hash_type(&hash_type)?;
+            Ok(())
+        };
+
+        let value = value.unwrap_or(AvatarValue::Gravatar(Vec::new()));
+
+        match value {
+            AvatarValue::Gravatar(hash)=>{
+                set_provider(AvatarProvider::Gravatar)?;
+                set_hash(hash)?;
             }
-            AvatarProvider::Robohash=>{
-                self.text_field.set_value("".to_string())?;
-                let mut set = Some("set2".to_string());
-                if let Some(text) = parts.next(){
-                    set = Some(text.to_string());
-                }
-                self.set_robotext(text_value, set)?;
+            AvatarValue::Libravatar(hash)=>{
+                set_provider(AvatarProvider::Libravatar)?;
+                set_hash(hash)?;
             }
-            AvatarProvider::Custom=>{
-                self.text_field.set_value(text_value.clone())?;
-                self.set_custom_url(text_value)?;
+            AvatarValue::Robohash(hash)=>{
+                set_provider(AvatarProvider::Robohash)?;
+                self.text_field.set_value("".to_string())?;
+                let text = hex::encode(hash);
+                let mut parts = text.split("|");
+                let text_value = parts.next().unwrap_or("").to_string();
+                
+                let set = parts.next().unwrap_or("set2");
+                self.set_robotext(text_value, Some(set.to_string()))?;
+            }
+            AvatarValue::Url(url)=>{
+                set_provider(AvatarProvider::Custom)?;
+                self.text_field.set_value(url.clone())?;
+                self.set_custom_url(url)?;
             }
         }
         
         Ok(self.serialize_value()?)
     }
 
-    fn serialize_value(&self)->Result<Option<String>>{
+    fn serialize_value(&self)->Result<Option<AvatarValue>>{
         let locked = self.inner()?;
         let params = &locked.params;
         let hash = if let Some(hash) = params.get("hash"){
@@ -438,13 +453,15 @@ impl Avatar{
                 if hash.len() == 0{
                     return Ok(None);
                 }
-                format!("Gravatar|{hash}")
+                //format!("Gravatar|{hash}")
+                AvatarValue::Gravatar(hex::decode(hash)?)
             }
             AvatarProvider::Libravatar=>{
                 if hash.len() == 0{
                     return Ok(None);
                 }
-                format!("Robohash|{hash}")
+                //format!("Robohash|{hash}")
+                AvatarValue::Libravatar(hex::decode(hash)?)
             }
             AvatarProvider::Robohash=>{
                 let set = match params.get("robo-set"){
@@ -455,7 +472,9 @@ impl Avatar{
                     Some(s)=>Self::clean_str(s)?.replace("|", ""),
                     None=>return Ok(None)
                 };
-                format!("Robohash|{text}|{set}")
+                //format!("Robohash|{text}|{set}")
+                let hash = hex::encode(format!("{text}|{set}"));
+                AvatarValue::Robohash(hex::decode(hash)?)
             }
             AvatarProvider::Custom=>{
                 let url = match params.get("url"){
@@ -465,7 +484,9 @@ impl Avatar{
                 if url.len() > 200{
                     return Ok(None)
                 }
-                format!("Custom|{}", Self::clean_str(url)?)
+                //format!("Custom|{}", Self::clean_str(url)?)
+                AvatarValue::Url(url)
+
             }
         };
         Ok(Some(value))
