@@ -431,7 +431,7 @@ impl Avatar{
             }
             AvatarValue::Url(url)=>{
                 set_provider(AvatarProvider::Custom)?;
-                self.text_field.set_value(url.clone())?;
+                self.url_field.set_value(url.clone())?;
                 self.set_custom_url(url)?;
             }
         }
