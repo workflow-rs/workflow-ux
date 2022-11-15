@@ -154,7 +154,6 @@ pub fn view(attr: TokenStream, item: TokenStream) -> TokenStream {
         unsafe impl #struct_params Sync for #struct_name #struct_params { }
         
         impl #struct_name #struct_params {
-            // fn element() -> workflow_allocator::result::Result<web_sys::Element> { 
             fn element() -> web_sys::Element { 
                 workflow_ux::document().create_element("workspace-view").expect("unable to create workspace-view element")
             }

@@ -1,16 +1,8 @@
 use std::fmt;
 use std::sync::Mutex;
-// use workflow_allocator::generate_random_pubkey;
-// use workflow_allocator::prelude::*;
-// use workflow_allocator::result::Result;
-// use workflow_allocator::error::*;
 use workflow_ux::error::Error;
 use workflow_ux::result::Result;
-// use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
-// use crate::utils::{document,get_element_by_id};
-// use crate::dom::document;
-//use workflow_log::log_trace;
 use workflow_ux::prelude::*;
 
 use crate::attributes::Attributes;
