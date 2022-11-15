@@ -4,6 +4,7 @@ use crate::{document, result::Result, error::Error};
 use crate::icon::{IconInfoMap, icon_root};
 use crate::prelude::log_trace;
 use crate::controls::svg::SvgNode;
+use crate::style::ControlStyle;
 
 use convert_case::{Case, Casing};
 use wasm_bindgen::JsCast;
@@ -108,16 +109,16 @@ fn build_theme_content(theme:&str, icons:Arc<Mutex<IconInfoMap>>)->ThemeContents
     }
 
     ThemeContents{
-        css: format!("body{{{}}}\n{}", var_list.join(""), icons_list.join("")),
+        css: format!("body{{\n/****** variables ******/\n{}}}\n\n/****** icons ******/\n{}", var_list.join(""), icons_list.join("")),
         svg: svg_list.join("")
     }
 }
 
 fn get_theme_content(theme:&str)->ThemeContents{
-    let theme_opt = if theme.eq("dark"){
-        unsafe{DARK_THEME.as_ref()}
-    }else{
-        unsafe{LIGHT_THEME.as_ref()}
+    let theme_opt = match theme{
+        "dark"=>unsafe{DARK_THEME.as_ref()},
+        "light"=>unsafe{LIGHT_THEME.as_ref()},
+        _=>None
     };
 
     match theme_opt {
@@ -178,7 +179,10 @@ pub fn set_theme(theme: Theme) -> Result<()> {
         }
     }
     if update{
-        theme_el.set_inner_html(&content.css);
+        let sep = "\n/**************************************************/\n";
+        let msg1 = format!("{sep}/*{: ^48}*/{sep}", "WorkflowUX : Controls");
+        let msg2 = format!("{sep}/*{: ^48}*/{sep}", "WorkflowUX : Theme");
+        theme_el.set_inner_html(&format!("{msg1}{}\n\n{msg2}{}", ControlStyle::get_str(), content.css));
         theme_svg_el.set_inner_html(&content.svg);
         theme_el.set_attribute("app-theme", &name)?;
         theme_svg_el.set_attribute("app-theme", &name)?;

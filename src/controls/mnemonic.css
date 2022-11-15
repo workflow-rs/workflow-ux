@@ -1,0 +1,31 @@
+
+.mnemonic-input .words{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr 1fr 1fr 1fr;
+    max-width: 100%;
+}
+.mnemonic-input .words input{
+    width: calc(100% - 4px);
+    min-width: 50px;
+    box-sizing: border-box;
+    margin: 2px;
+    text-align:center;
+    border: var(--workflow-flow-input-border, 2px solid var(--workflow-border-color, var(--workflow-primary-color, rgba(0,151,115,1))));
+    border-radius: var(--workflow-input-border-radius, 8px);
+    padding: var(--workflow-input-padding,10px);
+    color: var(--workflow-input-color, inherit);
+    font-size: var(--workflow-input-font-size, 1rem);
+    font-weight: var(--workflow-input-font-weight, 400);
+    font-family: var(--workflow-input-font-family);
+    line-height: var(--workflow-input-line-height, 1.2);
+    box-shadow: var(--workflow-input-box-shadow);
+    letter-spacing: var(--workflow-input-letter-spacing, inherit);
+}
+.mnemonic-input .words input:focus{
+    outline:none;
+}
+@media (max-width:500px){
+    .mnemonic-input .words{
+        grid-template-columns:1fr 1fr 1fr 1fr;
+    }
+}
