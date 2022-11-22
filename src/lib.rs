@@ -23,7 +23,7 @@ pub mod layout;
 pub mod module;
 pub mod application;
 pub mod workspace;
-// pub mod enums;
+pub mod wasm;
 pub mod view;
 pub mod link;
 pub mod image;
@@ -48,8 +48,6 @@ pub use workflow_core::{
 pub mod macros {
     pub use workflow_ux_macros::*;
 }
-
-// pub use dom::{ document, window };
 
 pub mod hash {
     pub use ahash::AHashSet as HashSet;
