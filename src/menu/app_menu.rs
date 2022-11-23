@@ -4,7 +4,7 @@
 use crate::result::Result;
 pub use crate::prelude::Element;
 
-pub use super::{MainMenu};
+pub use super::MainMenu;
 pub use super::{PopupMenu, PopupMenuItem};
 pub use super::{BottomMenu, BottomMenuItem};
 

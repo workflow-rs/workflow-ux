@@ -1,5 +1,5 @@
 use crate::{icon::Icon, result::Result, prelude::*, error::Error};
-use crate::app_drawer::get_drawer;
+use crate::app_layout::get_layout;
 
 use super::{select, Menu, MenuCaption};
 
@@ -15,8 +15,8 @@ impl MenuItem {
 
     pub fn select(&self) -> Result<()> {
         select(&self.element_wrapper.element)?;
-        if let Some(drawer) = get_drawer(){
-            drawer.close_left_drawer();
+        if let Some(layout) = get_layout(){
+            layout.close_left_drawer();
         }
         SectionMenu::select_by_id(&self.section_menu_id)?;
         Ok(())

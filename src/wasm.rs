@@ -1,22 +1,24 @@
 use wasm_bindgen::prelude::*;
+use crate::result::Result;
+use workflow_dom::inject::{Content, inject_blob};
+use workflow_wasm::init::init_workflow;
+pub use workflow_wasm::init::{global, workflow};
 
-#[wasm_bindgen(js_name="bindUX")]
-pub fn bind_ux(workflow: &JsValue, modules: &JsValue) -> std::result::Result<(), JsValue> {
-    let global = js_sys::Object::new();
-    js_sys::Reflect::set(&js_sys::global(), &"$workflow$".into(), &global)?;
-    js_sys::Reflect::set(&global,&"workflow".into(),&workflow)?;
-    js_sys::Reflect::set(&global,&"modules".into(), &modules)?;
+pub fn init_ux(workflow: &JsValue, modules: &JsValue) -> Result<()> {
+    init_workflow(workflow, modules)?;
     Ok(())
 }
 
-pub fn global() -> std::result::Result<JsValue,JsValue> {
-    Ok(js_sys::Reflect::get(&js_sys::global(), &"$workflow".into())?)
+#[wasm_bindgen(js_name="loadComponents")]
+pub fn load_components(flow_ux_path:&str)->Result<()>{
+    println!("flow_ux_path:{:?}", flow_ux_path);
+
+    crate::app::layout::AppLayout::load_js(flow_ux_path)?;
+    Ok(())
 }
 
-pub fn workflow() -> std::result::Result<JsValue,JsValue> {
-    Ok(js_sys::Reflect::get(&global()?, &"workflow".into())?)
-}
-
-pub fn modules() -> std::result::Result<JsValue,JsValue> {
-    Ok(js_sys::Reflect::get(&global()?, &"modules".into())?)
+pub fn load_component(flow_ux_path:&str, name:&str, cmp:&str)->Result<()>{
+    let js = cmp.replace("[FLOW-UX-PATH]", flow_ux_path);
+    inject_blob(name, Content::Module(js.as_bytes()))?;
+    Ok(())
 }
