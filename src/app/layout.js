@@ -295,6 +295,13 @@ export class WorkflowAppLayout extends BaseElement{
 		}
 	}
 
+	addEventListener(eventName, ...args){
+		super.addEventListener(eventName, ...args);
+		if (eventName == "ready" && this.isReady){
+			this.fire("ready");
+		}
+	}
+
 	firstUpdated(...args){
 		this.isReady = true;
 		this.fire("ready");
