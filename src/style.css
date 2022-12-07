@@ -40,8 +40,8 @@ layout-root{display:flex;flex-direction:column;}
     display:block;
     padding-bottom:0px;
 }
-.form-container.with-form-footer> workflow-layout:last-of-type {
-    margin-bottom:calc(var(--form-footer-height, 70px) + 32px);
+.form-container.with-form-footer {
+    padding-bottom:calc(var(--form-footer-height, 70px) + 32px);
 }
 .form-container .workflow-form-footer{
     position:absolute;

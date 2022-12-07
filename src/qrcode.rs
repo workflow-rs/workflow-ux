@@ -10,7 +10,7 @@ use qrcodegen::QrCodeEcc;
 pub struct SVGData{
     pub data:String,
     pub finder:String,
-    pub logo_start:u32,
+    pub logo_start:f32,
     pub logo_size:u32
 }
 
@@ -32,11 +32,11 @@ impl Default for Colors{
 
 #[derive(Clone)]
 pub struct Options{
-    border: u16,
-    ecl: QrCodeEcc,
-    logo_size: u8,
-    logo: Option<String>,
-    colors: Option<Colors>
+    pub border: u16,
+    pub ecl: QrCodeEcc,
+    pub logo_size: u8,
+    pub logo: Option<String>,
+    pub colors: Option<Colors>
 }
 impl Default for Options{
     fn default() -> Self {
@@ -145,7 +145,7 @@ pub fn qr_to_svg(qr: &QrCode, options:&Options)->Result<String>{
             &format!(
                 "<image href=\"{}\" x=\"{1}\" y=\"{1}\" height=\"{2}\" width=\"{2}\" />",
                 img,
-                info.logo_start + (options.border as u32),
+                info.logo_start,
                 info.logo_size
             )
         );
@@ -180,6 +180,8 @@ pub fn qr_svg_path_data(qr: &QrCode, border: u16, logo_size:Option<u8>) -> Resul
     }
 	
 	//println!("size:{size}, border:{border}");
+    //log_trace!("logo_start:{logo_start}, logo_end:{logo_end}");
+
 	for y in 0 .. size {
 		for x in 0 .. size {
 			if !qr.get_module(x, y){
@@ -198,6 +200,7 @@ pub fn qr_svg_path_data(qr: &QrCode, border: u16, logo_size:Option<u8>) -> Resul
 			}else{
 				if with_logo && y>= logo_start && y<=logo_end && x>= logo_start && x<=logo_end{
 					//
+                    //log_trace!("x:{x}, y:{y}");
 				}else{
 					if x != 0 || y != 0 {
                         data += " ";
@@ -208,11 +211,16 @@ pub fn qr_svg_path_data(qr: &QrCode, border: u16, logo_size:Option<u8>) -> Resul
 		}
 	}
 
-
+    let logo_size = (logo_end - logo_start) as u32;
+    let mut logo_start = logo_start as f32 + border as f32;
+    //if logo_start%2.0 == 0.0{
+        logo_start += 0.5;
+    //}
+    //log_trace!("size:{size}, logo_start:{logo_start}, logo_size: {logo_size}");
 	Ok(SVGData{
         data,
         finder,
-        logo_start: logo_start as u32,
-        logo_size: (logo_end - logo_start) as u32
+        logo_start,
+        logo_size
     })
 }
