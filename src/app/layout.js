@@ -296,6 +296,8 @@ export class WorkflowAppLayout extends BaseElement{
 	}
 
 	firstUpdated(...args){
+		this.isReady = true;
+		this.fire("ready");
 		this.swipeThreshold = this["swipe-threshold"] || 100;
 		super.firstUpdated(...args);
 		this.mobileLayoutQueryEl = this.renderRoot.querySelector(".mobile-layout-query");
