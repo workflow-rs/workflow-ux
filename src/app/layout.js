@@ -1,7 +1,4 @@
-import {
-	BaseElement, html, css, ScrollbarStyle, isSmallScreen as isMobile, svg,
-	dpc
-} from '[FLOW-UX-PATH]';
+import {BaseElement, html, css, ScrollbarStyle} from '[FLOW-UX-PATH]';
 
 let isTouchCapable = 'ontouchstart' in window ||
 	window.DocumentTouch && document instanceof window.DocumentTouch;/* ||
@@ -21,6 +18,11 @@ export class WorkflowAppLayout extends BaseElement{
 			"min-left-drawer":{type:Boolean, _reflect:true},
 			"swipe-threshold": {type: Number},
 			"scroll-margin": {type: Number},
+			"mobile-layout-max-width":{type: Number},
+			"hide-right-drawer":{type:Boolean},
+			"hide-bottom-menu":{type:Boolean},
+			"hide-menu-toggler":{type:Boolean},
+			"basic-layout":{type:Boolean}
 		}
 	}
 	static get styles(){
@@ -218,30 +220,57 @@ export class WorkflowAppLayout extends BaseElement{
 		`]
 	}
 	render(){
-		return html`
-			<header class="header-outer">
-				<slot name="header-prefix"></slot>
-				<fa-icon class="menu-btn"
-					icon="${this['menu-icon'] || 'bars'}" 
-					@click="${this.toggleFloatingLeftDrawer}"></fa-icon>
-				<slot name="header-prefix2"></slot>
-				<div class="header"><slot name="header"></slot></div>
-				<slot name="header-suffix"></slot>
-			</header>
-			<div class="outer">
-				<div class="drawer left-drawer">
-					<slot name="left-drawer"></slot>
+		if (this["basic-layout"]){
+			return html`
+				<header class="header-outer">
+					<slot name="header-prefix"></slot>
+					<slot name="header-prefix2"></slot>
+					<div class="header"><slot name="header"></slot></div>
+					<slot name="header-suffix"></slot>
+				</header>
+				<div class="outer">
+					<div class="drawer left-drawer">
+						<slot name="left-drawer"></slot>
+					</div>
+					<div class="main"><slot id="slot-main" name="main"></slot></div>
+					<div class="mask" @click=${this.onMaskClick}></div>
 				</div>
-				<div class="main"><slot id="slot-main" name="main"></slot></div>
-				<div class="drawer right-drawer"><slot name="right-drawer"></slot></div>
-				<flow-btn class="right-drawer-toggler"
-					@click=${this.toggleFloatingRightDrawer}
-					icon="${this['right-drawer-toggle-icon']}">
-				</flow-btn>
-				<div class="bottom-menu"><slot name="bottom-nav"></slot></div>
-				<div class="mask" @click=${this.onMaskClick}></div>
-			</div>
-		`;
+			`;
+		}else{
+			return html`
+				<header class="header-outer">
+					<slot name="header-prefix"></slot>
+					${
+						this["hide-menu-toggler"]? '':
+						html`<fa-icon class="menu-btn"
+							icon="${this['menu-icon'] || 'bars'}" 
+							@click="${this.toggleFloatingLeftDrawer}"></fa-icon>`
+					}
+					<slot name="header-prefix2"></slot>
+					<div class="header"><slot name="header"></slot></div>
+					<slot name="header-suffix"></slot>
+				</header>
+				<div class="outer">
+					<div class="drawer left-drawer">
+						<slot name="left-drawer"></slot>
+					</div>
+					<div class="main"><slot id="slot-main" name="main"></slot></div>
+					${
+						this["hide-right-drawer"]? '':
+						html`<div class="drawer right-drawer"><slot name="right-drawer"></slot></div>
+						<flow-btn class="right-drawer-toggler"
+							@click=${this.toggleFloatingRightDrawer}
+							icon="${this['right-drawer-toggle-icon']}">
+						</flow-btn>`
+					}
+					${
+						this["hide-bottom-menu"]? '':
+						html`<div class="bottom-menu"><slot name="bottom-nav"></slot></div>`
+					}
+					<div class="mask" @click=${this.onMaskClick}></div>
+				</div>
+			`;
+		}
 	}
 
 	constructor(){
@@ -360,7 +389,8 @@ export class WorkflowAppLayout extends BaseElement{
 	isSmallScreen(){
 		//console.log("xxxxx", this.mobileLayoutQueryEl.getBoundingClientRect().width)
 		//return this.mobileLayoutQueryEl.getBoundingClientRect().width > 0;
-		return window.matchMedia(`(max-width:${mobileLayoutMaxWidth}px)`).matches;
+		let maxWidth = this["mobile-layout-max-width"] || mobileLayoutMaxWidth;
+		return window.matchMedia(`(max-width:${maxWidth}px)`).matches;
 		//return window.innerWidth <= mobileLayoutMaxWidth;
 		//return this.getBoundingClientRect().width < mobileLayoutMaxWidth;
 	}
@@ -539,7 +569,7 @@ export class WorkflowAppLayout extends BaseElement{
 		//)
 
 		if(!dragged){
-			if ( moveX < 5 ||  moveY > 10){
+			if ( moveX < 5 ||  moveY > 10 || (!this.drawerOpen && this.hideRightDrawer && moveXRound<0)){
 				if (!_dragged){
 					this.appLog(`drag failed: (${moveX}, ${moveY})`);
 				}

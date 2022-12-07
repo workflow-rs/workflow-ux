@@ -34,7 +34,8 @@
 }
 layout-root{height:100%;box-sizing:border-box;}
 layout-root{display:flex;flex-direction:column;}
-[hide]{display:none;}
+[hide],
+[hidden]{display:none;}
 
 .form-container.with-form-footer{
     display:block;
@@ -78,4 +79,17 @@ workflow-app-layout.almost-scrolled .form-container .workflow-form-footer{
     background-color:#FFF;
     margin:0px;
     z-index:10000;
+}
+
+.workflow-qrcode{
+    width:150px;
+}
+.workflow-qrcode .qr-code{
+    height:100%;
+}
+
+
+.icon[icon]{
+    background:center no-repeat;
+    background-size:contain;
 }
