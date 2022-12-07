@@ -7,9 +7,11 @@ use qrcodegen::QrCode;
 use qrcodegen::QrCodeEcc;
 //use qrcodegen::QrSegment;
 //use qrcodegen::Version;
-pub struct SVGPathData{
+pub struct SVGData{
     pub data:String,
-    pub finder:String
+    pub finder:String,
+    pub logo_start:u32,
+    pub logo_size:u32
 }
 
 #[derive(Clone)]
@@ -30,18 +32,20 @@ impl Default for Colors{
 
 #[derive(Clone)]
 pub struct Options{
-    border:u16,
+    border: u16,
     ecl: QrCodeEcc,
-    logo_size:Option<u8>,
-    colors:Option<Colors>
+    logo_size: u8,
+    logo: Option<String>,
+    colors: Option<Colors>
 }
 impl Default for Options{
     fn default() -> Self {
         Self {
-            border: 5,
+            border:4,
             ecl: QrCodeEcc::High,
-            logo_size: None,
-            colors:None
+            logo_size: 20,
+            logo: None,
+            colors: None
         }
     }
 }
@@ -49,26 +53,29 @@ impl Default for Options{
 impl Options{
     pub fn from_attributes(attributes: &Attributes)->Result<Self>{
         let mut options = Self::default();
-        if let Some(border) = attributes.get("qr-border"){
+        if let Some(border) = attributes.get("qr_border"){
             let border:u16 = border.parse()?;
             options.border = border;
         }
 
-        if let Some(logo_size) = attributes.get("qr-logo_size"){
-            let logo_size:u8 = logo_size.parse()?;
-            options.logo_size = Some(logo_size);
+        if let Some(logo_size) = attributes.get("qr_logo_size"){
+            options.logo_size = logo_size.parse()?;
         }
 
         let mut colors = Colors::default();
 
-        if let Some(color) = attributes.get("qr-bg-color"){
+        if let Some(color) = attributes.get("qr_bg_color"){
             colors.background = color.clone();
         }
-        if let Some(color) = attributes.get("qr-data-color"){
+        if let Some(color) = attributes.get("qr_data_color"){
             colors.data = color.clone();
         }
-        if let Some(color) = attributes.get("qr-finder-color"){
+        if let Some(color) = attributes.get("qr_finder_color"){
             colors.finder = color.clone();
+        }
+
+        if let Some(logo) = attributes.get("qr_logo"){
+            options.logo = Some(logo.clone());
         }
 
         options.colors = Some(colors);
@@ -89,7 +96,7 @@ impl Options{
     }
 
     pub fn has_logo(&self)->bool{
-        self.logo_size.is_some()
+        self.logo.is_some()
     }
 
 }
@@ -113,7 +120,8 @@ pub fn qr_to_svg(qr: &QrCode, options:&Options)->Result<String>{
     svg.push_str("<?xml version=\"1.0\" encoding=\"UTF-8\">");
     svg.push_str("<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">");
 
-    let view_size = qr.size().checked_add(options.border.checked_mul(2).unwrap() as i32).unwrap();
+    let size = qr.size();
+    let view_size = size.checked_add(options.border.checked_mul(2).unwrap() as i32).unwrap();
     svg.push_str(
         &format!("<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 {view_size} {view_size}\" version=\"1.1\" 
     xmlns=\"http://www.w3.org/2000/svg\">"));
@@ -123,16 +131,32 @@ pub fn qr_to_svg(qr: &QrCode, options:&Options)->Result<String>{
 
     svg.push_str(&format!("<rect width=\"100%\" height=\"100%\" fill=\"{}\" />", colors.background));
 
-    let path_data = qr_svg_path_data(qr, options.border, options.logo_size)?;
-    svg.push_str(&format!("<path d=\"{}\" fill=\"{}\" />", path_data.data, colors.data));
-    svg.push_str(&format!("<path d=\"{}\" fill=\"{}\" />", path_data.finder, colors.finder));
+    let mut logo_size = None;
+    if options.has_logo(){
+        logo_size = Some(options.logo_size);
+    }
+
+    let info = qr_svg_path_data(qr, options.border, logo_size)?;
+    svg.push_str(&format!("<path d=\"{}\" fill=\"{}\" />", info.data, colors.data));
+    svg.push_str(&format!("<path d=\"{}\" fill=\"{}\" />", info.finder, colors.finder));
+
+    if let Some(img) = &options.logo{
+        svg.push_str(
+            &format!(
+                "<image href=\"{}\" x=\"{1}\" y=\"{1}\" height=\"{2}\" width=\"{2}\" />",
+                img,
+                info.logo_start + (options.border as u32),
+                info.logo_size
+            )
+        );
+    }
 
     svg.push_str("</svg>");
 
     Ok(svg)
 }
 
-pub fn qr_svg_path_data(qr: &QrCode, border: u16, logo_size:Option<u8>) -> Result<SVGPathData> {
+pub fn qr_svg_path_data(qr: &QrCode, border: u16, logo_size:Option<u8>) -> Result<SVGData> {
     let border = border as i32;
 	let mut data = String::new();
 	let mut finder = String::new();
@@ -184,8 +208,11 @@ pub fn qr_svg_path_data(qr: &QrCode, border: u16, logo_size:Option<u8>) -> Resul
 		}
 	}
 
-	Ok(SVGPathData{
+
+	Ok(SVGData{
         data,
-        finder
+        finder,
+        logo_start: logo_start as u32,
+        logo_size: (logo_end - logo_start) as u32
     })
 }
