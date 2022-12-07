@@ -9,6 +9,7 @@ use workflow_core::channel::{SendError,RecvError};
 use std::io::Error as IoError;
 use core::num::{ParseIntError, ParseFloatError};
 use hex::FromHexError;
+use qrcodegen::DataTooLong;
 
 #[macro_export]
 macro_rules! error {
@@ -88,7 +89,10 @@ pub enum Error {
     ParseIntError(ParseIntError),
 
     #[error("FromHexError error: {0}")]
-    FromHexError(FromHexError)
+    FromHexError(FromHexError),
+
+    #[error("DataTooLong error: {0}")]
+    DataTooLong(#[from] DataTooLong)
     
 }
 

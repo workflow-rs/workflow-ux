@@ -32,6 +32,7 @@ pub use crate::controls::base_element::BaseElement;
 pub use crate::controls::select::FlowMenuBase;
 pub use crate::create_el;
 pub use crate::pagination::*;
+pub use crate::qrcode;
 pub use web_sys::{
     Document,
     Element,

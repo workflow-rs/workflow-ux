@@ -1,0 +1,46 @@
+.workflow-pagination-box{text-align:center;padding:10px 5px;}
+.workflow-pagination{display: inline-block;}
+.workflow-pagination-box[disabled]{display:none}
+.workflow-pagination a{
+    color: var(--workflow-pagination-color, var(--flow-pagination-color, inherit));
+    float: left;
+    padding: 8px 16px;
+    text-decoration: none;
+    transition: background-color .3s;
+    border: 2px solid var(--flow-btn-border-color, var(--flow-border-color));
+    border-color:var(--workflow-pagination-border-color, var(--workflow-btn-border-color, var(--flow-btn-border-color, var(--flow-border-color))));
+    margin:var(--workflow-pagination-margin, 2px 4px);
+    cursor:pointer;
+    user-select:none;
+    border-radius:var(--flow-btn-radius, 8px);
+}
+@media (max-width:768px){
+    .workflow-pagination a{
+        /*padding:8px 16px;*/
+        margin: 0px 2px;
+        font-size:0.8rem;
+    }
+}
+.workflow-pagination a[disabled]{
+    opacity:0.5;
+}
+.workflow-pagination a[hidden]{display:none}
+.workflow-pagination a[active]{
+    background:var(--workflow-pagination-active-bg, var(--flow-btn-border-color, var(--flow-border-color)));
+    color:var(--workflow-pagination-active-color, #FFF);
+    border:1px solid #2489da;
+    border-color:var(--workflow-pagination-active-border-color, var(--flow-btn-border-color, var(--flow-border-color)));
+}
+.workflow-pagination a[active],
+.workflow-pagination a[disabled]{
+    cursor:default;
+}
+.workflow-pagination a:hover:not([active]):not([disabled]){
+    border-color:var(--workflow-pagination-hover-border-color, var(--workflow-btn-hover-border-color, var(--flow-btn-hover-border-color, inherit) ));
+    background-color:var(--workflow-pagination-hover-bg-color, var(--workflow-btn-hover-bg-color, rgba(255,255,255, 0.2) ));
+    color:var(--workflow-pagination-hover-color, var(--workflow-btn-hover-color, var(--flow-btn-hover-color, inherit)));
+}
+.workflow-pagination a.first,
+.workflow-pagination a.last{
+    display:none;
+}

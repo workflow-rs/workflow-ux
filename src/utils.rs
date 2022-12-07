@@ -2,6 +2,7 @@ use workflow_ux::error::Error;
 use workflow_ux::result::Result;
 use wasm_bindgen::JsValue;
 use workflow_html::{html, Html, Render};
+use workflow_log::log_error;
 use crate::markdown::markdown_to_html;
 use crate::controls::md::MD;
 use web_sys::{
@@ -31,7 +32,14 @@ pub fn local_storage() -> Storage {
 }
 
 pub fn find_el(selector:&str, error_msg:&str) -> Result<Element>{
-    let element = match document().query_selector(selector).expect(&Error::MissingElement(error_msg.into(), selector.into() ).to_string()){
+    let el_opt = match document().query_selector(selector){
+        Ok(el_opt) => el_opt,
+        Err(err)=>{
+            log_error!("MissingElement:error: {:?}, selector:{selector}, error_msg:{error_msg}", err);
+            return Err(Error::MissingElement(error_msg.into(), selector.into()));
+        }
+    };
+    let element = match el_opt{
         Some(el)=>el,
         None=>return Err(Error::MissingElement(error_msg.into(), selector.into() ))
     };

@@ -26,6 +26,7 @@ workflow-log = { path = "../workflow-log" }
 workflow-html = { path = "../workflow-html" }
 workflow-wasm = { path = "../workflow-wasm" }
 workflow-dom = { path = "../workflow-dom" }
+qrcodegen = "1.8.0"
 
 workflow-ux-macros = { path = "macros" }
 

@@ -1,4 +1,4 @@
-use crate::prelude::*;
+use crate::{prelude::*, error};
 use crate::result::Result;
 use crate::wasm::load_component;
 
@@ -13,21 +13,21 @@ pub fn set_layout(layout: Arc<AppLayout>){
 
 #[wasm_bindgen]
 extern "C" {
-    # [wasm_bindgen (extends = BaseElement,  js_name = FlowAppDrawer , typescript_type = "FlowAppDrawer")]
+    # [wasm_bindgen (extends = BaseElement,  js_name = WorkflowAppLayout , typescript_type = "WorkflowAppLayout")]
     // "The `AppLayout` class.
     #[derive(Debug, Clone, PartialEq, Eq)]
     pub type AppLayout;
 
-    #[wasm_bindgen (structural , method , js_class = "AppDrawer" , js_name = "toggleLeftDrawer")]
+    #[wasm_bindgen (method, js_name = "toggleLeftDrawer")]
     pub fn toggle_left_drawer(this: &AppLayout);
 
-    #[wasm_bindgen (structural , method , js_class = "AppDrawer" , js_name = "closeLeftDrawer")]
+    #[wasm_bindgen (method, js_name = "closeLeftDrawer")]
     pub fn close_left_drawer(this: &AppLayout);
 
-    #[wasm_bindgen (structural , method , js_class = "AppDrawer" , js_name = "toggleRightDrawer")]
+    #[wasm_bindgen (method, js_name = "toggleRightDrawer")]
     pub fn toggle_right_drawer(this: &AppLayout);
 
-    #[wasm_bindgen (structural , method , js_class = "AppDrawer" , js_name = "closeRightDrawer")]
+    #[wasm_bindgen (method, js_name = "closeRightDrawer")]
     pub fn close_right_drawer(this: &AppLayout);
 
 }
@@ -41,13 +41,15 @@ impl AppLayout{
     }
 
     pub fn get(selector:&str)->Result<Self>{
-        let drawer_el_opt = document().query_selector(selector)?;
-        if drawer_el_opt.is_none(){
-            panic!("Unable to find `{}` element for AppLayout", selector);
-        }
-        let drawer = drawer_el_opt.unwrap().dyn_into::<AppLayout>()?;
-        set_layout(Arc::new(drawer.clone()));
-        Ok(drawer)
+        let layout_el = find_el(selector, "missing workspace AppLayout element")?;
+        let layout = match layout_el.dyn_into::<AppLayout>(){
+            Ok(el)=>el,
+            Err(el)=>{
+                return Err(error!("Unable to cast '{selector}' to AppLayout, JsValue:{:?}", el));
+            }
+        };
+        set_layout(Arc::new(layout.clone()));
+        Ok(layout)
     }
 }
 

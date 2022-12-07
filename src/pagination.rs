@@ -4,6 +4,9 @@ use crate::result::Result;
 use std::{sync::{Arc, Mutex}, fmt::Debug};
 use workflow_log::log_error;
 
+pub static CSS:&'static str = include_str!("pagination.css");
+
+
 #[derive(Debug)]
 pub struct PaginationPage{
     pub page:u32,

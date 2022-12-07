@@ -1,0 +1,88 @@
+
+.workflow-dialog{
+    position:fixed;
+    top:0px;right:0px;bottom:0px;left:0px;
+    width:100%;
+    height:100%;
+    display:flex;
+    align-items: center;
+    justify-content: center;
+    z-index:-1000;
+    opacity:0;
+    transition:opacity 0.5s ease;
+    background-color:var(--flow-dialog-mask-color, var(--workflow-popup-menu-overlay-color, rgba(255, 255, 255, 0.7)));
+}
+.workflow-dialog.open{
+    opacity:1;
+    z-index:10000;
+}
+
+.workflow-dialog-inner{
+    max-width:95%;
+    min-width:300px;
+    max-height:95%;
+    min-height:300px;
+    display:flex;
+    flex-direction:column;
+    background-color:var(--flow-background-color, var(--panel-bg-color));
+    border:2px solid var(--flow-border-color, var(--flow-primary-color));
+    border-radius:20px;
+    /*box-shadow: 20px 20px 60px var(--panel-box-shadow-color),
+        -20px -20px 60px var(--panel-bg-color);*/
+    -webkit-box-shadow: 9px 11px 21px -5px rgba(0,0,0,0.75);
+    -moz-box-shadow: 9px 11px 21px -5px rgba(0,0,0,0.75);
+    /*box-shadow: 9px 11px 21px -5px rgba(0,0,0,0.75);*/
+    box-shadow: 4px 6px 20px -5px rgb(0 0 0 / 75%);
+    position: relative;
+}
+.workflow-dialog-mask{
+    position:absolute;
+    top:0px;
+    left:0px;
+    z-index:-1;
+    width:100%;
+    height:100%;
+    /*background-color: #16b7214f;*/
+}
+.workflow-dialog-inner .dialog-close-icon{
+    cursor:pointer;
+    position:absolute;
+    right:10px;
+    top:10px;
+    width:32px;
+    height:32px;
+}
+.workflow-dialog-inner .title{
+    padding:0px 15px;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    margin-right:40px;
+}
+.workflow-dialog-inner .body{
+    flex:1;overflow:auto;
+    padding:15px;
+}
+.workflow-dialog-inner .actions{
+    display:flex;
+    flex-direction:row;
+    align-items:center;
+    justify-content:space-between;
+    padding:10px;
+    flex-wrap:wrap;
+}
+.workflow-dialog-inner .actions>div{
+    /*border:0px solid #DEDEDE;*/
+    display:flex;
+    justify-content:center;
+    padding:5px;margin:2px;
+    box-sizing:border-box;
+}
+.workflow-dialog-inner .actions flow-btn:not(:last-child){
+    margin-right:5px;
+}
+.workflow-dialog-inner .actions>div.left-buttons{
+    justify-content:flex-start;
+}
+.workflow-dialog-inner .actions>div.right-buttons{
+    justify-content:flex-end;
+}

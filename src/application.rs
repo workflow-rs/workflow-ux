@@ -17,7 +17,7 @@ static mut APPLICATION : Option<Application> = None;
 
 impl Application {
 
-    pub fn new() -> Result<Application> {
+    pub fn new(el_selector:Option<&str>) -> Result<Application> {
         log_trace!("Creating Workflow Application");
 
         //console_error_panic_hook::set_once();
@@ -27,9 +27,9 @@ impl Application {
         workflow_i18n::init_i18n("en")?;
         workflow_ux::icon::init_icon_root("/resources/icons")?;
         workflow_ux::theme::init_theme(crate::theme::Theme::default())?;
-        
-        let collection = document().get_elements_by_tag_name("workflow-app");
-        let element = collection.get_with_index(0).expect("unable to locate workflow-app element");
+        let el_selector = el_selector.unwrap_or("workflow-app");
+        let collection = document().query_selector(el_selector)?;
+        let element = collection.expect(&format!("unable to locate '{el_selector}' element"));
         
         let app = Application {
             element : Arc::new(element),

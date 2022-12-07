@@ -17,7 +17,8 @@ pub use crate::controls::{
     terminal::Terminal,
     avatar::Avatar,
     id::HiddenId,
-    mnemonic::Mnemonic
+    mnemonic::Mnemonic,
+    qr::QRCode
 };
 pub use crate::form::{FormHandler, FormData, FormDataValue};
 pub type UXResult<T> = workflow_ux::result::Result<T>;

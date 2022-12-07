@@ -8,6 +8,8 @@ use workflow_core::id::Id;
 use workflow_core::channel::oneshot;
 use crate::icon::Icon;
 
+pub static CSS:&'static str = include_str!("dialog.css");
+
 static mut DIALOGES : Option<BTreeMap<String, Dialog>> = None;
 
 

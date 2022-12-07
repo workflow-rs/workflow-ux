@@ -13,7 +13,7 @@ ScrollbarStyle.appendTo("head");
 
 let mobileLayoutMaxWidth = 1200;
 
-export class FlowAppDrawerLayout extends BaseElement{
+export class WorkflowAppLayout extends BaseElement{
 	static get properties(){
 		return {
 			"menu-icon":{type:String},
@@ -633,5 +633,5 @@ export class FlowAppDrawerLayout extends BaseElement{
 
 }
 
-FlowAppDrawerLayout.define('flow-app-drawers');
-window.FlowAppDrawer = FlowAppDrawerLayout;
+WorkflowAppLayout.define('workflow-app-layout');
+window.WorkflowAppLayout = WorkflowAppLayout;
