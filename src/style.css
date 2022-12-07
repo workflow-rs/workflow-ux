@@ -1,10 +1,10 @@
-#app-main{
+#workspace-main{
     padding:15px;
     height: 100%;
     box-sizing: border-box;
     overflow: auto;
 }
-#app-main:after{
+#workspace-main:after{
     content:"";
     opacity:0;
     z-index:-10;
@@ -19,15 +19,15 @@
     transition: opacity 0.5s ease-in;
     touch-action:none;
 }
-#app-main.loading{
+#workspace-main.loading{
     position: relative;
     overflow: unset;
 }
-#app-main.loading:after{
+#workspace-main.loading:after{
     opacity:1;
     z-index:9999;
 }
-#app-main>workspace-view{
+#workspace-main>workspace-view{
     display:block;
     margin: auto;
     max-width:var(--workspace-main-max-width, 900px);
@@ -60,7 +60,7 @@ layout-root{display:flex;flex-direction:column;}
     box-sizing:border-box;
     transition:all 0.5s ease;
 }
-#app-main>workspace-view,
+#workspace-main>workspace-view,
 .form-container .workflow-form-footer{
     max-width: var(--workspace-main-max-width, 900px);
     margin:0px auto;
