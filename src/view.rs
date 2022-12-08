@@ -1,9 +1,10 @@
 use std::{sync::{Arc, Mutex,RwLock}, any::TypeId, collections::BTreeMap};
 
-use crate::{prelude::*, app_menu::AppMenu};
+use crate::{prelude::*, app_menu::AppMenu, events};
 use crate::{bottom_menu, layout, result::Result};
 use downcast::{downcast_sync, AnySync};
 use workflow_log::log_trace;
+use crate::events::Emitter;
 
 //use web_sys::{ScrollBehavior, ScrollToOptions};
 //use crate::view::base_element::ExtendedElement;
@@ -97,6 +98,7 @@ impl Container {
                     // TODO query module for view eviction etc.
                     module.evict(self, previous.clone()).await?;
                     previous.clone().evict().await?;
+                    //previous.unsubscribe()?;
 
                     // check and abort view progress if present
                     Progress::abort(previous);
@@ -104,6 +106,7 @@ impl Container {
                     log_trace!("swap_from(): finishing...");
                     Ok(Some(previous.clone()))
                 } else {
+                    //previous.unsubscribe()?;
                     Ok(None)
                 }
             }
@@ -129,6 +132,7 @@ impl Container {
         }
 
         self.element.append_child(&incoming.element())?;
+        incoming.subscribe()?;
 
         /*
         let mut scroll_opt = ScrollToOptions::new();
@@ -198,6 +202,12 @@ pub trait View : Sync + Send + AnySync {
         None
     }
 
+    fn subscribe(&self)->Result<()>{
+        Ok(())
+    }
+    fn unsubscribe(&self)->Result<()>{
+        Ok(())
+    }
 }
 
 downcast_sync!(dyn View);
@@ -412,7 +422,7 @@ impl Html {
     pub fn try_new(
         module : Option<Arc<dyn ModuleInterface>>,
         html : workflow_html::Html,
-    ) -> Result<Arc<dyn View>> {
+    ) -> Result<Arc<Self>> {
         let view = Self::create(module, html, None)?;
         Ok(Arc::new(view))
     }
@@ -421,7 +431,7 @@ impl Html {
         module : Option<Arc<dyn ModuleInterface>>,
         html : workflow_html::Html,
         menus:Vec<bottom_menu::BottomMenuItem>
-    )-> Result<Arc<dyn View>> {
+    )-> Result<Arc<Self>> {
         let view = Self::create(module, html, Some(menus))?;
         Ok(Arc::new(view))
     }
@@ -480,12 +490,127 @@ impl View for Html {
     fn bottom_menus(&self)->Option<Vec<bottom_menu::BottomMenuItem>>{
         self.menus.clone()
     }
-
-    // fn trigger(&self)->Option<ViewTrigger>{
-    //     self.trigger.clone()
-    // }
 }
 
+pub struct DynamicHtml<T:Send+'static, E:Emitter<T>+'static>{
+    inner: Html,
+    subscriber:Arc<Mutex<Option<Arc<events::Subscriber<T, E>>>>>
+}
+
+impl<T, E> DynamicHtml<T, E>
+where 
+T:Send + 'static,
+E:Emitter<T> + 'static,
+{
+    pub fn with_subscriber(&self, subscriber: Arc<events::Subscriber<T, E>>) -> Result<()> {
+        *self.subscriber.lock()? = Some(subscriber);
+        Ok(())
+    }
+
+    pub fn try_new(
+        module : Option<Arc<dyn ModuleInterface>>,
+        html : workflow_html::Html,
+    ) -> Result<Arc<Self>> {
+        let view = Self::create(module, html, None)?;
+        Ok(Arc::new(view))
+    }
+
+    pub fn try_new_with_menus(
+        module : Option<Arc<dyn ModuleInterface>>,
+        html : workflow_html::Html,
+        menus:Vec<bottom_menu::BottomMenuItem>
+    )-> Result<Arc<Self>> {
+        let view = Self::create(module, html, Some(menus))?;
+        Ok(Arc::new(view))
+    }
+
+    pub fn create(
+        module : Option<Arc<dyn ModuleInterface>>,
+        html : workflow_html::Html,
+        menus:Option<Vec<bottom_menu::BottomMenuItem>>
+    )-> Result<Self> {
+        let element = document().create_element("workspace-view")?;
+        html.inject_into(&element)?;
+
+        let html_list = BTreeMap::new();
+
+        let inner = Html { 
+            element,
+            module,
+            html,
+            html_list:Arc::new(Mutex::new(html_list)),
+            menus
+        };
+
+        Ok(Self {
+            inner,
+            subscriber:Arc::new(Mutex::new(None))
+        })
+    }
+
+    pub fn add_html(&self, id:Id, html:workflow_html::Html)->Result<()>{
+        self.inner.html_list.lock()?.insert(id, html);
+        Ok(())
+    }
+    pub fn remove_html(&self, id:&Id)->Result<()>{
+        self.inner.html_list.lock()?.remove(id);
+        Ok(())
+    }
+    pub fn html(&self)->&workflow_html::Html{
+        &self.inner.html
+    }
+}
+
+unsafe impl<T:Send, E:Emitter<T>> Send for DynamicHtml<T, E> { }
+unsafe impl<T:Send, E:Emitter<T>> Sync for DynamicHtml<T, E> { }
+
+impl<T, E> View for DynamicHtml<T, E>
+where 
+T:Send + 'static,
+E:Emitter<T> + 'static
+{
+    fn element(&self) -> Element {
+        self.inner.element.clone()
+    }
+
+    fn module(&self) -> Option<Arc<dyn ModuleInterface>> {
+        self.inner.module.clone()
+    }
+
+    fn typeid(&self) -> TypeId {
+        TypeId::of::<Self>()
+    }
+
+    fn bottom_menus(&self)->Option<Vec<bottom_menu::BottomMenuItem>>{
+        self.inner.menus.clone()
+    }
+
+    fn unsubscribe(&self)->Result<()>{
+        if let Some(subscriber) = self.subscriber.lock()?.as_ref(){
+            subscriber.clone().unsubscribe()?;
+        }
+
+        Ok(())
+    }
+
+    fn subscribe(&self)->Result<()>{
+        if let Some(subscriber) = self.subscriber.lock()?.as_ref(){
+            subscriber.clone().subscribe()?;
+        }
+
+        Ok(())
+    }
+}
+
+impl<T, E> Drop for DynamicHtml<T, E>
+where
+T:Send+'static,
+E:Emitter<T>+'static
+{
+    fn drop(&mut self) {
+        let _ = self.unsubscribe();
+    }
+}
 
 pub trait Meta : AnySync {
     // type Data;
