@@ -16,42 +16,60 @@ pub trait Listener<T:Send>:Sync+Send{
     async fn digest_event(self: Arc<Self>, event:T)->Result<bool>;
 }
 
-//pub type Callback<T> = Box<dyn Fn(T)->(dyn Future<Output = Result<bool>>)+Send+Sync>;
-//pub type Callback<T> = Box<dyn Fn(T)->(dyn Future<Output = Result<bool>>+Sync)+Send+Sync>;
 
 pub struct Subscriber<T:Send, E> {
     sender : Arc<Mutex<Option<Sender<T>>>>,
-    e:PhantomData<E>,
-    listener:Arc<dyn Listener<T>>
-    //a:PhantomData<A>
-    //callback: Callback<T>
+    active : Arc<Mutex<bool>>,
+    listener:Arc<dyn Listener<T>>,
+    e:PhantomData<E>
 }
+
+unsafe impl<T, E> Send for Subscriber<T, E>
+where 
+T:Send + 'static,
+E:Emitter<T> + 'static {}
+
+unsafe impl<T, E> Sync for Subscriber<T, E>
+where 
+T:Send + 'static,
+E:Emitter<T> + 'static {}
 
 
 impl<T, E> Subscriber<T, E>
 where 
 T:Send + 'static,
-E:Emitter<T>
+E:Emitter<T> + 'static,
 {
-    pub fn new(/*callback:Callback<T>*/ listener:Arc<dyn Listener<T>+Send+Sync>)->Result<Self>{
+    pub fn new(listener:Arc<dyn Listener<T>+Send+Sync>)->Result<Self>{
         Ok(Self{
             sender: Arc::new(Mutex::new(None)),
+            active: Arc::new(Mutex::new(false)),
             listener,
-            e:PhantomData,
-            //callback
+            e:PhantomData
         })
     }
 
+    fn is_active(&self)->bool{
+        *self.active.lock().unwrap()
+    }
+    fn set_active(&self, active:bool){
+        *self.active.lock().unwrap() = active;
+    }
+
     pub fn subscribe(self: Arc<Self>) -> Result<()>{
+        if self.is_active(){
+            return Ok(())
+        }
 
         let (id, sender, receiver) = E::register_event_channel();
 
         *self.sender.lock().unwrap() = Some(sender);
-        let listener = self.listener.clone();
+
+        self.set_active(true);
 
         spawn(async move {
             loop {
-                let listener_ = listener.clone();
+                let listener_ = self.listener.clone();
                 match receiver.recv().await {
                     Ok(event) => {
                         match listener_.digest_event(event).await {
@@ -71,7 +89,7 @@ E:Emitter<T>
                     }
                 }
             }
-
+            self.set_active(false);
             E::unregister_event_channel(id);
         });
 
