@@ -5,7 +5,7 @@ use std::sync::PoisonError;
 use workflow_i18n::Error as i18nError;
 use serde_wasm_bindgen::Error as SerdeError;
 use thiserror::Error;
-use workflow_core::channel::{SendError,RecvError};
+use workflow_core::channel::{SendError,RecvError,TrySendError};
 use std::io::Error as IoError;
 use core::num::{ParseIntError, ParseFloatError};
 use hex::FromHexError;
@@ -38,6 +38,9 @@ pub enum Error {
 
     #[error("Channel send error: {0}")]
     ChannelSendError(String),
+
+    #[error("Channel try_send error: {0}")]
+    ChannelTrySendError(String),
 
     #[error("Channel receive error: {0}")]
     ChannelReceiveError(String),
@@ -175,6 +178,12 @@ impl From<web_sys::Element> for Error {
 impl<T> From<SendError<T>> for Error {
     fn from(error: SendError<T>) -> Error {
         Error::ChannelSendError(format!("{:?}",error))
+    }
+}
+
+impl<T> From<TrySendError<T>> for Error {
+    fn from(e: TrySendError<T>) -> Self {
+        Self::ChannelTrySendError(e.to_string())
     }
 }
 

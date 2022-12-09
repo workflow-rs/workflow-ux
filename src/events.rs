@@ -3,7 +3,8 @@ use workflow_ux::result::Result;
 use workflow_ux::prelude::*;
 use workflow_ux::error::error;
 use workflow_core::{task::spawn, channel::{Sender, Receiver}};
-//use core::future::Future;
+use core::future::Future;
+use core::pin::Pin;
 
 pub trait Emitter<T:Send>{
     fn register_event_channel()->(Id, Sender<T>, Receiver<T>);
@@ -110,4 +111,46 @@ E:Emitter<T> + 'static,
         Ok(())
     }
 
+}
+
+pub type CallbackResult = Pin<Box<dyn Future<Output = Result<bool>> + Send>>;
+
+pub fn subscribe<E, C, U>(
+    receiver: Receiver<E>,
+    callback: C,
+    finish_callback: U
+) -> Result<()>
+where
+E: Send + 'static,
+U: Fn() + Send + 'static,
+C: Fn(E) -> CallbackResult + Send + 'static
+{
+
+    spawn(async move {
+        loop {
+            match receiver.recv().await {
+                Ok(event) => {
+                    let f = callback(event);
+                    match f.await {
+                        Ok(keep_alive) => {
+                            if !keep_alive {
+                                log_warning!("subscribe digest() halt");
+                                break;
+                            }
+                        },
+                        Err(err) => {
+                            log_error!("subscribe digest() error: {:?}", err);
+                        }
+                    }
+                },
+                Err(err) => {
+                    log_error!("subscribe recv() error: {:?}", err);
+                }
+            }
+        }
+
+        finish_callback();
+    });
+
+    Ok(())
 }
