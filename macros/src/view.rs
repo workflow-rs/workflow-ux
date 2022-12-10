@@ -3,8 +3,10 @@ use std::convert::Into;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 // use proc_macro2::{Span, Ident};
+use proc_macro2::Span;
 use quote::{quote, ToTokens};
 use syn::{
+    Ident,
     DeriveInput,
 // Result, 
     Error,
@@ -197,6 +199,45 @@ pub fn html_view(item: TokenStream) -> TokenStream {
     //let impl_generics = struct_params;
     //let ty_generics = struct_params;
     //let where_clause = quote!{};
+    let mut handle_evict = quote!{};
+    for a in &ast.attrs{
+        if let Some(i) = a.path.get_ident(){
+            let name = i.to_string();
+            //println!("attrs::::::{:?}, tokens:{:?}", name, a.tokens);
+            if !name.eq("evict_handler"){
+                continue;
+            }
+            let mut tokens = a.tokens.clone().into_iter();
+            if let Some(tt) = tokens.next(){
+                if tt.to_string().eq("="){
+                    if let Some(tt) = tokens.next(){
+                        let mod_name = tt.to_string().replace("\"", "").to_lowercase();
+                        let evict_handler = Ident::new(&mod_name, Span::call_site());
+                        //println!("RequiredModule attr found: {}", required_module_str);
+
+                        handle_evict = quote!{
+                            self.#evict_handler()?;
+                        };
+                    }
+                }else{
+                    handle_evict = quote!{
+                        self.evict_handler()?;
+                    };
+                }
+            }else{
+                handle_evict = quote!{
+                    self.evict_handler()?;
+                };
+            }
+
+            //if evict_handler.is_none(){
+            //    evict_handler = Some(Ident::new("evict_handler", Span::call_site()));
+            //}
+
+            break;
+        }
+    }
+    
 
     let _ast = match &mut ast.data {
         syn::Data::Struct(ref mut struct_data) => {           
@@ -333,6 +374,7 @@ pub fn html_view(item: TokenStream) -> TokenStream {
         
             async fn evict(self:Arc<Self>) ->  Result<()>{
                 log_info!(#evict_msg);
+                #handle_evict
                 //self.unsubscribe()?;
                 //self.get_html().unwrap().set_html().remove_event_listeners()?;
                 //self.get_html().unwrap().cleanup()?;

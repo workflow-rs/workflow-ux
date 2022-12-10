@@ -11,7 +11,7 @@ pub fn view(_attr: TokenStream, item: TokenStream) -> TokenStream {
     view::view(_attr,item)
 }
 
-#[proc_macro_derive(HtmlView)]
+#[proc_macro_derive(HtmlView, attributes(evict_handler))]
 pub fn html_view(input: TokenStream) -> TokenStream {
     view::html_view(input)
 }
