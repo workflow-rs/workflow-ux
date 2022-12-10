@@ -106,6 +106,7 @@ impl Container {
                     log_trace!("swap_from(): finishing...");
                     Ok(Some(previous.clone()))
                 } else {
+                    previous.clone().evict().await?;
                     //previous.unsubscribe()?;
                     Ok(None)
                 }
@@ -413,7 +414,7 @@ impl<F,D> Drop for Layout<F,D>
 pub struct Html {
     element : Element,
     module : Option<Arc<dyn ModuleInterface>>,
-    html: workflow_html::Html,
+    html: Arc<Mutex<Option<Arc<workflow_html::Html>>>>,
     html_list: Arc<Mutex<BTreeMap<Id, workflow_html::Html>>>,
     menus:Option<Vec<bottom_menu::BottomMenuItem>>
 }
@@ -449,7 +450,7 @@ impl Html {
         let view = Html { 
             element,
             module,
-            html,
+            html:Arc::new(Mutex::new(Some(Arc::new(html)))),
             html_list:Arc::new(Mutex::new(html_list)),
             menus
         };
@@ -465,8 +466,13 @@ impl Html {
         self.html_list.lock()?.remove(id);
         Ok(())
     }
-    pub fn html(&self)->&workflow_html::Html{
-        &self.html
+    pub fn html(&self)->Arc<workflow_html::Html>{
+        self.html.lock().unwrap().as_ref().expect("No HTML").clone()
+    }
+    pub fn cleanup(&self)->Result<()>{
+        *self.html.lock()? = None;
+        self.html_list.lock()?.clear();
+        Ok(())
     }
 
 }
@@ -529,18 +535,7 @@ E:Emitter<T> + 'static,
         html : workflow_html::Html,
         menus:Option<Vec<bottom_menu::BottomMenuItem>>
     )-> Result<Self> {
-        let element = document().create_element("workspace-view")?;
-        html.inject_into(&element)?;
-
-        let html_list = BTreeMap::new();
-
-        let inner = Html { 
-            element,
-            module,
-            html,
-            html_list:Arc::new(Mutex::new(html_list)),
-            menus
-        };
+        let inner = Html::create(module, html, menus)?;
 
         Ok(Self {
             inner,
@@ -556,8 +551,8 @@ E:Emitter<T> + 'static,
         self.inner.html_list.lock()?.remove(id);
         Ok(())
     }
-    pub fn html(&self)->&workflow_html::Html{
-        &self.inner.html
+    pub fn html(&self)->Arc<workflow_html::Html>{
+        self.inner.html()
     }
 }
 
