@@ -11,6 +11,11 @@ pub fn view(_attr: TokenStream, item: TokenStream) -> TokenStream {
     view::view(_attr,item)
 }
 
+#[proc_macro_derive(HtmlView)]
+pub fn html_view(input: TokenStream) -> TokenStream {
+    view::html_view(input)
+}
+
 #[proc_macro]
 pub fn section_menu(item: TokenStream) -> TokenStream {
     menu::section_menu(item)

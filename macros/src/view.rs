@@ -3,7 +3,7 @@ use std::convert::Into;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 // use proc_macro2::{Span, Ident};
-use quote::quote;
+use quote::{quote, ToTokens};
 use syn::{
     DeriveInput,
 // Result, 
@@ -176,6 +176,188 @@ pub fn view(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
 
     };
+    ts.into()
+}
+
+
+pub fn html_view(item: TokenStream) -> TokenStream {
+    // println!("panel attrs: {:#?}",attr);
+    // let layout_attributes = parse_macro_input!(attr as Args);
+    // println!("************************ \n\n\n\n\n{:#?}",cattr);
+
+    //let attributes = parse_macro_input!(attr as Attributes);
+
+    // let struct_decl = item.clone();
+    let struct_decl_ast = item.clone();
+    let mut ast = parse_macro_input!(struct_decl_ast as DeriveInput);
+    // let struct_name = &ast.ident;
+    let struct_name = &ast.ident;
+    let struct_params = &ast.generics;
+    let (impl_generics, ty_generics, where_clause) = &ast.generics.split_for_impl();
+    //let impl_generics = struct_params;
+    //let ty_generics = struct_params;
+    //let where_clause = quote!{};
+
+    let _ast = match &mut ast.data {
+        syn::Data::Struct(ref mut struct_data) => {           
+            match &mut struct_data.fields {
+                syn::Fields::Named(fields) => {
+                    /*
+                    let punctuated_fields: Punctuated<ParsableNamedField, Token![,]> = parse_quote! {
+                        html: Arc<Mutex<Option<Arc<workflow_ux::view::Html>>>>
+                    };
+                
+                    fields
+                        .named
+                        .extend(punctuated_fields.into_iter().map(|p| p.field));
+                    */
+                    let mut has_html_field = false;
+                    for field in &fields.named{
+                        let f_type = &field.ty;
+
+                        if let Some(ident) = &field.ident{
+                            let name = ident.to_string();
+                            if name.eq("html"){
+                                let check_list: Punctuated<ParsableNamedField, Token![,]> = parse_quote!{
+                                    f1: Arc<Mutex<Option<Arc<workflow_ux::view::Html>>>>,
+                                    f2: Arc<Mutex<Option<Arc<view::Html>>>>,
+                                    f3: Arc<Mutex<Option<Arc<Html>>>>,
+                                    f4: std::sync::Arc<Mutex<Option<std::sync::Arc<view::Html>>>>,
+                                    f5: std::sync::Arc<std::sync::Mutex<Option<std::sync::Arc<workflow_ux::view::Html>>>>,
+                                    f6: std::sync::Arc<std::sync::Mutex<Option<std::sync::Arc<view::Html>>>>,
+                                    f7: std::sync::Arc<std::sync::Mutex<Option<std::sync::Arc<Html>>>>
+                                };
+                                let f_type_str = format!("{}", f_type.to_token_stream());
+                                let mut found = false;
+                                for f in check_list{
+                                    let s = format!("{}", f.field.ty.to_token_stream());
+                                    if s.eq(&f_type_str){
+                                        found = true;
+                                    }
+                                }
+
+                                if !found{
+                                    continue;
+                                }
+                                
+
+                                /*
+                                match f_type{
+                                    
+                                    //let c = syn::Type::parse();
+
+                                    syn::Type::Path(tp)=>{
+                                        //println!("f_type: {:#?}", tp.path.segments);
+                                        let last = tp.path.segments.last();
+                                        if last.is_none(){
+                                            continue;
+                                        }
+                                        let arc = last.unwrap();
+                                        if !arc.ident.to_string().eq("Arc"){
+                                            continue;
+                                        }
+                                        let arc_args = &arc.arguments;
+                                        //match arc_args{
+
+                                        //}
+                                        println!("f_type: {:#?}", last);
+                                    }
+                                    _=>{
+                                        continue;
+                                    }
+                                }
+                                */
+                                has_html_field = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if !has_html_field{
+                        return Error::new_spanned(
+                            struct_name,
+                            format!("#[HtmlView] struct require 'html' member/property. \n`html: Arc<Mutex<Option<Arc<workflow_ux::view::Html>>>>`")
+                        )
+                        .to_compile_error()
+                        .into();
+                    }
+                }   
+                _ => {
+                    ()
+                }
+            }              
+            
+            &ast
+        }
+        _ => {
+            return Error::new_spanned(
+                struct_name,
+                format!("#[HtmlView] macro only supports structs")
+            )
+            .to_compile_error()
+            .into();
+        }
+    };
+
+    let name = struct_name.to_string();
+    let html_missing_msg = format!("{} requires inner html view", name);
+    let evict_msg = format!("{} evict", name);
+    let drop_msg = format!("{} drop", name);
+
+    let ts = quote!{
+
+        unsafe impl #struct_params Send for #struct_name #ty_generics #where_clause{ }
+        unsafe impl #struct_params Sync for #struct_name #ty_generics #where_clause{ }
+
+        impl #impl_generics  #struct_name #ty_generics #where_clause{
+            pub fn get_html(&self)->workflow_ux::result::Result<Arc<workflow_ux::view::Html>>{
+                let view = (*self.html.lock()?).clone().expect(#html_missing_msg);
+                Ok(view)
+            } 
+        }
+        
+        #[workflow_async_trait]
+        impl #impl_generics workflow_ux::view::View for #struct_name #ty_generics #where_clause{
+            fn element(&self) -> web_sys::Element {
+                self.get_html().unwrap().element()
+            }
+            fn module(&self) -> Option<std::sync::Arc<dyn workflow_ux::module::ModuleInterface>> {
+                self.get_html().unwrap().module()
+            }
+            fn bottom_menus(&self)->Option<Vec<workflow_ux::bottom_menu::BottomMenuItem>>{
+                self.get_html().unwrap().bottom_menus()
+            }
+            fn typeid(&self) -> std::any::TypeId {
+                std::any::TypeId::of::<Self>()
+            }
+        
+            async fn evict(self:Arc<Self>) ->  Result<()>{
+                log_info!(#evict_msg);
+                //self.unsubscribe()?;
+                //self.get_html().unwrap().set_html().remove_event_listeners()?;
+                //self.get_html().unwrap().cleanup()?;
+                Ok(())
+            }
+        }
+        
+        
+        impl #impl_generics Drop for #struct_name #ty_generics #where_clause{
+            fn drop(&mut self) {
+                log_info!(#drop_msg);
+                
+                /*
+                match self.unsubscribe(){
+                    Ok(_)=>{}
+                    Err(err)=>{
+                        workflow_log::log_error!("WalletView drop: unsubscribe error: {:?}", err);
+                    }
+                }
+                */
+            }
+        }
+        
+    };
+    
     ts.into()
 }
 
