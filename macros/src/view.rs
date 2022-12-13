@@ -3,17 +3,17 @@ use std::convert::Into;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
 // use proc_macro2::{Span, Ident};
-use proc_macro2::Span;
+//use proc_macro2::Span;
 use quote::{quote, ToTokens};
 use syn::{
-    Ident,
+    //Ident,
     DeriveInput,
-// Result, 
+    //Result,
     Error,
     parse_macro_input, 
-    // PathArguments, 
+    //PathArguments, 
     punctuated::Punctuated, 
-    // Expr, 
+    //Expr, 
     Token, 
     parse::{Parse, ParseStream}, parse_quote, Expr, 
     // ExprPath, PathSegment,
@@ -183,75 +183,19 @@ pub fn view(attr: TokenStream, item: TokenStream) -> TokenStream {
 
 
 pub fn html_view(item: TokenStream) -> TokenStream {
-    // println!("panel attrs: {:#?}",attr);
-    // let layout_attributes = parse_macro_input!(attr as Args);
-    // println!("************************ \n\n\n\n\n{:#?}",cattr);
-
-    //let attributes = parse_macro_input!(attr as Attributes);
-
-    // let struct_decl = item.clone();
     let struct_decl_ast = item.clone();
     let mut ast = parse_macro_input!(struct_decl_ast as DeriveInput);
-    // let struct_name = &ast.ident;
     let struct_name = &ast.ident;
     let struct_params = &ast.generics;
     let (impl_generics, ty_generics, where_clause) = &ast.generics.split_for_impl();
     //let impl_generics = struct_params;
     //let ty_generics = struct_params;
-    //let where_clause = quote!{};
-    let mut handle_evict = quote!{};
-    for a in &ast.attrs{
-        if let Some(i) = a.path.get_ident(){
-            let name = i.to_string();
-            //println!("attrs::::::{:?}, tokens:{:?}", name, a.tokens);
-            if !name.eq("evict_handler"){
-                continue;
-            }
-            let mut tokens = a.tokens.clone().into_iter();
-            if let Some(tt) = tokens.next(){
-                if tt.to_string().eq("="){
-                    if let Some(tt) = tokens.next(){
-                        let mod_name = tt.to_string().replace("\"", "").to_lowercase();
-                        let evict_handler = Ident::new(&mod_name, Span::call_site());
-                        //println!("RequiredModule attr found: {}", required_module_str);
+    //let where_clause = quote!{}; 
 
-                        handle_evict = quote!{
-                            self.#evict_handler()?;
-                        };
-                    }
-                }else{
-                    handle_evict = quote!{
-                        self.evict_handler()?;
-                    };
-                }
-            }else{
-                handle_evict = quote!{
-                    self.evict_handler()?;
-                };
-            }
-
-            //if evict_handler.is_none(){
-            //    evict_handler = Some(Ident::new("evict_handler", Span::call_site()));
-            //}
-
-            break;
-        }
-    }
-    
-
-    let _ast = match &mut ast.data {
+    match &mut ast.data {
         syn::Data::Struct(ref mut struct_data) => {           
             match &mut struct_data.fields {
                 syn::Fields::Named(fields) => {
-                    /*
-                    let punctuated_fields: Punctuated<ParsableNamedField, Token![,]> = parse_quote! {
-                        html: Arc<Mutex<Option<Arc<workflow_ux::view::Html>>>>
-                    };
-                
-                    fields
-                        .named
-                        .extend(punctuated_fields.into_iter().map(|p| p.field));
-                    */
                     let mut has_html_field = false;
                     for field in &fields.named{
                         let f_type = &field.ty;
@@ -280,34 +224,6 @@ pub fn html_view(item: TokenStream) -> TokenStream {
                                 if !found{
                                     continue;
                                 }
-                                
-
-                                /*
-                                match f_type{
-                                    
-                                    //let c = syn::Type::parse();
-
-                                    syn::Type::Path(tp)=>{
-                                        //println!("f_type: {:#?}", tp.path.segments);
-                                        let last = tp.path.segments.last();
-                                        if last.is_none(){
-                                            continue;
-                                        }
-                                        let arc = last.unwrap();
-                                        if !arc.ident.to_string().eq("Arc"){
-                                            continue;
-                                        }
-                                        let arc_args = &arc.arguments;
-                                        //match arc_args{
-
-                                        //}
-                                        println!("f_type: {:#?}", last);
-                                    }
-                                    _=>{
-                                        continue;
-                                    }
-                                }
-                                */
                                 has_html_field = true;
                                 break;
                             }
@@ -326,9 +242,7 @@ pub fn html_view(item: TokenStream) -> TokenStream {
                 _ => {
                     ()
                 }
-            }              
-            
-            &ast
+            }
         }
         _ => {
             return Error::new_spanned(
@@ -374,12 +288,19 @@ pub fn html_view(item: TokenStream) -> TokenStream {
         
             async fn evict(self:Arc<Self>) ->  Result<()>{
                 log_info!(#evict_msg);
-                #handle_evict
-                //self.unsubscribe()?;
-                //self.get_html().unwrap().set_html().remove_event_listeners()?;
-                //self.get_html().unwrap().cleanup()?;
+
+                if self.clone().view_evict().await?{
+                    let html = self.get_html().unwrap();
+                    html.evict().await?;
+                }
+
                 Ok(())
             }
+        }
+
+        #[workflow_async_trait]
+        impl #impl_generics workflow_ux::view::Evict for #struct_name #ty_generics #where_clause{
+
         }
         
         
@@ -391,7 +312,7 @@ pub fn html_view(item: TokenStream) -> TokenStream {
                 match self.unsubscribe(){
                     Ok(_)=>{}
                     Err(err)=>{
-                        workflow_log::log_error!("WalletView drop: unsubscribe error: {:?}", err);
+                        workflow_log::log_error!("View drop: unsubscribe error: {:?}", err);
                     }
                 }
                 */

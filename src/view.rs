@@ -213,6 +213,14 @@ pub trait View : Sync + Send + AnySync {
 
 downcast_sync!(dyn View);
 
+
+#[workflow_async_trait]
+pub trait Evict: Sync + Send{
+    async fn view_evict(self: Arc<Self>)->workflow_ux::result::Result<bool>{
+        Ok(true)
+    }
+}
+
 pub fn into_meta_view(view : Arc<dyn View>, meta: Arc<dyn Meta>) -> Result<Arc<dyn View>> {
     let meta_view = MetaView::try_new(view, meta)?;
     Ok(meta_view)
@@ -330,7 +338,6 @@ where
             module,
             layout : Arc::new(AsyncMutex::new(layout)),
             data : Arc::new(Mutex::new(data)),
-            // evict : Arc::new(Mutex::new(evict)),
             evict : Arc::new(Mutex::new(None)),
             drop : Arc::new(Mutex::new(None)),
         };
@@ -480,6 +487,7 @@ impl Html {
 unsafe impl Send for Html { }
 unsafe impl Sync for Html { }
 
+#[workflow_async_trait]
 impl View for Html {
     fn element(&self) -> Element {
         self.element.clone()
@@ -495,6 +503,17 @@ impl View for Html {
 
     fn bottom_menus(&self)->Option<Vec<bottom_menu::BottomMenuItem>>{
         self.menus.clone()
+    }
+
+    async fn evict(self : Arc<Self>) -> Result<()> {
+        self.cleanup()?;
+        Ok(())
+    }
+}
+
+impl Drop for Html{
+    fn drop(&mut self) {
+        log_trace!("Html drop: {:?}", self.element().get_attribute("class"));
     }
 }
 
