@@ -268,7 +268,10 @@ pub fn html_view(item: TokenStream) -> TokenStream {
             pub fn get_html(&self)->workflow_ux::result::Result<Arc<workflow_ux::view::Html>>{
                 let view = (*self.html.lock()?).clone().expect(#html_missing_msg);
                 Ok(view)
-            } 
+            }
+            pub async fn view_evict(self: Arc<Self>)->workflow_ux::result::Result<bool>{
+                Ok(true)
+            }
         }
         
         #[workflow_async_trait]
@@ -289,18 +292,13 @@ pub fn html_view(item: TokenStream) -> TokenStream {
             async fn evict(self:Arc<Self>) ->  Result<()>{
                 log_info!(#evict_msg);
 
-                if self.clone().view_evict().await?{
+                if (self.clone() as Arc<dyn workflow_ux::view::Evict>).evict().await?{
                     let html = self.get_html().unwrap();
                     html.evict().await?;
                 }
 
                 Ok(())
             }
-        }
-
-        #[workflow_async_trait]
-        impl #impl_generics workflow_ux::view::Evict for #struct_name #ty_generics #where_clause{
-
         }
         
         

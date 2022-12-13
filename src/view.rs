@@ -216,7 +216,7 @@ downcast_sync!(dyn View);
 
 #[workflow_async_trait]
 pub trait Evict: Sync + Send{
-    async fn view_evict(self: Arc<Self>)->workflow_ux::result::Result<bool>{
+    async fn evict(self: Arc<Self>)->workflow_ux::result::Result<bool>{
         Ok(true)
     }
 }
