@@ -22,7 +22,6 @@ pub mod base_element;
 pub mod terminal;
 pub mod prelude;
 pub mod svg;
-pub mod listener;
 pub mod element_wrapper;
 pub mod helper;
 pub mod builder;

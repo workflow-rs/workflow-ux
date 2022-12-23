@@ -2,8 +2,8 @@ use crate::icon::Icon;
 use crate::prelude::*;
 use workflow_html::{Render, Hooks, Renderables, ElementResult};
 use crate::result::Result;
-use crate::controls::listener::Listener;
 use web_sys::Element;
+use workflow_wasm::prelude::*;
 
 #[derive(Clone, Debug, Default)]
 pub struct OptString(Option<String>);
@@ -71,14 +71,14 @@ pub struct InfoRow{
     pub left_icon: OptString,
     pub right_icon: OptString,
     pub right_icon_el: Arc<Mutex<Option<Element>>>,
-    pub right_icon_click_listener: Option<Listener<web_sys::MouseEvent>>
+    pub right_icon_click_listener: Option<Callback<dyn FnMut(web_sys::MouseEvent)->Result<()>>>
 }
 
 impl InfoRow{
     pub fn on(mut self, event:&str, cb: Box<dyn Fn(&InfoRow) -> Result<()>>)-> Self{
         log_trace!("InfoRow.on() => event: {}", event);
         let this = self.clone();
-        self.right_icon_click_listener = Some(Listener::new(move|_e|->Result<()>{
+        self.right_icon_click_listener = Some(callback!(move|_:web_sys::MouseEvent|->Result<()>{
             cb(&this)?;
             Ok(())
         }));

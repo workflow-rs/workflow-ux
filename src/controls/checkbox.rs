@@ -6,7 +6,7 @@ pub struct Checkbox {
     pub layout : ElementLayout,
     pub element_wrapper : ElementWrapper,
     value : Arc<Mutex<bool>>,
-    on_change_cb:Arc<Mutex<Option<CallbackNoArgs>>>,
+    on_change_cb:Arc<Mutex<Option<CallbackFnNoArgs>>>,
 }
 
 impl Checkbox {
@@ -64,7 +64,7 @@ impl Checkbox {
         *self.value.lock().unwrap()
     }
 
-    pub fn on_change(&self, callback:CallbackNoArgs){
+    pub fn on_change(&self, callback:CallbackFnNoArgs){
         *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 }

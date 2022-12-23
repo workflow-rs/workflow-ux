@@ -5,7 +5,7 @@ use workflow_ux::result::Result;
 #[derive(Clone)]
 pub struct Action {
     pub element_wrapper : ElementWrapper,
-    callback : OptionalCallbackNoArgs
+    callback : OptionalCallbackFnNoArgs
 }
 
 impl Action {
@@ -46,7 +46,7 @@ impl Action {
         Ok(action)
     }
 
-    pub fn with_callback(&self, callback : CallbackNoArgs) -> &Self {
+    pub fn with_callback(&self, callback : CallbackFnNoArgs) -> &Self {
         *self.callback.lock().unwrap() = Some(callback);
         self
     }

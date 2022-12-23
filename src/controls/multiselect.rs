@@ -40,7 +40,7 @@ impl FlowMultiMenuBase{
 pub struct MultiSelect<E> {
     pub element_wrapper : ElementWrapper,
     values : Arc<Mutex<Vec<String>>>,
-    on_change_cb: Arc<Mutex<Option<Callback<Vec<String>>>>>,
+    on_change_cb: Arc<Mutex<Option<CallbackFn<Vec<String>>>>>,
     p:PhantomData<E>
 }
 
@@ -122,7 +122,7 @@ where E: EnumTrait<E>
         self.values.lock().unwrap().clone()
     }
 
-    pub fn on_change(&self, callback:Callback<Vec<String>>){
+    pub fn on_change(&self, callback:CallbackFn<Vec<String>>){
         *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 }

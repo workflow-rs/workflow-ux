@@ -20,7 +20,7 @@ pub struct Textarea {
     pub layout : ElementLayout,
     pub element_wrapper : ElementWrapper,
     value : Arc<Mutex<String>>,
-    on_change_cb:Arc<Mutex<Option<CallbackNoArgs>>>,
+    on_change_cb:Arc<Mutex<Option<CallbackFnNoArgs>>>,
 }
 
 //impl FieldHelpers for Textarea{}
@@ -96,7 +96,7 @@ impl Textarea {
         Ok(())
     }
     
-    pub fn on_change(&self, callback:CallbackNoArgs){
+    pub fn on_change(&self, callback:CallbackFnNoArgs){
         *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 

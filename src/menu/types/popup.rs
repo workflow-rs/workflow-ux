@@ -2,8 +2,8 @@ use std::{collections::BTreeMap, f64::consts::PI};
 
 use crate::{prelude::*, icon::Icon};
 use workflow_ux::result::Result;
+use workflow_wasm::prelude::*;
 use crate::controls::svg::SvgNode;
-use crate::controls::listener::Listener;
 use std::sync::{MutexGuard, LockResult};
 use crate::menu::MenuCaption;
 
@@ -23,7 +23,7 @@ pub struct PopupMenuItem{
     pub text: String,
     pub element : SvgElement,
     pub items: Arc<Mutex<BTreeMap<u8, PopupMenuItem>>>,
-    pub click_listener: Arc<Mutex<Option<Listener<web_sys::MouseEvent>>>>
+    pub click_listener: Arc<Mutex<Option<Callback<dyn FnMut(web_sys::MouseEvent)->Result<()>>>>>
 }
 
 impl PopupMenuItem{
@@ -87,7 +87,7 @@ impl PopupMenuItem{
     }
     pub fn with_callback(self, callback: Box<dyn Fn(&PopupMenuItem) -> Result<()>>) ->Result<Self>{
         let self_ = self.clone();
-        let callback = Listener::new(move|event: web_sys::MouseEvent|->Result<()>{
+        let callback_ = callback!(move|event: web_sys::MouseEvent|->Result<()>{
             log_trace!("PopupMenuItem::with_callback called");
             event.stop_immediate_propagation();
             
@@ -100,10 +100,10 @@ impl PopupMenuItem{
 
             Ok(())
         });
-        self.element.add_event_listener_with_callback("click", callback.into_js())?;
+        self.element.add_event_listener_with_callback("click", callback_.as_ref())?;
         {
             let mut locked = self.click_listener.lock().expect("Unable to lock popu_pmenu.click_listener");
-            (*locked) = Some(callback);
+            (*locked) = Some(callback_);
         }
         Ok(self)
     }
@@ -113,7 +113,7 @@ impl PopupMenuItem{
 pub struct PopupMenuInner {
     //size: i64,
     closed: bool,
-    listeners: Vec<Listener<CustomEvent>>
+    callbacks: CallbackMap
 }
 
 static mut POPUP_MENU : Option<Arc<PopupMenu>> = None;
@@ -222,7 +222,7 @@ impl PopupMenu {
             inner: Arc::new(Mutex::new(PopupMenuInner {
                 //size,
                 closed: false,
-                listeners: Vec::new()
+                callbacks: CallbackMap::new()
             }))
         };
         let m = menu.init_event()?;
@@ -370,26 +370,26 @@ impl PopupMenu {
         let self_ = this.clone();
         {
             let _this = this.clone();
-            let listener = Listener::new(move |_event: web_sys::CustomEvent| -> Result<()> {
+            let callback = callback!(move |_event: web_sys::CustomEvent| -> Result<()> {
                 //let mut m = _this.lock().expect("Unable to lock PopupMenu for click event");
                 //log_trace!("##### transitionend");
                 _this.on_transition_end()?;
                 Ok(())
             });
-            self_.circle_proxy_el.add_event_listener_with_callback("transitionend", listener.into_js())?;
-            let mut inner = self_.inner()?;
-            inner.listeners.push(listener);
+            self_.circle_proxy_el.add_event_listener_with_callback("transitionend", callback.as_ref())?;
+            let inner = self_.inner()?;
+            inner.callbacks.insert(callback)?;
         }
         {
             let _this = this.clone();
-            let listener = Listener::new(move |_event: web_sys::CustomEvent| -> Result<()> {
+            let callback = callback!(move |_event: web_sys::CustomEvent| -> Result<()> {
                 //let mut m = _this.lock().expect("Unable to lock PopupMenu for click event");
                 _this.close()?;
                 Ok(())
             });
-            self_.circle_el.add_event_listener_with_callback("click", listener.into_js())?;
-            let mut inner = self_.inner()?;
-            inner.listeners.push(listener);
+            self_.circle_el.add_event_listener_with_callback("click", callback.as_ref())?;
+            let inner = self_.inner()?;
+            inner.callbacks.insert(callback)?;
         }
         
         Ok(this.clone())

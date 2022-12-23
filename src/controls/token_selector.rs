@@ -7,7 +7,7 @@ pub struct TokenSelector{
     pub layout: ElementLayout,
     pub element_wrapper : ElementWrapper,
     value : Arc<Mutex<String>>,
-    on_change_cb: Arc<Mutex<Option<Callback<String>>>>
+    on_change_cb: Arc<Mutex<Option<CallbackFn<String>>>>
 }
 
 
@@ -87,7 +87,7 @@ impl TokenSelector{
     pub fn value(&self) -> String {
         self.value.lock().unwrap().clone()
     }
-    pub fn on_change(&self, callback:Callback<String>){
+    pub fn on_change(&self, callback:CallbackFn<String>){
         *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 }

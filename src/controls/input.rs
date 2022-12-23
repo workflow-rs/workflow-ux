@@ -3,7 +3,7 @@ use crate::layout::ElementLayout;
 use std::convert::Into;
 use crate::result::Result;
 use crate::error::Error;
-use crate::controls::listener::Listener;
+use workflow_wasm::prelude::callback;
 
 
 #[wasm_bindgen]
@@ -27,7 +27,7 @@ pub struct Input {
     pub attributes: Attributes,
     pub element_wrapper : ElementWrapper,
     value : Arc<Mutex<String>>,
-    on_change_cb:Arc<Mutex<Option<Callback<String>>>>,
+    on_change_cb:Arc<Mutex<Option<CallbackFn<String>>>>,
 }
 
 impl Input {
@@ -143,7 +143,7 @@ impl Input {
             let el = element.clone();
             let value = self.value.clone();
             let cb_opt = self.on_change_cb.clone();
-            let listener = Listener::new(move |_event:web_sys::CustomEvent| ->Result<()> {
+            let callback = callback!(move |_event:web_sys::CustomEvent| ->Result<()> {
 
                 //log_trace!("received key event: {:#?}", event);
                 let new_value = el.value();
@@ -156,15 +156,15 @@ impl Input {
                 }
                 Ok(())
             });
-            self.element_wrapper.element.add_event_listener_with_callback("keyup", listener.into_js())?;
-            self.element_wrapper.element.add_event_listener_with_callback("keydown", listener.into_js())?;
-            self.element_wrapper.push_listener(listener);
+            self.element_wrapper.element.add_event_listener_with_callback("keyup", callback.as_ref())?;
+            self.element_wrapper.element.add_event_listener_with_callback("keydown", callback.as_ref())?;
+            self.element_wrapper.callbacks.insert(callback)?;
         }
 
         Ok(())
     }
 
-    pub fn on_change(&self, callback:Callback<String>){
+    pub fn on_change(&self, callback:CallbackFn<String>){
         *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 }

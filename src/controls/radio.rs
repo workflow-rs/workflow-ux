@@ -19,7 +19,7 @@ extern "C" {
 pub struct Radio<E> {
     element_wrapper : ElementWrapper,
     value : Arc<Mutex<String>>,
-    change_callback : OptionalCallback<String>,
+    change_callback : OptionalCallbackFn<String>,
     p:PhantomData<E>
 }
 
@@ -118,7 +118,7 @@ where E: EnumTrait<E> + 'static + Display
         Ok(())
     }
 
-    pub fn on_change(&self, callback:Callback<String>){
+    pub fn on_change(&self, callback:CallbackFn<String>){
         *self.change_callback.lock().unwrap() = Some(callback);
     }
 }

@@ -79,7 +79,7 @@ pub use workflow_ux_macros::Module;
 pub use workflow_ux_macros::declare_module;
 
 
-pub type Callback<E> = Box<dyn FnMut(E)->crate::result::Result<()>>;
-pub type CallbackNoArgs = Box<dyn FnMut()->crate::result::Result<()>>;
-pub type OptionalCallback<T> = Arc<Mutex<Option<Callback<T>>>>;
-pub type OptionalCallbackNoArgs = Arc<Mutex<Option<CallbackNoArgs>>>;
+pub type CallbackFn<E> = Box<dyn FnMut(E)->crate::result::Result<()>>;
+pub type CallbackFnNoArgs = Box<dyn FnMut()->crate::result::Result<()>>;
+pub type OptionalCallbackFn<T> = Arc<Mutex<Option<CallbackFn<T>>>>;
+pub type OptionalCallbackFnNoArgs = Arc<Mutex<Option<CallbackFnNoArgs>>>;

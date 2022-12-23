@@ -4,10 +4,9 @@ use std::sync::LockResult;
 use crate::prelude::*;
 use crate::result::Result;
 use crate::icon::Icon;
-use crate::controls::listener::Listener;
 use std::sync::MutexGuard;
-//use workflow_core::id::Id;
-//use workflow_html::Html;
+use workflow_wasm::prelude::*;
+use workflow_wasm::callback::Callback;
 
 pub struct ListRow{
     pub id: String,
@@ -17,7 +16,7 @@ pub struct ListRow{
     pub value: Option<String>,
     pub left_icon: Option<String>,
     pub right_icon: Option<String>,
-    pub right_icon_click_listener: Option<Listener<web_sys::MouseEvent>>,
+    pub right_icon_click_listener: Option<Callback<CallbackClosure<web_sys::MouseEvent>>>,
     pub cls: Option<String>,
     pub editable: bool,
     pub deletable: bool,
@@ -98,7 +97,7 @@ impl ListRow{
             info_row_el.append_child(&el)?;
 
             if let Some(listener) = &self.right_icon_click_listener{
-                el.add_event_listener_with_callback("click", listener.into_js())?;
+                el.add_event_listener_with_callback("click", listener.as_ref())?;
             }
         }
 

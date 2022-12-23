@@ -20,7 +20,7 @@ pub struct Selector<E> {
     pub element_wrapper : ElementWrapper,
     value : Arc<Mutex<String>>,
     p:PhantomData<E>,
-    on_change_cb:Arc<Mutex<Option<CallbackNoArgs>>>,
+    on_change_cb:Arc<Mutex<Option<CallbackFnNoArgs>>>,
 }
 
 impl<E> Selector<E>
@@ -122,7 +122,7 @@ where E: EnumTrait<E>+Display
         self.value.lock().unwrap().clone()
     }
 
-    pub fn on_change(&self, callback:CallbackNoArgs){
+    pub fn on_change(&self, callback:CallbackFnNoArgs){
         *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 }

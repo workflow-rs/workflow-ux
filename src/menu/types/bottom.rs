@@ -1,5 +1,6 @@
+use workflow_wasm::prelude::*;
 use crate::{prelude::*, find_el, icon::Icon, result::Result};
-use crate::controls::{svg::SvgNode, listener::Listener};
+use crate::controls::svg::SvgNode;
 
 
 pub fn create_item<T:Into<String>, I: Into<Icon>>(text:T, icon:I)->Result<BottomMenuItem>{
@@ -22,7 +23,7 @@ pub struct BottomMenuItem{
     pub text_el : SvgElement,
     pub circle_el : SvgElement,
     pub icon_el: SvgElement,
-    pub click_listener:Option<Listener<web_sys::MouseEvent>>
+    pub click_listener: Option<Callback<dyn FnMut(web_sys::MouseEvent)->Result<()>>>
 }
 
 impl BottomMenuItem{
@@ -86,8 +87,8 @@ impl BottomMenuItem{
     where
         F: FnMut(web_sys::MouseEvent) ->Result<()> + 'static
     {
-        let callback = Listener::new(t);
-        self.element.add_event_listener_with_callback("click", callback.into_js())?;
+        let callback = callback!(t);
+        self.element.add_event_listener_with_callback("click", callback.as_ref())?;
         self.click_listener = Some(callback);
         Ok(())
     }

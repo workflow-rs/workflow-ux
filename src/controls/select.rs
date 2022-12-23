@@ -49,7 +49,7 @@ impl FlowMenuBase{
 pub struct Select<E> {
     pub element_wrapper : ElementWrapper,
     value : Arc<Mutex<String>>,
-    on_change_cb: Arc<Mutex<Option<Callback<String>>>>,
+    on_change_cb: Arc<Mutex<Option<CallbackFn<String>>>>,
     p:PhantomData<E>
 }
 
@@ -181,7 +181,7 @@ where E: EnumTrait<E>
         self.element().select_first()
     }
 
-    pub fn on_change(&self, callback:Callback<String>){
+    pub fn on_change(&self, callback:CallbackFn<String>){
         *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 

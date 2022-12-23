@@ -2,7 +2,8 @@ use wasm_bindgen::JsCast;
 use workflow_ux::result::Result;
 pub use wasm_bindgen::prelude::*;
 use web_sys::{CustomEvent, MouseEvent, Element};
-use crate::controls::listener::Listener;
+use workflow_wasm::callback::CallbackMap;
+use workflow_wasm::prelude::callback;
 use crate::controls::form::FormControlBase;
 
 pub trait BaseElementTrait{
@@ -33,27 +34,24 @@ impl BaseElementTrait for Element{
 #[derive(Clone, Debug)]
 pub struct ElementWrapper{
     pub element : Element,
-    listeners: Vec<Listener<CustomEvent>>,
-    click_listeners:Vec<Listener<MouseEvent>>,
+    pub callbacks: CallbackMap
 }
 impl ElementWrapper{
-    pub fn push_listener(&mut self, listener: Listener<CustomEvent>){
-        self.listeners.push(listener);
-    }
-    pub fn push_click_listener(&mut self, listener: Listener<MouseEvent>){
-        self.click_listeners.push(listener);
-    }
+
     pub fn new(element : Element)->Self{
-        Self { element, listeners: Vec::new(), click_listeners: Vec::new() }
+        Self {
+            element,
+            callbacks: CallbackMap::new()
+        }
     }
 
     pub fn on<F>(&mut self, name:&str, t:F) ->Result<()>
     where
         F: FnMut(CustomEvent) ->Result<()> + 'static
     {
-        let listener = Listener::new(t);
-        self.element.add_event_listener_with_callback(name, listener.into_js())?;
-        self.listeners.push(listener);
+        let callback = callback!(t);
+        self.element.add_event_listener_with_callback(name, callback.as_ref())?;
+        self.callbacks.insert(callback)?;
         Ok(())
     }
 
@@ -61,9 +59,9 @@ impl ElementWrapper{
     where
         F: FnMut(MouseEvent) -> Result<()> + 'static
     {
-        let listener = Listener::new(t);
-        self.element.add_event_listener_with_callback("click", listener.into_js())?;
-        self.click_listeners.push(listener);
+        let callback = callback!(t);
+        self.element.add_event_listener_with_callback("click", callback.as_ref())?;
+        self.callbacks.insert(callback)?;
         Ok(())
     }
 }

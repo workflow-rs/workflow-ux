@@ -18,7 +18,7 @@ extern "C" {
 pub struct RadioBtns<E> {
     pub element_wrapper : ElementWrapper,
     value : Arc<Mutex<String>>,
-    on_change_cb:Arc<Mutex<Option<Callback<E>>>>,
+    on_change_cb:Arc<Mutex<Option<CallbackFn<E>>>>,
     p:PhantomData<E>
 }
 
@@ -102,7 +102,7 @@ where E: EnumTrait<E>+'static+Display
         self.value.lock().unwrap().clone()
     }
 
-    pub fn on_change(&self, callback:Callback<E>){
+    pub fn on_change(&self, callback:CallbackFn<E>){
         *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 }

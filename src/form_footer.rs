@@ -31,7 +31,7 @@ extern "C" {
 pub struct FormFooter{
     pub layout: ElementLayout,
     pub element_wrapper : ElementWrapper,
-    on_submit_click_cb:Arc<Mutex<Option<Callback<String>>>>,
+    on_submit_click_cb:Arc<Mutex<Option<CallbackFn<String>>>>,
     submit_btn: ElementWrapper
 }
 
@@ -79,7 +79,7 @@ impl FormFooter {
     pub fn init(&mut self) -> Result<()> {
         let cb_opt = self.on_submit_click_cb.clone();
         self.submit_btn.on_click(move|_e|->Result<()>{
-            if let Some(cb) =  &mut*cb_opt.lock().expect("Unable to lock submit_click_cb"){
+            if let Some(cb) =  cb_opt.lock().expect("Unable to lock submit_click_cb").as_mut(){
                 return Ok(cb("submit".to_string())?);
             }
             Ok(())
@@ -87,7 +87,7 @@ impl FormFooter {
         Ok(())
     }
 
-    pub fn on_submit_click(&self, callback:Callback<String>)->Result<()>{
+    pub fn on_submit_click(&self, callback:CallbackFn<String>)->Result<()>{
         let mut locked = self.on_submit_click_cb.lock()?;
         *locked = Some(callback);
         Ok(())

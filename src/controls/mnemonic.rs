@@ -1,8 +1,8 @@
 use crate::prelude::*;
 use crate::result::Result;
 use crate::error::Error;
-use crate::controls::listener::Listener;
 use workflow_html::{Html, Render, html};
+use workflow_wasm::prelude::callback;
 
 pub static CSS:&'static str = include_str!("mnemonic.css");
 
@@ -18,7 +18,7 @@ pub struct Mnemonic {
     body: Arc<Html>,
     inputs:Vec<HtmlInputElement>,
     value : Arc<Mutex<String>>,
-    on_change_cb:Arc<Mutex<Option<Callback<String>>>>,
+    on_change_cb:Arc<Mutex<Option<CallbackFn<String>>>>,
 }
 
 impl Mnemonic {
@@ -181,14 +181,14 @@ impl Mnemonic {
     pub fn init(&mut self)-> Result<()>{
         {
             let this = self.clone();
-            let listener = Listener::new(move |event:web_sys::CustomEvent| ->Result<()> {
+            let callback = callback!(move |event:web_sys::CustomEvent| ->Result<()> {
                 this.on_input_change(event)?;
                 Ok(())
             });
-            self.words_el.element.add_event_listener_with_callback("change", listener.into_js())?;
-            self.words_el.element.add_event_listener_with_callback("keyup", listener.into_js())?;
-            self.words_el.element.add_event_listener_with_callback("keydown", listener.into_js())?;
-            self.words_el.push_listener(listener);
+            self.words_el.element.add_event_listener_with_callback("change", callback.as_ref())?;
+            self.words_el.element.add_event_listener_with_callback("keyup", callback.as_ref())?;
+            self.words_el.element.add_event_listener_with_callback("keydown", callback.as_ref())?;
+            self.words_el.callbacks.insert(callback)?;
         }
 
         Ok(())
@@ -253,7 +253,7 @@ impl Mnemonic {
 
     }
 
-    pub fn on_change(&self, callback:Callback<String>){
+    pub fn on_change(&self, callback:CallbackFn<String>){
         *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 }

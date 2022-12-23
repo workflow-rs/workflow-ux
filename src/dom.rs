@@ -1,9 +1,10 @@
-use crate::{prelude::*, controls::listener::Listener};
+use crate::prelude::*;
 use std::{sync::Arc, str::FromStr};
 use ahash::AHashMap;
 use workflow_core::id::Id;
 use thiserror::Error;
 use wasm_bindgen::JsCast;
+use workflow_wasm::prelude::*;
 #[derive(Error, Debug)]
 pub enum Error {
     #[error("Js Error: {0}")]
@@ -28,7 +29,7 @@ pub fn register(el : &Arc<dyn Element>) {
 
 pub struct Dom {
     elements : AHashMap<Id, Arc<dyn Element>>,
-    dom_listener: Option<Listener<js_sys::Array>>
+    dom_listener: Option<Callback<CallbackClosure<js_sys::Array>>>
 }
 
 
@@ -48,7 +49,7 @@ impl Dom {
 
         let body = document().get_elements_by_tag_name("body").item(0).expect("Unable to get body element");
 
-        let listener = Listener::new(move |array: js_sys::Array| ->Result<(), crate::error::Error> {
+        let callback = callback!(move |array: js_sys::Array| ->Result<(), JsValue> {
 
             let records : Vec<MutationRecord> = array
                 .iter()
@@ -75,8 +76,8 @@ impl Dom {
             // log_trace!("= = = = = = = = MutationObserver called : {:?}", data);
         });
 
-        let observer = MutationObserver::new(listener.into_js()).map_err(|e|Error::JsError(format!("{:?}", e).to_string()))?;
-        self.dom_listener = Some(listener);
+        let observer = MutationObserver::new(callback.as_ref()).map_err(|e|Error::JsError(format!("{:?}", e).to_string()))?;
+        self.dom_listener = Some(callback);
         let mut options = MutationObserverInit::new();
         options.child_list(true);
         options.subtree(true);
