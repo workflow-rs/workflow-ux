@@ -30,3 +30,4 @@ pub mod md;
 pub mod id;
 pub mod mnemonic;
 pub mod qr;
+pub mod badge;

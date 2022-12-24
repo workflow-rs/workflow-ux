@@ -1,4 +1,5 @@
-import {BaseElement, html, css, ScrollbarStyle} from '[FLOW-UX-PATH]';
+import {BaseElement, html, css, ScrollbarStyle, FlowDataBadgeGraph} from '[FLOW-UX-PATH]';
+window.FlowDataBadgeGraph = FlowDataBadgeGraph;
 
 let isTouchCapable = 'ontouchstart' in window ||
 	window.DocumentTouch && document instanceof window.DocumentTouch;/* ||

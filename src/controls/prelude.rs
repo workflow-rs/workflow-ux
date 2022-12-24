@@ -18,7 +18,8 @@ pub use crate::controls::{
     avatar::Avatar,
     id::HiddenId,
     mnemonic::Mnemonic,
-    qr::QRCode
+    qr::QRCode,
+    badge::{Badge, Options as BadgeOptions}
 };
 pub use crate::form::{FormHandler, FormData, FormDataValue};
 pub type UXResult<T> = workflow_ux::result::Result<T>;
