@@ -20,7 +20,7 @@ crate-type = ["cdylib", "lib"]
 # workflow-log = "0.1.0"
 # workflow-html = { path = "../workflow-html" }
 # workflow-wasm = "0.1.0"
-workflow-core = { path = "../workflow-core" }
+workflow-core = { path = "../workflow-core", features = ["wasm"] }
 workflow-i18n = { path = "../workflow-i18n" }
 workflow-log = { path = "../workflow-log" }
 workflow-html = { path = "../workflow-html" }

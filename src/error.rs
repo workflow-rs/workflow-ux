@@ -5,7 +5,7 @@ use std::sync::PoisonError;
 use workflow_i18n::Error as i18nError;
 use serde_wasm_bindgen::Error as SerdeError;
 use thiserror::Error;
-use workflow_wasm::callback::Error as CallbackError;
+use workflow_wasm::callback::CallbackError;
 use workflow_core::channel::{SendError,RecvError,TrySendError};
 use std::io::Error as IoError;
 use core::num::{ParseIntError, ParseFloatError};
@@ -99,7 +99,10 @@ pub enum Error {
     DataTooLong(#[from] DataTooLong),
 
     #[error("CallbackError error: {0}")]
-    CallbackError(#[from] CallbackError)
+    CallbackError(#[from] CallbackError),
+
+    #[error("DOM error: {0}")]
+    DomError(#[from] workflow_dom::error::Error),
 
 }
 

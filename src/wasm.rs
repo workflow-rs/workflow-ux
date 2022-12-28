@@ -1,6 +1,6 @@
 use wasm_bindgen::prelude::*;
 use crate::result::Result;
-use workflow_dom::inject::{Content, inject_blob};
+use workflow_dom::inject::{Content, inject_blob_nowait};
 use workflow_wasm::init::init_workflow;
 pub use workflow_wasm::init::{global, workflow};
 use crate::location;
@@ -23,6 +23,6 @@ pub fn load_component(flow_ux_path:&str, _name:&str, cmp:&str)->Result<()>{
     let origin = loc.origin()?;
     let js = cmp.replace("[FLOW-UX-PATH]", flow_ux_path)
                         .replace("[HOST-ORIGIN]", &origin);
-    inject_blob(Content::Module(js.as_bytes()))?;
+    inject_blob_nowait(Content::Module(js.as_bytes()))?;
     Ok(())
 }
