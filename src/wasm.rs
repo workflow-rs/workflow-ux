@@ -23,6 +23,6 @@ pub fn load_component(flow_ux_path:&str, _name:&str, cmp:&str)->Result<()>{
     let origin = loc.origin()?;
     let js = cmp.replace("[FLOW-UX-PATH]", flow_ux_path)
                         .replace("[HOST-ORIGIN]", &origin);
-    inject_blob_nowait(Content::Module(js.as_bytes()))?;
+    inject_blob_nowait(Content::Module(None, js.as_bytes()))?;
     Ok(())
 }
