@@ -3,25 +3,24 @@ use crate::result::Result;
 
 #[derive(Clone)]
 pub struct HiddenId {
-    el:Element,
-    value: Arc<Mutex<Option<String>>>
+    el: Element,
+    value: Arc<Mutex<Option<String>>>,
 }
 
-unsafe impl Send for HiddenId{}
+unsafe impl Send for HiddenId {}
 
 impl HiddenId {
-
-    pub fn element(&self)->Element{
+    pub fn element(&self) -> Element {
         self.el.clone()
     }
 
-    pub fn new(_pane : &ElementLayout, _attributes: &Attributes, _docs : &Docs) -> Result<Self> {
+    pub fn new(_pane: &ElementLayout, _attributes: &Attributes, _docs: &Docs) -> Result<Self> {
         let el = document().create_element("input")?;
         el.set_attribute("type", "hidden")?;
 
-        Ok(Self{
+        Ok(Self {
             el,
-            value:Arc::new(Mutex::new(None))
+            value: Arc::new(Mutex::new(None)),
         })
     }
 
@@ -30,10 +29,8 @@ impl HiddenId {
         Ok(value)
     }
 
-    pub fn set_value(&self, value:Option<String>) -> Result<()> {
+    pub fn set_value(&self, value: Option<String>) -> Result<()> {
         *self.value.lock()? = value;
         Ok(())
     }
-
 }
-

@@ -1,16 +1,16 @@
 use downcast::DowncastError;
 use wasm_bindgen::JsValue;
 //, convert::{WasmAbi, IntoWasmAbi, FromWasmAbi}};
-use std::sync::PoisonError;
-use workflow_i18n::Error as i18nError;
-use serde_wasm_bindgen::Error as SerdeError;
-use thiserror::Error;
-use workflow_wasm::callback::CallbackError;
-use workflow_core::channel::{SendError,RecvError,TrySendError};
-use std::io::Error as IoError;
-use core::num::{ParseIntError, ParseFloatError};
+use core::num::{ParseFloatError, ParseIntError};
 use hex::FromHexError;
 use qrcodegen::DataTooLong;
+use serde_wasm_bindgen::Error as SerdeError;
+use std::io::Error as IoError;
+use std::sync::PoisonError;
+use thiserror::Error;
+use workflow_core::channel::{RecvError, SendError, TrySendError};
+use workflow_i18n::Error as i18nError;
+use workflow_wasm::callback::CallbackError;
 
 #[macro_export]
 macro_rules! error {
@@ -21,7 +21,6 @@ pub use error;
 #[allow(non_camel_case_types)]
 #[derive(Debug, Error)]
 pub enum Error {
-
     #[error("{0}")]
     String(String),
 
@@ -50,7 +49,7 @@ pub enum Error {
     ParentNotFound(web_sys::Element),
 
     #[error("Layout<{0}>: the supplied HTML contains bindings that are not used: {1}")]
-    MissingLayoutBindings(String,String),
+    MissingLayoutBindings(String, String),
 
     #[error("[{0}]: Unable to locate element with id {1}")]
     MissingElement(String, String),
@@ -67,7 +66,6 @@ pub enum Error {
     #[error("{0}")]
     i18nError(#[from] i18nError),
 
-    
     #[error("data_types_to_modules map is missing; ensure modules::seal() is invoked after module registration")]
     DataTypesToModuleMapMissing,
 
@@ -103,11 +101,9 @@ pub enum Error {
 
     #[error("DOM error: {0}")]
     DomError(#[from] workflow_dom::error::Error),
-
 }
 
-unsafe impl Send for Error{}
-
+unsafe impl Send for Error {}
 
 impl From<FromHexError> for Error {
     fn from(error: FromHexError) -> Error {
@@ -133,7 +129,7 @@ impl From<IoError> for Error {
     }
 }
 
-impl From<JsValue> for Error {  
+impl From<JsValue> for Error {
     fn from(val: JsValue) -> Self {
         Self::JsValue(val)
     }
@@ -144,7 +140,6 @@ impl From<SerdeError> for Error {
         Self::JsValue(e.into())
     }
 }
-
 
 impl From<Error> for JsValue {
     fn from(error: Error) -> JsValue {
@@ -160,7 +155,7 @@ impl From<Error> for JsValue {
 
 impl<T> From<PoisonError<T>> for Error {
     fn from(err: PoisonError<T>) -> Self {
-        Self::PoisonError(format!("{:?}",err).to_string())
+        Self::PoisonError(format!("{:?}", err).to_string())
     }
 }
 
@@ -184,7 +179,7 @@ impl From<web_sys::Element> for Error {
 
 impl<T> From<SendError<T>> for Error {
     fn from(error: SendError<T>) -> Error {
-        Error::ChannelSendError(format!("{:?}",error))
+        Error::ChannelSendError(format!("{:?}", error))
     }
 }
 
@@ -196,16 +191,15 @@ impl<T> From<TrySendError<T>> for Error {
 
 impl From<RecvError> for Error {
     fn from(error: RecvError) -> Error {
-        Error::ChannelReceiveError(format!("{:?}",error))
+        Error::ChannelReceiveError(format!("{:?}", error))
     }
 }
 
 impl<T> From<DowncastError<T>> for Error {
     fn from(error: DowncastError<T>) -> Error {
-        Error::Downcast(format!("{:?}",error))
+        Error::Downcast(format!("{:?}", error))
     }
 }
-
 
 // impl WasmAbi for Error {}
 

@@ -1,25 +1,22 @@
-
 use pulldown_cmark::{
-    Parser, Tag, Event,
-    escape::{escape_html, escape_href},
-    LinkType, CowStr, Options, html
+    escape::{escape_href, escape_html},
+    html, CowStr, Event, LinkType, Options, Parser, Tag,
 };
 //use workflow_log::log_trace;
 
-pub fn markdown_to_html(str:&str)->String{
-
+pub fn markdown_to_html(str: &str) -> String {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_STRIKETHROUGH);
     let parser = Parser::new_ext(&str, options);
 
     let parser = parser.map(|event| match event {
         //Event::Text(text) => Event::Text(text.replace("abbr", "abbreviation").into()),
-        Event::Start(tag)=>{
-            let t = match tag{
-                Tag::Link(link_type, dest, title)=>{
+        Event::Start(tag) => {
+            let t = match tag {
+                Tag::Link(link_type, dest, title) => {
                     //log_trace!("link-type: {:?}, href:{:?}, title:{:?}", link_type, dest, title);
                     let mut prefix = "";
-                    if link_type.eq(&LinkType::Email){
+                    if link_type.eq(&LinkType::Email) {
                         prefix = "mailto:";
                     }
 
@@ -28,26 +25,27 @@ pub fn markdown_to_html(str:&str)->String{
                     let _ = escape_href(&mut href, &mut dest_str);
                     let href = CowStr::from(href);
                     if title.is_empty() {
-                        return Event::Html(
-                            CowStr::from(format!("<a target=\"_blank\" href=\"{}{}\">", CowStr::from(prefix), href))
-                        );
-                    }else{
+                        return Event::Html(CowStr::from(format!(
+                            "<a target=\"_blank\" href=\"{}{}\">",
+                            CowStr::from(prefix),
+                            href
+                        )));
+                    } else {
                         let mut title_ = String::new();
                         let mut title_str = title.into_string();
                         let _ = escape_html(&mut title_, &mut title_str);
                         let title = CowStr::from(title_);
-                        return Event::Html(
-                            CowStr::from(format!("<a target=\"_blank\" href=\"{}{}\" title=\"{}\">", prefix, href, title))
-                        );
+                        return Event::Html(CowStr::from(format!(
+                            "<a target=\"_blank\" href=\"{}{}\" title=\"{}\">",
+                            prefix, href, title
+                        )));
                     }
                 }
-                _=>{
-                    tag
-                }
+                _ => tag,
             };
             Event::Start(t)
-        },
-        _ => event
+        }
+        _ => event,
     });
 
     // Write to String buffer.
@@ -56,4 +54,3 @@ pub fn markdown_to_html(str:&str)->String{
 
     html_output
 }
-

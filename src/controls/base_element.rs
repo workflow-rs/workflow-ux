@@ -30,40 +30,43 @@ extern "C" {
     // [MDN Documentation](https://developer.mozilla.org/en-US/docs/Web/API/Element/closest)"]
     // *This API requires the following crate features to be activated: `Element`*
     # [wasm_bindgen (catch , method , structural , js_class = "BaseElement" , js_name = closest)]
-    pub fn _closest_form_control(this: &BaseElement, selector: &str) -> Result<Option<FormControlBase>>;
+    pub fn _closest_form_control(
+        this: &BaseElement,
+        selector: &str,
+    ) -> Result<Option<FormControlBase>>;
 }
 
-impl BaseElement{
-    pub fn show(&self, show:bool)->Result<()>{
-        if show{
+impl BaseElement {
+    pub fn show(&self, show: bool) -> Result<()> {
+        if show {
             self.remove_attribute("hide")?;
-        }else{
+        } else {
             self.set_attribute("hide", "true")?;
         }
 
         Ok(())
     }
-    pub fn show_form_control(&self, show:bool)->Result<()>{
-        if let Some(ct) = self.closest_form_control()?{
-            if show{
+    pub fn show_form_control(&self, show: bool) -> Result<()> {
+        if let Some(ct) = self.closest_form_control()? {
+            if show {
                 ct.remove_attribute("hide")?;
-            }else{
+            } else {
                 ct.set_attribute("hide", "true")?;
             }
         }
 
         Ok(())
     }
-    pub fn closest_form_control(&self)->Result<Option<FormControlBase>>{
+    pub fn closest_form_control(&self) -> Result<Option<FormControlBase>> {
         self._closest_form_control("flow-form-control".into())
     }
 
-    pub fn focus_form_control(&self)->Result<()>{
+    pub fn focus_form_control(&self) -> Result<()> {
         let r = self.closest_form_control()?;
         if let Some(form_control) = r {
             form_control.scroll_into_view();
             form_control.focus();
-        }else{
+        } else {
             self.scroll_into_view();
         }
 

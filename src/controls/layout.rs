@@ -32,11 +32,9 @@
 //         // let layout_style = ElementLayoutStyle::Pane;
 //         // // let content = ElementLayout::new(&parent.id, &layout_style, attributes)?;
 
-
 //         // let content = T::new(&parent.id, &layout_style, attributes)?;
 
-
-//         Ok(Layout { 
+//         Ok(Layout {
 //             parent : parent.clone(),
 //             content : content.clone(),
 //             element : content.element.clone(),

@@ -1,17 +1,11 @@
-use workflow_ux::error::Error;
-use workflow_ux::result::Result;
+use crate::controls::md::MD;
+use crate::markdown::markdown_to_html;
 use wasm_bindgen::JsValue;
+use web_sys::{Document, Element, Location, Storage, Window};
 use workflow_html::{html, Html, Render};
 use workflow_log::log_error;
-use crate::markdown::markdown_to_html;
-use crate::controls::md::MD;
-use web_sys::{
-    Window,
-    Document,
-    Element,
-    Location,
-    Storage,
-};
+use workflow_ux::error::Error;
+use workflow_ux::result::Result;
 
 pub fn document() -> Document {
     let window = web_sys::window().expect("no global `window` exists");
@@ -31,31 +25,34 @@ pub fn local_storage() -> Storage {
     web_sys::window().unwrap().local_storage().unwrap().unwrap()
 }
 
-pub fn find_el(selector:&str, error_msg:&str) -> Result<Element>{
-    let el_opt = match document().query_selector(selector){
+pub fn find_el(selector: &str, error_msg: &str) -> Result<Element> {
+    let el_opt = match document().query_selector(selector) {
         Ok(el_opt) => el_opt,
-        Err(err)=>{
-            log_error!("MissingElement:error: {:?}, selector:{selector}, error_msg:{error_msg}", err);
+        Err(err) => {
+            log_error!(
+                "MissingElement:error: {:?}, selector:{selector}, error_msg:{error_msg}",
+                err
+            );
             return Err(Error::MissingElement(error_msg.into(), selector.into()));
         }
     };
-    let element = match el_opt{
-        Some(el)=>el,
-        None=>return Err(Error::MissingElement(error_msg.into(), selector.into() ))
+    let element = match el_opt {
+        Some(el) => el,
+        None => return Err(Error::MissingElement(error_msg.into(), selector.into())),
     };
 
     Ok(element)
 }
 
-pub fn create_el(tag:&str, attrs:Vec<(&str, &str)>, html:Option<&str>) -> Result<Element>{
+pub fn create_el(tag: &str, attrs: Vec<(&str, &str)>, html: Option<&str>) -> Result<Element> {
     let doc = document();
     let mut tag_name = tag;
-    let mut classes:Option<js_sys::Array> = None;
-    if tag_name.contains("."){
+    let mut classes: Option<js_sys::Array> = None;
+    if tag_name.contains(".") {
         let mut parts = tag_name.split(".");
         let tag = parts.next().unwrap();
         let array = js_sys::Array::new();
-        for a in parts{
+        for a in parts {
             array.push(&JsValue::from(a));
         }
         classes = Some(array);
@@ -63,14 +60,14 @@ pub fn create_el(tag:&str, attrs:Vec<(&str, &str)>, html:Option<&str>) -> Result
     }
     let el = doc.create_element(tag_name)?;
 
-    for (name, value) in attrs{
+    for (name, value) in attrs {
         el.set_attribute(name, value)?;
     }
-    if let Some(classes) = classes{
+    if let Some(classes) = classes {
         el.class_list().add(&classes)?;
     }
 
-    if let Some(html) = html{
+    if let Some(html) = html {
         el.set_inner_html(html);
     }
 
@@ -81,7 +78,7 @@ pub fn type_of<T>(_: T) -> String {
     std::any::type_name::<T>().to_string()
 }
 
-pub fn markdown(str:&str)->crate::result::Result<Html>{
+pub fn markdown(str: &str) -> crate::result::Result<Html> {
     let body = markdown_to_html(str);
     /*
     //let stream: proc_macro2::TokenStream = str.parse().unwrap();
@@ -96,6 +93,5 @@ pub fn markdown(str:&str)->crate::result::Result<Html>{
 
     //Ok(MD::new(body)?)
 
-    Ok(html!{<MD body />}?)
+    Ok(html! {<MD body />}?)
 }
-

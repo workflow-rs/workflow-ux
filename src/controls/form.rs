@@ -11,7 +11,6 @@ extern "C" {
     #[doc = "The `FormControlBase` class."]
     pub type FormControlBase;
 
-
     # [wasm_bindgen (structural , method , js_class = "FormControlBase" , js_name = focus)]
     pub fn focus(this: &FormControlBase);
 }
@@ -20,7 +19,6 @@ pub struct FormControl {
 }
 
 impl FormControl {
-
     pub fn element(&self) -> Element {
         self.element.clone()
     }
@@ -29,41 +27,35 @@ impl FormControl {
         Ok(FormControl::new_with_id(&Id::new().to_string())?)
     }
 
-    pub fn new_with_id(self_id : &str) -> Result<FormControl> {
-
-        let element = document()
-            .create_element("flow-form-control")?;
+    pub fn new_with_id(self_id: &str) -> Result<FormControl> {
+        let element = document().create_element("flow-form-control")?;
         element.set_id(self_id);
 
         //element.set_attribute("focusable", "true")?;
-        Ok(FormControl {
-            element: element,
-        })
+        Ok(FormControl { element: element })
     }
 
     pub fn set_title(&self, title: &str) -> Result<()> {
-        let div = document()
-            .create_element("div")?;
-        div.set_attribute("slot","title")?;
+        let div = document().create_element("div")?;
+        div.set_attribute("slot", "title")?;
         div.set_inner_html(title);
         self.element.append_child(&div)?;
         Ok(())
     }
-    pub fn set_attribute(&self, k:&str, v:&str) -> Result<()>{
+    pub fn set_attribute(&self, k: &str, v: &str) -> Result<()> {
         self.element.set_attribute(k, v)?;
         Ok(())
     }
 
     pub fn set_info(&self, info: &str) -> Result<()> {
-        let div = document()
-            .create_element("div")?;
-        div.set_attribute("slot","info")?;
+        let div = document().create_element("div")?;
+        div.set_attribute("slot", "info")?;
         div.set_inner_html(info);
         self.element.append_child(&div)?;
         Ok(())
     }
 
-    pub fn append_child(&self, child : &Element) -> Result<()> {
+    pub fn append_child(&self, child: &Element) -> Result<()> {
         self.element.append_child(child)?;
         Ok(())
     }

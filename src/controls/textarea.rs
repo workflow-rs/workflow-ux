@@ -17,48 +17,47 @@ extern "C" {
 
 #[derive(Clone)]
 pub struct Textarea {
-    pub layout : ElementLayout,
-    pub element_wrapper : ElementWrapper,
-    value : Arc<Mutex<String>>,
-    on_change_cb:Arc<Mutex<Option<CallbackFnNoArgs>>>,
+    pub layout: ElementLayout,
+    pub element_wrapper: ElementWrapper,
+    value: Arc<Mutex<String>>,
+    on_change_cb: Arc<Mutex<Option<CallbackFnNoArgs>>>,
 }
 
 //impl FieldHelpers for Textarea{}
 
 impl Textarea {
-    
     pub fn element(&self) -> FlowTextareaBase {
-        self.element_wrapper.element.clone().dyn_into::<FlowTextareaBase>().expect("Unable to cast to FlowTextareaBase")
+        self.element_wrapper
+            .element
+            .clone()
+            .dyn_into::<FlowTextareaBase>()
+            .expect("Unable to cast to FlowTextareaBase")
     }
 
     pub fn focus(&self) -> Result<()> {
         Ok(self.element().focus_form_control()?)
     }
 
-    pub fn new(
-        layout : &ElementLayout,
-        attributes: &Attributes,
-        _docs : &Docs
-    ) -> Result<Textarea> {
-        let element = document()
-            .create_element("flow-textarea")?;
+    pub fn new(layout: &ElementLayout, attributes: &Attributes, _docs: &Docs) -> Result<Textarea> {
+        let element = document().create_element("flow-textarea")?;
 
         let init_value: String = String::from("");
-        for (k,v) in attributes.iter() {
-            element.set_attribute(k,v)?;
+        for (k, v) in attributes.iter() {
+            element.set_attribute(k, v)?;
         }
-
 
         let value = Arc::new(Mutex::new(init_value));
 
-        let pane_inner = layout.inner().ok_or(JsValue::from("unable to mut lock pane inner"))?;
+        let pane_inner = layout
+            .inner()
+            .ok_or(JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
 
-        let mut control = Textarea { 
-            layout : layout.clone(),
+        let mut control = Textarea {
+            layout: layout.clone(),
             element_wrapper: ElementWrapper::new(element),
             value,
-            on_change_cb:Arc::new(Mutex::new(None))
+            on_change_cb: Arc::new(Mutex::new(None)),
         };
 
         control.init()?;
@@ -66,21 +65,22 @@ impl Textarea {
         Ok(control)
     }
 
-    fn init(&mut self)->Result<()>{
+    fn init(&mut self) -> Result<()> {
         let el = self.element();
         let value = self.value.clone();
         let cb_opt = self.on_change_cb.clone();
-        self.element_wrapper.on("changed", move |_event| ->Result<()> {
-            let new_value = el.value();
-            log_trace!("new value: {:?}", new_value);
+        self.element_wrapper
+            .on("changed", move |_event| -> Result<()> {
+                let new_value = el.value();
+                log_trace!("new value: {:?}", new_value);
 
-            *value.lock().unwrap() = new_value;
-            if let Some(cb) =  &mut*cb_opt.lock().unwrap(){
-                return Ok(cb()?);
-            }
+                *value.lock().unwrap() = new_value;
+                if let Some(cb) = &mut *cb_opt.lock().unwrap() {
+                    return Ok(cb()?);
+                }
 
-            Ok(())
-        })?;
+                Ok(())
+            })?;
 
         Ok(())
     }
@@ -89,16 +89,14 @@ impl Textarea {
         self.value.lock().unwrap().clone()
     }
 
-    pub fn set_value<T: Into<String>>(&self, value:T)->Result<()>{
+    pub fn set_value<T: Into<String>>(&self, value: T) -> Result<()> {
         let value = value.into();
         FieldHelper::set_value_attr(&self.element_wrapper.element, &value)?;
         *self.value.lock().unwrap() = value;
         Ok(())
     }
-    
-    pub fn on_change(&self, callback:CallbackFnNoArgs){
+
+    pub fn on_change(&self, callback: CallbackFnNoArgs) {
         *self.on_change_cb.lock().unwrap() = Some(callback);
     }
-
 }
-

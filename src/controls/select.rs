@@ -1,8 +1,7 @@
 use crate::prelude::*;
-use std::{convert::Into, marker::PhantomData};
 use js_sys::Array;
+use std::{convert::Into, marker::PhantomData};
 use workflow_ux::result::Result;
-
 
 #[wasm_bindgen]
 extern "C" {
@@ -21,86 +20,85 @@ extern "C" {
 
     // Create option Object for select
     #[wasm_bindgen(static_method_of=FlowMenu, js_name = createOption)]
-    pub fn _create_option(text:String, value:String)->SelectOption;
+    pub fn _create_option(text: String, value: String) -> SelectOption;
 
     // Create option Object for select
     #[wasm_bindgen(static_method_of=FlowMenu, js_name = createOption)]
-    pub fn _create_option_with_cls(text:String, value:String, cls:String)->SelectOption;
+    pub fn _create_option_with_cls(text: String, value: String, cls: String) -> SelectOption;
 
     #[wasm_bindgen (structural , method , js_class = "FlowMenuBase" , js_name = selectOne)]
-    pub fn _select(this: &FlowMenuBase, value:String);
+    pub fn _select(this: &FlowMenuBase, value: String);
 
     // Remove old/current options and set new option
     #[wasm_bindgen (structural , method , js_class = "FlowMenuBase" , js_name = changeOptions)]
-    pub fn change_options(this: &FlowMenuBase, options:Array);
+    pub fn change_options(this: &FlowMenuBase, options: Array);
 
     #[wasm_bindgen (structural , method , js_class = "FlowMenuBase" , js_name = selectFirst)]
-    pub fn select_first(this: &FlowMenuBase)->String;
+    pub fn select_first(this: &FlowMenuBase) -> String;
 }
 
-
-impl FlowMenuBase{
-    pub fn select<S: Into<String>>(self: &FlowMenuBase, selection:S){
+impl FlowMenuBase {
+    pub fn select<S: Into<String>>(self: &FlowMenuBase, selection: S) {
         self._select(selection.into());
     }
 }
 
 #[derive(Clone)]
 pub struct Select<E> {
-    pub element_wrapper : ElementWrapper,
-    value : Arc<Mutex<String>>,
+    pub element_wrapper: ElementWrapper,
+    value: Arc<Mutex<String>>,
     on_change_cb: Arc<Mutex<Option<CallbackFn<String>>>>,
-    p:PhantomData<E>
+    p: PhantomData<E>,
 }
 
-unsafe impl<E> Send for Select<E> where E: EnumTrait<E>{}
-unsafe impl<E> Sync for Select<E> where E: EnumTrait<E>{}
+unsafe impl<E> Send for Select<E> where E: EnumTrait<E> {}
+unsafe impl<E> Sync for Select<E> where E: EnumTrait<E> {}
 
-impl Select<()>{
-    pub fn create_option<S: Into<String>>(text:S, value:S)->SelectOption{
+impl Select<()> {
+    pub fn create_option<S: Into<String>>(text: S, value: S) -> SelectOption {
         FlowMenu::_create_option(text.into(), value.into())
     }
 
-    pub fn create_option_with_cls<S: Into<String>>(text:S, value:S, cls:S)->SelectOption{
+    pub fn create_option_with_cls<S: Into<String>>(text: S, value: S, cls: S) -> SelectOption {
         FlowMenu::_create_option_with_cls(text.into(), value.into(), cls.into())
     }
 }
 
 impl<E> Select<E>
-where E: EnumTrait<E>
+where
+    E: EnumTrait<E>,
 {
-    
     pub fn element(&self) -> FlowMenuBase {
-        self.element_wrapper.element.clone().dyn_into::<FlowMenuBase>().expect("Unable to cast Select as FlowMenuBase")
+        self.element_wrapper
+            .element
+            .clone()
+            .dyn_into::<FlowMenuBase>()
+            .expect("Unable to cast Select as FlowMenuBase")
     }
     pub fn focus(&self) -> Result<()> {
         self.element().focus_form_control()?;
         Ok(())
     }
 
-    pub fn bind(element : &Element) -> Result<Select<String>> {
-
+    pub fn bind(element: &Element) -> Result<Select<String>> {
         let value = match element.get_attribute("value") {
-            Some(value) => { value },
-            None => { "".to_string() },
+            Some(value) => value,
+            None => "".to_string(),
         };
 
         let control = Select {
-            element_wrapper : ElementWrapper::new(element.clone()),
-            value : Arc::new(Mutex::new(value)),
+            element_wrapper: ElementWrapper::new(element.clone()),
+            value: Arc::new(Mutex::new(value)),
             on_change_cb: Arc::new(Mutex::new(None)),
-            p:PhantomData
+            p: PhantomData,
         };
 
         Ok(control)
     }
 
-
-    pub fn new(layout : &ElementLayout, attributes: &Attributes, _docs : &Docs) -> Result<Select<E>> {
+    pub fn new(layout: &ElementLayout, attributes: &Attributes, _docs: &Docs) -> Result<Select<E>> {
         let doc = document();
-        let element = doc
-            .create_element("flow-select")?;
-            
+        let element = doc.create_element("flow-select")?;
 
         let mut init_value: String = String::new();
         let items = E::list();
@@ -111,16 +109,16 @@ where E: EnumTrait<E>
             element.append_child(&menu_item)?;
         }
 
-        for (k,v) in attributes.iter() {
-            if k.eq("multiple"){
+        for (k, v) in attributes.iter() {
+            if k.eq("multiple") {
                 log_trace!("Use `MultiSelect` for multiple selection {:?}", attributes);
                 continue;
             }
-            if k.eq("value"){
-                element.set_attribute("selected",v)?;
+            if k.eq("value") {
+                element.set_attribute("selected", v)?;
                 init_value = v.to_string();
-            }else{
-                element.set_attribute(k,v)?;
+            } else {
+                element.set_attribute(k, v)?;
             }
         }
         let value = Arc::new(Mutex::new(init_value));
@@ -131,33 +129,32 @@ where E: EnumTrait<E>
         pane_inner.element.append_child(&element)?;
 
         let mut control = Select {
-            element_wrapper:ElementWrapper::new(element),
+            element_wrapper: ElementWrapper::new(element),
             value,
-            on_change_cb:Arc::new(Mutex::new(None)),
-            p:PhantomData
+            on_change_cb: Arc::new(Mutex::new(None)),
+            p: PhantomData,
         };
 
         control.init_events()?;
         Ok(control)
     }
 
-    fn init_events(&mut self) -> Result<()>{
+    fn init_events(&mut self) -> Result<()> {
         let el = self.element();
         let value = self.value.clone();
         let cb_opt = self.on_change_cb.clone();
-        self.element_wrapper.on("select", move |event| -> Result<()> {
+        self.element_wrapper
+            .on("select", move |event| -> Result<()> {
+                log_trace!("Select: {:?}", event);
+                let new_value = el.value();
+                let mut value = value.lock().unwrap();
+                *value = new_value.clone();
+                if let Some(cb) = cb_opt.lock().unwrap().as_mut() {
+                    cb(new_value)?;
+                }
 
-            log_trace!("Select: {:?}", event);
-            let new_value = el.value();
-            let mut value = value.lock().unwrap();
-            *value = new_value.clone();
-            if let Some(cb) = cb_opt.lock().unwrap().as_mut(){
-                cb(new_value)?;
-            }
-
-            Ok(())
-
-        })?;
+                Ok(())
+            })?;
 
         Ok(())
     }
@@ -166,28 +163,28 @@ where E: EnumTrait<E>
         self.value.lock().unwrap().clone()
     }
 
-    pub fn set_value<T: Into<String>>(&self, value:T)->Result<()>{
+    pub fn set_value<T: Into<String>>(&self, value: T) -> Result<()> {
         let value = value.into();
         FieldHelper::set_attr(&self.element_wrapper.element, "selected", &value)?;
         *self.value.lock().unwrap() = value.clone();
 
         //if let Some(cb) = &mut*self.on_change_cb.borrow_mut(){
-            //cb(value)?;
+        //cb(value)?;
         //}
 
         Ok(())
     }
-    pub fn select_first(&self)->String{
+    pub fn select_first(&self) -> String {
         self.element().select_first()
     }
 
-    pub fn on_change(&self, callback:CallbackFn<String>){
+    pub fn on_change(&self, callback: CallbackFn<String>) {
         *self.on_change_cb.lock().unwrap() = Some(callback);
     }
 
-    pub fn change_options<T:Into<String>>(&self, options:Vec<(T, T)>)->Result<()>{
+    pub fn change_options<T: Into<String>>(&self, options: Vec<(T, T)>) -> Result<()> {
         let items = Array::new_with_length(options.len() as u32);
-        for (text, value) in options{
+        for (text, value) in options {
             let opt = Select::create_option(text, value);
             items.push(&JsValue::from(opt));
         }

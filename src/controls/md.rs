@@ -1,38 +1,39 @@
 use crate::prelude::*;
-use workflow_html::{Hooks, Renderables, Render, ElementResult};
+use workflow_html::{ElementResult, Hooks, Render, Renderables};
 
 #[derive(Clone)]
-pub struct MD{
+pub struct MD {
     pub el: Element,
-    pub body:String
+    pub body: String,
 }
 
-impl Default for MD{
+impl Default for MD {
     fn default() -> Self {
-        Self{
+        Self {
             el: document().create_element("div").unwrap(),
-            body:"".to_string()
+            body: "".to_string(),
         }
     }
 }
 
-impl MD{
-    pub fn new(body:String)->crate::result::Result<Self>{
-        Ok(Self{
+impl MD {
+    pub fn new(body: String) -> crate::result::Result<Self> {
+        Ok(Self {
             el: document().create_element("div")?,
-            body
+            body,
         })
     }
 }
 
-impl Render for MD{
+impl Render for MD {
     fn render_node(
-        self, 
-        parent:&mut Element,
-        _map:&mut Hooks,
-        renderables:&mut Renderables
-    )->ElementResult<()>
-    where Self: Sized
+        self,
+        parent: &mut Element,
+        _map: &mut Hooks,
+        renderables: &mut Renderables,
+    ) -> ElementResult<()>
+    where
+        Self: Sized,
     {
         self.el.class_list().add_1("md-container-el")?;
         self.el.set_inner_html(&self.body);
@@ -41,7 +42,7 @@ impl Render for MD{
         Ok(())
     }
 
-    fn render(&self, _w: &mut Vec<String>)->ElementResult<()> {
+    fn render(&self, _w: &mut Vec<String>) -> ElementResult<()> {
         Ok(())
     }
 }
