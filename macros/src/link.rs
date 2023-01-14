@@ -1,34 +1,34 @@
-use std::convert::Into;
 use proc_macro::TokenStream;
 use proc_macro2::Ident;
 use quote::quote;
+use std::convert::Into;
 use syn::{
-    Result, parse_macro_input,
-    punctuated::Punctuated, Expr, Token, 
-    parse::{Parse, ParseStream}, Error,
+    parse::{Parse, ParseStream},
+    parse_macro_input,
+    punctuated::Punctuated,
+    Error, Expr, Result, Token,
 };
 
 #[derive(Debug)]
 struct LinkWithCallback {
     // parent : Expr,
     // title : Expr,
-    text : Expr,
-    module_type : Ident,
-    module_handler_fn : Ident,
-    args : Vec<Expr>,
+    text: Expr,
+    module_type: Ident,
+    module_handler_fn: Ident,
+    args: Vec<Expr>,
     // cls: String
-} 
+}
 
 impl Parse for LinkWithCallback {
     fn parse(input: ParseStream) -> Result<Self> {
-
         let usage = "<text>, <ModuleType::handler_fn>, [args, ...]";
 
         let parsed = Punctuated::<Expr, Token![,]>::parse_terminated(input).unwrap();
         if parsed.len() < 2 {
             return Err(Error::new_spanned(
                 parsed,
-                format!("not enough arguments - usage: {}", usage)
+                format!("not enough arguments - usage: {}", usage),
             ));
         }
         //  else if parsed.len() > 2 {
@@ -37,7 +37,7 @@ impl Parse for LinkWithCallback {
         //         format!("too many arguments - usage: {}", usage)
         //     ));
         // }
-        
+
         let mut iter = parsed.iter();
         // let parent = iter.next().clone().unwrap().clone();
         // let title = iter.next().clone().unwrap().clone();
@@ -76,7 +76,7 @@ impl Parse for LinkWithCallback {
                     let handler_fn = segments.next().clone().unwrap().ident.clone();
                     (module_type, handler_fn)
                 }
-            },
+            }
             _ => {
                 return Err(Error::new_spanned(
                     handler.clone(),
@@ -85,7 +85,7 @@ impl Parse for LinkWithCallback {
             }
         };
 
-        let args : Vec<Expr> = iter.map(|v|v.clone()).collect();
+        let args: Vec<Expr> = iter.map(|v| v.clone()).collect();
 
         let link = LinkWithCallback {
             text,
@@ -98,7 +98,6 @@ impl Parse for LinkWithCallback {
     }
 }
 
-
 pub fn link_with_callback(input: TokenStream) -> TokenStream {
     let link = parse_macro_input!(input as LinkWithCallback);
 
@@ -109,14 +108,16 @@ pub fn link_with_callback(input: TokenStream) -> TokenStream {
     let args = link.args;
 
     let (transforms, args) = if args.len() == 0 {
-        (quote!{},quote!{})
+        (quote! {}, quote! {})
     } else {
-        (quote!{
-            #(let #args = #args.clone();)*
-        },
-        quote!{
-            #(#args),*
-        })
+        (
+            quote! {
+                #(let #args = #args.clone();)*
+            },
+            quote! {
+                #(#args),*
+            },
+        )
     };
 
     (quote!{
@@ -145,7 +146,7 @@ pub fn menu_link_with_callback(input: TokenStream) -> TokenStream {
     let module_type = link.module_type;
     let menu = link.module_handler_fn;
 
-    (quote!{
+    (quote! {
 
         {
             workflow_ux::link::Link::new_for_callback(#text)?
@@ -160,63 +161,54 @@ pub fn menu_link_with_callback(input: TokenStream) -> TokenStream {
                 Ok(())
             }))?
         }
-    }).into()
+    })
+    .into()
 }
-
-
-
 
 #[derive(Debug)]
 struct LinkWithUrl {
-    text : Expr,
-    url : Expr,
+    text: Expr,
+    url: Expr,
 }
 
 impl Parse for LinkWithUrl {
     fn parse(input: ParseStream) -> Result<Self> {
-
         let usage = "<text>, <url>, <ModuleType::handler_fn>";
 
         let parsed = Punctuated::<Expr, Token![,]>::parse_terminated(input).unwrap();
         if parsed.len() < 3 {
             return Err(Error::new_spanned(
                 parsed,
-                format!("not enough arguments - usage: {}", usage)
+                format!("not enough arguments - usage: {}", usage),
             ));
         } else if parsed.len() > 3 {
             return Err(Error::new_spanned(
                 parsed,
-                format!("too many arguments - usage: {}", usage)
+                format!("too many arguments - usage: {}", usage),
             ));
         }
-        
+
         let mut iter = parsed.iter();
         let text = iter.next().clone().unwrap().clone();
         let url = iter.next().clone().unwrap().clone();
 
-        let link = LinkWithUrl {
-            text,
-            url,
-        };
+        let link = LinkWithUrl { text, url };
         Ok(link)
     }
 }
-
 
 pub fn link_with_url(input: TokenStream) -> TokenStream {
     let link = parse_macro_input!(input as LinkWithUrl);
     let text = link.text;
     let url = link.url;
 
-    (quote!{
+    (quote! {
 
         {
             workflow_ux::link::Link::new_with_url(&#text,#url)?
         }
 
 
-    }).into()
-
-
+    })
+    .into()
 }
-

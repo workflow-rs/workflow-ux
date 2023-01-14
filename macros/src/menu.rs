@@ -1,40 +1,40 @@
-use std::convert::Into;
 use proc_macro::TokenStream;
 use proc_macro2::{Ident, Span};
 use quote::quote;
+use std::convert::Into;
 use syn::{
-    Result, parse_macro_input,
-    punctuated::Punctuated, Expr, Token, 
-    parse::{Parse, ParseStream}, Error,
+    parse::{Parse, ParseStream},
+    parse_macro_input,
+    punctuated::Punctuated,
+    Error, Expr, Result, Token,
 };
 
 #[derive(Debug)]
 struct Menu {
-    parent : Expr,
-    title : Expr,
-    icon : Expr,
-    module_type : Ident,
-    module_handler_fn : Ident,
+    parent: Expr,
+    title: Expr,
+    icon: Expr,
+    module_type: Ident,
+    module_handler_fn: Ident,
 }
 
 impl Parse for Menu {
     fn parse(input: ParseStream) -> Result<Self> {
-
         let usage = "<parent>, <title>, <icon>, <ModuleType::handler_fn>";
 
         let parsed = Punctuated::<Expr, Token![,]>::parse_terminated(input).unwrap();
         if parsed.len() < 4 {
             return Err(Error::new_spanned(
                 parsed,
-                format!("not enough arguments - usage: {}", usage)
+                format!("not enough arguments - usage: {}", usage),
             ));
         } else if parsed.len() > 4 {
             return Err(Error::new_spanned(
                 parsed,
-                format!("too many arguments - usage: {}", usage)
+                format!("too many arguments - usage: {}", usage),
             ));
         }
-        
+
         let mut iter = parsed.iter();
         let parent = iter.next().clone().unwrap().clone();
         let title = iter.next().clone().unwrap().clone();
@@ -55,7 +55,7 @@ impl Parse for Menu {
                     let handler_fn = segments.next().clone().unwrap().ident.clone();
                     (module_type, handler_fn)
                 }
-            },
+            }
             _ => {
                 return Err(Error::new_spanned(
                     module_handler_path.clone(),
@@ -77,29 +77,28 @@ impl Parse for Menu {
 
 #[derive(Debug)]
 struct SectionMenu {
-    parent : Expr,
-    title : Expr,
-    icon : Expr
+    parent: Expr,
+    title: Expr,
+    icon: Expr,
 }
 
 impl Parse for SectionMenu {
     fn parse(input: ParseStream) -> Result<Self> {
-
         let usage = "<parent>, <title>, <icon>";
 
         let parsed = Punctuated::<Expr, Token![,]>::parse_terminated(input).unwrap();
         if parsed.len() < 3 {
             return Err(Error::new_spanned(
                 parsed,
-                format!("not enough arguments - usage: {}", usage)
+                format!("not enough arguments - usage: {}", usage),
             ));
         } else if parsed.len() > 3 {
             return Err(Error::new_spanned(
                 parsed,
-                format!("too many arguments - usage: {}", usage)
+                format!("too many arguments - usage: {}", usage),
             ));
         }
-        
+
         let mut iter = parsed.iter();
         let parent = iter.next().clone().unwrap().clone();
         let title = iter.next().clone().unwrap().clone();
@@ -108,59 +107,48 @@ impl Parse for SectionMenu {
         let menu = SectionMenu {
             parent,
             title,
-            icon
+            icon,
         };
         Ok(menu)
     }
 }
 
-
 #[derive(Debug)]
 struct MenuGroup {
-    parent : Expr,
-    title : Expr
+    parent: Expr,
+    title: Expr,
 }
 
 impl Parse for MenuGroup {
     fn parse(input: ParseStream) -> Result<Self> {
-
         let usage = "<parent>, <title>";
 
         let parsed = Punctuated::<Expr, Token![,]>::parse_terminated(input).unwrap();
         if parsed.len() < 2 {
             return Err(Error::new_spanned(
                 parsed,
-                format!("not enough arguments - usage: {}", usage)
+                format!("not enough arguments - usage: {}", usage),
             ));
         } else if parsed.len() > 2 {
             return Err(Error::new_spanned(
                 parsed,
-                format!("too many arguments - usage: {}", usage)
+                format!("too many arguments - usage: {}", usage),
             ));
         }
-        
+
         let mut iter = parsed.iter();
         let parent = iter.next().clone().unwrap().clone();
         let title = iter.next().clone().unwrap().clone();
 
-        let menu = Self {
-            parent,
-            title
-        };
+        let menu = Self { parent, title };
         Ok(menu)
     }
 }
 
-
 pub fn section_menu(input: TokenStream) -> TokenStream {
     let menu = parse_macro_input!(input as SectionMenu);
     let menu_type = Ident::new("SectionMenu", Span::call_site());
-    menu_impl(
-        menu_type,
-        menu.parent,
-        menu.title,
-        menu.icon
-    ).into()
+    menu_impl(menu_type, menu.parent, menu.title, menu.icon).into()
 }
 
 pub fn menu_group(input: TokenStream) -> TokenStream {
@@ -168,7 +156,7 @@ pub fn menu_group(input: TokenStream) -> TokenStream {
     let menu_type = Ident::new("MenuGroup", Span::call_site());
     let parent = menu.parent;
     let title = menu.title;
-    (quote!{
+    (quote! {
 
         workflow_ux::menu::#menu_type::new(&#parent,#title.into())?
         .with_callback(Box::new(move |target|{
@@ -176,7 +164,8 @@ pub fn menu_group(input: TokenStream) -> TokenStream {
             Ok(())
         }))?
 
-    }).into()
+    })
+    .into()
 }
 
 pub fn menu_item(input: TokenStream) -> TokenStream {
@@ -188,11 +177,10 @@ pub fn menu_item(input: TokenStream) -> TokenStream {
         menu.title,
         menu.icon,
         menu.module_type,
-        menu.module_handler_fn
-    ).into()
+        menu.module_handler_fn,
+    )
+    .into()
 }
-
-
 
 pub fn popup_menu(input: TokenStream) -> TokenStream {
     let menu = parse_macro_input!(input as Menu);
@@ -237,7 +225,7 @@ pub fn popup_menu_link(input: TokenStream) -> TokenStream {
     let module_type = menu.module_type;
     let menu = menu.module_handler_fn;
 
-    (quote!{
+    (quote! {
 
         {
             workflow_ux::popup_menu::PopupMenuItem::new(&#parent, #title.into(), #icon)?
@@ -261,18 +249,12 @@ pub fn popup_menu_link(input: TokenStream) -> TokenStream {
         }
 
 
-    }).into()
+    })
+    .into()
 }
 
-
-fn menu_impl(
-    menu_type : Ident,
-    parent : Expr,
-    title : Expr,
-    icon : Expr
-) -> TokenStream {
-
-    (quote!{
+fn menu_impl(menu_type: Ident, parent: Expr, title: Expr, icon: Expr) -> TokenStream {
+    (quote! {
 
         workflow_ux::menu::#menu_type::new(&#parent,#title.into(),#icon)?
         .with_callback(Box::new(move |target|{
@@ -280,22 +262,19 @@ fn menu_impl(
             Ok(())
         }))?
 
-    }).into()
+    })
+    .into()
 }
 
-
-
 fn menu_with_callback(
-    menu_type : Ident,
-    parent : Expr,
-    title : Expr,
-    icon : Expr,
-    module_type : Ident,
-    module_handler_fn : Ident,
-
+    menu_type: Ident,
+    parent: Expr,
+    title: Expr,
+    icon: Expr,
+    module_type: Ident,
+    module_handler_fn: Ident,
 ) -> TokenStream {
-
-    (quote!{
+    (quote! {
 
         {
             workflow_ux::menu::#menu_type::new(&#parent,#title.into(),#icon)?
@@ -317,5 +296,6 @@ fn menu_with_callback(
         }
 
 
-    }).into()
+    })
+    .into()
 }

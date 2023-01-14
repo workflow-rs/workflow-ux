@@ -1,22 +1,23 @@
-
-use std::convert::Into;
 use proc_macro::TokenStream;
 use proc_macro2::TokenStream as TokenStream2;
+use std::convert::Into;
 // use proc_macro2::{Span, Ident};
 //use proc_macro2::Span;
 use quote::{quote, ToTokens};
 use syn::{
+    parse::{Parse, ParseStream},
+    parse_macro_input,
+    parse_quote,
+    //PathArguments,
+    punctuated::Punctuated,
     //Ident,
     DeriveInput,
     //Result,
     Error,
-    parse_macro_input, 
-    //PathArguments, 
-    punctuated::Punctuated, 
-    //Expr, 
-    Token, 
-    parse::{Parse, ParseStream}, parse_quote, Expr, 
+    Expr,
     // ExprPath, PathSegment,
+    //Expr,
+    Token,
 };
 // use std::convert::Into;
 // use proc_macro::TokenStream;
@@ -33,7 +34,6 @@ use syn::{
 
 #[allow(dead_code)]
 
-
 struct ParsableNamedField {
     pub field: syn::Field,
 }
@@ -42,16 +42,12 @@ impl Parse for ParsableNamedField {
     fn parse(input: ParseStream<'_>) -> syn::parse::Result<Self> {
         let field = syn::Field::parse_named(input)?;
 
-        Ok(ParsableNamedField {
-            field,
-        })
+        Ok(ParsableNamedField { field })
     }
 }
 
-
-
 struct Attributes {
-    pub evict : TokenStream2
+    pub evict: TokenStream2,
 }
 
 impl Parse for Attributes {
@@ -63,18 +59,16 @@ impl Parse for Attributes {
         if parsed.len() > 1 {
             return Err(Error::new_spanned(
                 parsed,
-                format!("usage: #[view[(evict::Allow or evict::Disallow)]]")
+                format!("usage: #[view[(evict::Allow or evict::Disallow)]]"),
             ));
         }
 
-
         let evict = if parsed.len() < 1 {
-            quote!{ workflow_ux::view::Eviction::Allow }
+            quote! { workflow_ux::view::Eviction::Allow }
         } else {
-
             let mut iter = parsed.iter();
             let expr = iter.next().clone().unwrap().clone();
-            // let evict_disposition = 
+            // let evict_disposition =
             match &expr {
                 Expr::Path(_) => quote! { #expr }, //.clone(),
                 _ => {
@@ -89,13 +83,12 @@ impl Parse for Attributes {
 
         // let evict_dispotition = input.parse::<syn::Path>()?;
         // let evict_dispotition = input.parse::<syn::Path>()?;
-        
-        Ok(Attributes { 
-            evict : evict.clone()
+
+        Ok(Attributes {
+            evict: evict.clone(),
         })
     }
 }
-
 
 pub fn view(attr: TokenStream, item: TokenStream) -> TokenStream {
     // println!("panel attrs: {:#?}",attr);
@@ -113,50 +106,44 @@ pub fn view(attr: TokenStream, item: TokenStream) -> TokenStream {
     // let struct_params = &ast.generics;
 
     let ast = match &mut ast.data {
-        syn::Data::Struct(ref mut struct_data) => {           
+        syn::Data::Struct(ref mut struct_data) => {
             match &mut struct_data.fields {
                 syn::Fields::Named(fields) => {
-
                     let punctuated_fields: Punctuated<ParsableNamedField, Token![,]> = parse_quote! {
                         element : web_sys::Element,
                         module : Option<std::sync::Arc<dyn workflow_ux::module::ModuleInterface>>,
                     };
-                
+
                     fields
                         .named
                         .extend(punctuated_fields.into_iter().map(|p| p.field));
-                }   
-                _ => {
-                    ()
                 }
-            }              
-            
+                _ => (),
+            }
+
             &ast
             // return quote! {
             //     #ast
             // }.into();
         }
         _ => {
-            return Error::new_spanned(
-                struct_name,
-                format!("#[view] macro only supports structs")
-            )
-            .to_compile_error()
-            .into();
+            return Error::new_spanned(struct_name, format!("#[view] macro only supports structs"))
+                .to_compile_error()
+                .into();
         }
     };
 
     let _evict = attributes.evict.clone(); //.to_token_stream();
 
-    let ts = quote!{
+    let ts = quote! {
 
         #ast
 
         unsafe impl #struct_params Send for #struct_name #struct_params { }
         unsafe impl #struct_params Sync for #struct_name #struct_params { }
-        
+
         impl #struct_name #struct_params {
-            fn element() -> web_sys::Element { 
+            fn element() -> web_sys::Element {
                 workflow_ux::document().create_element("workspace-view").expect("unable to create workspace-view element")
             }
         }
@@ -181,7 +168,6 @@ pub fn view(attr: TokenStream, item: TokenStream) -> TokenStream {
     ts.into()
 }
 
-
 pub fn html_view(item: TokenStream) -> TokenStream {
     let struct_decl_ast = item.clone();
     let mut ast = parse_macro_input!(struct_decl_ast as DeriveInput);
@@ -190,64 +176,60 @@ pub fn html_view(item: TokenStream) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = &ast.generics.split_for_impl();
     //let impl_generics = struct_params;
     //let ty_generics = struct_params;
-    //let where_clause = quote!{}; 
+    //let where_clause = quote!{};
 
     match &mut ast.data {
-        syn::Data::Struct(ref mut struct_data) => {           
-            match &mut struct_data.fields {
-                syn::Fields::Named(fields) => {
-                    let mut has_html_field = false;
-                    for field in &fields.named{
-                        let f_type = &field.ty;
+        syn::Data::Struct(ref mut struct_data) => match &mut struct_data.fields {
+            syn::Fields::Named(fields) => {
+                let mut has_html_field = false;
+                for field in &fields.named {
+                    let f_type = &field.ty;
 
-                        if let Some(ident) = &field.ident{
-                            let name = ident.to_string();
-                            if name.eq("html"){
-                                let check_list: Punctuated<ParsableNamedField, Token![,]> = parse_quote!{
-                                    f1: Arc<Mutex<Option<Arc<workflow_ux::view::Html>>>>,
-                                    f2: Arc<Mutex<Option<Arc<view::Html>>>>,
-                                    f3: Arc<Mutex<Option<Arc<Html>>>>,
-                                    f4: std::sync::Arc<Mutex<Option<std::sync::Arc<view::Html>>>>,
-                                    f5: std::sync::Arc<std::sync::Mutex<Option<std::sync::Arc<workflow_ux::view::Html>>>>,
-                                    f6: std::sync::Arc<std::sync::Mutex<Option<std::sync::Arc<view::Html>>>>,
-                                    f7: std::sync::Arc<std::sync::Mutex<Option<std::sync::Arc<Html>>>>
-                                };
-                                let f_type_str = format!("{}", f_type.to_token_stream());
-                                let mut found = false;
-                                for f in check_list{
-                                    let s = format!("{}", f.field.ty.to_token_stream());
-                                    if s.eq(&f_type_str){
-                                        found = true;
-                                    }
+                    if let Some(ident) = &field.ident {
+                        let name = ident.to_string();
+                        if name.eq("html") {
+                            let check_list: Punctuated<ParsableNamedField, Token![,]> = parse_quote! {
+                                f1: Arc<Mutex<Option<Arc<workflow_ux::view::Html>>>>,
+                                f2: Arc<Mutex<Option<Arc<view::Html>>>>,
+                                f3: Arc<Mutex<Option<Arc<Html>>>>,
+                                f4: std::sync::Arc<Mutex<Option<std::sync::Arc<view::Html>>>>,
+                                f5: std::sync::Arc<std::sync::Mutex<Option<std::sync::Arc<workflow_ux::view::Html>>>>,
+                                f6: std::sync::Arc<std::sync::Mutex<Option<std::sync::Arc<view::Html>>>>,
+                                f7: std::sync::Arc<std::sync::Mutex<Option<std::sync::Arc<Html>>>>
+                            };
+                            let f_type_str = format!("{}", f_type.to_token_stream());
+                            let mut found = false;
+                            for f in check_list {
+                                let s = format!("{}", f.field.ty.to_token_stream());
+                                if s.eq(&f_type_str) {
+                                    found = true;
                                 }
-
-                                if !found{
-                                    continue;
-                                }
-                                has_html_field = true;
-                                break;
                             }
+
+                            if !found {
+                                continue;
+                            }
+                            has_html_field = true;
+                            break;
                         }
                     }
+                }
 
-                    if !has_html_field{
-                        return Error::new_spanned(
+                if !has_html_field {
+                    return Error::new_spanned(
                             struct_name,
                             format!("#[HtmlView] struct require 'html' member/property. \n`html: Arc<Mutex<Option<Arc<workflow_ux::view::Html>>>>`")
                         )
                         .to_compile_error()
                         .into();
-                    }
-                }   
-                _ => {
-                    ()
                 }
             }
-        }
+            _ => (),
+        },
         _ => {
             return Error::new_spanned(
                 struct_name,
-                format!("#[HtmlView] macro only supports structs")
+                format!("#[HtmlView] macro only supports structs"),
             )
             .to_compile_error()
             .into();
@@ -259,7 +241,7 @@ pub fn html_view(item: TokenStream) -> TokenStream {
     let evict_msg = format!("{} evict", name);
     let drop_msg = format!("{} drop", name);
 
-    let ts = quote!{
+    let ts = quote! {
 
         unsafe impl #struct_params Send for #struct_name #ty_generics #where_clause{ }
         unsafe impl #struct_params Sync for #struct_name #ty_generics #where_clause{ }
@@ -273,7 +255,7 @@ pub fn html_view(item: TokenStream) -> TokenStream {
                 Ok(true)
             }
         }
-        
+
         #[workflow_async_trait]
         impl #impl_generics workflow_ux::view::View for #struct_name #ty_generics #where_clause{
             fn element(&self) -> web_sys::Element {
@@ -288,7 +270,7 @@ pub fn html_view(item: TokenStream) -> TokenStream {
             fn typeid(&self) -> std::any::TypeId {
                 std::any::TypeId::of::<Self>()
             }
-        
+
             async fn evict(self:Arc<Self>) ->  Result<()>{
                 log_info!(#evict_msg);
 
@@ -300,12 +282,12 @@ pub fn html_view(item: TokenStream) -> TokenStream {
                 Ok(())
             }
         }
-        
-        
+
+
         impl #impl_generics Drop for #struct_name #ty_generics #where_clause{
             fn drop(&mut self) {
                 log_info!(#drop_msg);
-                
+
                 /*
                 match self.unsubscribe(){
                     Ok(_)=>{}
@@ -316,9 +298,8 @@ pub fn html_view(item: TokenStream) -> TokenStream {
                 */
             }
         }
-        
+
     };
-    
+
     ts.into()
 }
-
