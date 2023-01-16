@@ -25,7 +25,7 @@ extern "C" {
 
 impl FlowMultiMenuBase {
     pub fn select<S: ToString>(self: &FlowMultiMenuBase, selection: Vec<S>) {
-        let select: Vec<String> = (&selection).iter().map(|a| a.to_string()).collect();
+        let select: Vec<String> = selection.iter().map(|a| a.to_string()).collect();
         let list = Array::new_with_length(select.len() as u32);
         for str in select {
             list.push(&JsValue::from_str(&str));
@@ -87,7 +87,7 @@ where
 
         let pane_inner = layout
             .inner()
-            .ok_or(JsValue::from("unable to mut lock pane inner"))?;
+            .ok_or_else(|| JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
 
         let mut control = MultiSelect {

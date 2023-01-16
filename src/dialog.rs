@@ -5,15 +5,16 @@ use crate::result::Result;
 use core::fmt;
 use std::{
     collections::BTreeMap,
+    str::FromStr,
     sync::{Arc, LockResult, Mutex, MutexGuard},
 };
 use workflow_core::channel::oneshot;
 use workflow_core::id::Id;
 use workflow_html::{html, ElementResult, Hooks, Html, Render, Renderables};
 
-pub static CSS: &'static str = include_str!("dialog.css");
+pub static CSS: &str = include_str!("dialog.css");
 
-static mut DIALOGES: Option<BTreeMap<String, Dialog>> = None;
+static mut DIALOGS: Option<BTreeMap<String, Dialog>> = None;
 
 pub type Callback = Box<dyn FnMut(Dialog, Button) -> Result<()>>;
 
@@ -25,8 +26,8 @@ pub enum ButtonClass {
     Info,
 }
 
-impl ButtonClass {
-    pub fn to_string(&self) -> String {
+impl ToString for ButtonClass {
+    fn to_string(&self) -> String {
         match self {
             Self::Primary => "Primary",
             Self::Secondary => "Secondary",
@@ -64,6 +65,35 @@ pub enum Button {
     __WithClass(String, String),
 }
 
+impl FromStr for Button {
+    type Err = Error;
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        let v = match s {
+            "Ok" => Self::Ok,
+            "Cancel" => Self::Cancel,
+            "Done" => Self::Done,
+            "Save" => Self::Save,
+            "Exit" => Self::Exit,
+            "Try It" => Self::TryIt,
+            "Not Now" => Self::NotNow,
+            "Subscribe" => Self::Subscribe,
+            "Accept" => Self::Accept,
+            "Decline" => Self::Decline,
+            "Run" => Self::Run,
+            "Delete" => Self::Delete,
+            "Print" => Self::Print,
+            "Start" => Self::Start,
+            "Stop" => Self::Stop,
+            "Discard" => Self::Discard,
+            "Yes" => Self::Yes,
+            "No" => Self::No,
+            "Got It" => Self::GotIt,
+            _ => Self::Custom(s.to_string()),
+        };
+        Ok(v)
+    }
+}
+
 impl Button {
     pub fn with_class(&self, class: ButtonClass) -> Self {
         let (name, _cls) = self.name_and_class();
@@ -97,31 +127,6 @@ impl Button {
         (name.to_string(), class)
     }
 
-    pub fn from_str(str: &str) -> Option<Self> {
-        match str {
-            "Ok" => Some(Self::Ok),
-            "Cancel" => Some(Self::Cancel),
-            "Done" => Some(Self::Done),
-            "Save" => Some(Self::Save),
-            "Exit" => Some(Self::Exit),
-            "Try It" => Some(Self::TryIt),
-            "Not Now" => Some(Self::NotNow),
-            "Subscribe" => Some(Self::Subscribe),
-            "Accept" => Some(Self::Accept),
-            "Decline" => Some(Self::Decline),
-            "Run" => Some(Self::Run),
-            "Delete" => Some(Self::Delete),
-            "Print" => Some(Self::Print),
-            "Start" => Some(Self::Start),
-            "Stop" => Some(Self::Stop),
-            "Discard" => Some(Self::Discard),
-            "Yes" => Some(Self::Yes),
-            "No" => Some(Self::No),
-            "Got It" => Some(Self::GotIt),
-            _ => Some(Self::Custom(str.to_string())),
-        }
-    }
-
     fn render_with_class(
         self,
         parent: &mut Element,
@@ -130,10 +135,10 @@ impl Button {
         _class: Option<String>,
     ) -> ElementResult<()> {
         let (name, class) = self.name_and_class();
-        let action = name.replace("\"", "");
+        let action = name.replace('\"', "");
         //text = text.replace("Custom::", "");
 
-        let cls = class.unwrap_or("".to_string()).to_lowercase();
+        let cls = class.unwrap_or_default().to_lowercase();
 
         let body = html! {
             <flow-btn data-action={action} class={cls}>
@@ -280,16 +285,11 @@ pub struct Dialog {
 
 impl Dialog {
     pub fn new() -> Result<Self> {
-        Ok(Self::create::<Button, Button, Button>(
-            None,
-            &[],
-            &[],
-            &[Button::Ok],
-        )?)
+        Self::create::<Button, Button, Button>(None, &[], &[], &[Button::Ok])
     }
 
     pub fn new_without_buttons() -> Result<Self> {
-        Ok(Self::create::<Button, Button, Button>(None, &[], &[], &[])?)
+        Self::create::<Button, Button, Button>(None, &[], &[], &[])
     }
 
     pub fn new_with_body_and_buttons<A, B, C>(
@@ -303,12 +303,7 @@ impl Dialog {
         B: Into<DialogButtonData> + Clone,
         C: Into<DialogButtonData> + Clone,
     {
-        Ok(Self::create(
-            Some(body),
-            left_btns,
-            center_btns,
-            right_btns,
-        )?)
+        Self::create(Some(body), left_btns, center_btns, right_btns)
     }
 
     pub fn new_with_btns<A, B, C>(left: &[A], center: &[B], right: &[C]) -> Result<Self>
@@ -317,7 +312,7 @@ impl Dialog {
         B: Into<DialogButtonData> + Clone,
         C: Into<DialogButtonData> + Clone,
     {
-        Ok(Self::create(None, left, center, right)?)
+        Self::create(None, left, center, right)
     }
 
     fn create<A, B, C>(
@@ -332,7 +327,7 @@ impl Dialog {
         C: Into<DialogButtonData> + Clone,
     {
         let btns = DialogButtons::new(left, center, right);
-        Ok(Self {
+        Self {
             id: format!("dialog_{}", Id::new()),
             element: create_el("div.workflow-dialog", vec![], None)?,
             inner: Arc::new(Mutex::new(None)),
@@ -341,7 +336,7 @@ impl Dialog {
                 Ok(())
             }))),
         }
-        .init(body_html, btns)?)
+        .init(body_html, btns)
     }
 
     fn init(self, body_html: Option<Html>, btns: DialogButtons) -> Result<Self> {
@@ -435,14 +430,9 @@ impl Dialog {
         let btn = target.closest("[data-action]")?;
         if let Some(btn) = btn {
             let action = btn.get_attribute("data-action").unwrap();
-            match Button::from_str(&action) {
-                Some(btn) => {
-                    log_trace!("dialog calling callback....");
-                    (self.callback.lock()?)(self.clone(), btn)?;
-                }
-                None => {
-                    //
-                }
+            if let Ok(btn) = Button::from_str(&action) {
+                log_trace!("dialog calling callback....");
+                (self.callback.lock()?)(self.clone(), btn)?;
             }
         }
 
@@ -525,13 +515,13 @@ impl Dialog {
 }
 
 fn get_list() -> &'static mut BTreeMap<String, Dialog> {
-    match unsafe { DIALOGES.as_mut() } {
+    match unsafe { DIALOGS.as_mut() } {
         Some(list) => list,
         None => {
             unsafe {
-                DIALOGES = Some(BTreeMap::new());
+                DIALOGS = Some(BTreeMap::new());
             }
-            unsafe { DIALOGES.as_mut() }.unwrap()
+            unsafe { DIALOGS.as_mut() }.unwrap()
         }
     }
 }

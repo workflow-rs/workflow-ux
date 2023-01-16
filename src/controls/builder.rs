@@ -116,7 +116,7 @@ pub trait ListBuilderItem: Clone {
 pub trait ListBuilder<I: ListBuilderItem>: Clone {
     fn new() -> Result<Self>;
 
-    fn list(&self, items: &Vec<I>, start: usize, limit: usize) -> Result<Vec<ListRow>>;
+    fn list(&self, items: &[I], start: usize, limit: usize) -> Result<Vec<ListRow>>;
 
     fn addable(&self, len: usize) -> Result<bool>;
 
@@ -358,7 +358,7 @@ where
 
     fn on_save_click(&mut self) -> Result<()> {
         let editing_item = { self.inner()?.editing_item.clone() };
-        let valid = self.imp.lock()?.save(&self, editing_item)?;
+        let valid = self.imp.lock()?.save(self, editing_item)?;
         log_trace!("on_save_click:valid {}", valid);
         if valid {
             self.show_save_btn(false)?;

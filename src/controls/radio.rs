@@ -55,11 +55,11 @@ where
 
         element.set_attribute("selected", init_value.as_str())?;
 
-        let value = Arc::new(Mutex::new(init_value.clone()));
+        let value = Arc::new(Mutex::new(init_value));
 
         let pane_inner = layout
             .inner()
-            .ok_or(JsValue::from("unable to mut lock pane inner"))?;
+            .ok_or_else(|| JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
 
         let mut radio = Radio {
@@ -76,7 +76,6 @@ where
     fn init(&mut self) -> Result<()> {
         let element = self.element();
         let el = element
-            .clone()
             .dyn_into::<FlowRadiosBase>()
             .expect("Unable to cast to FlowRadioBase");
         let value = self.value.clone();

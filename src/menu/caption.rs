@@ -21,7 +21,7 @@ impl MenuCaption{
 impl From<Vec<&str>> for MenuCaption {
     fn from(v: Vec<&str>) -> Self {
         let title = {
-            if v.len() > 0 {
+            if !v.is_empty() {
                 v[0]
             } else {
                 ""

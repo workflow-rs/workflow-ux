@@ -4,7 +4,7 @@ pub struct ControlStyle {
     //items:Vec<String>
 }
 
-const CSS: &'static str = include_str!("style.css");
+const CSS: &str = include_str!("style.css");
 
 impl ControlStyle {
     pub fn get() -> Vec<&'static str> {

@@ -52,7 +52,7 @@ impl MenuGroup {
         let id = Self::create_id();
         let li = doc.create_element("li")?;
         li.set_attribute("data-id", &format!("menu_group_{}", id))?;
-        li.set_attribute("class", &format!("menu-item menu-group skip-drawer-event"))?;
+        li.set_attribute("class", "menu-item menu-group skip-drawer-event")?;
 
         let text_box_el = doc.create_element("div")?;
         text_box_el.set_attribute("class", "text-box")?;
@@ -71,7 +71,7 @@ impl MenuGroup {
         let item = section_menu.add_child_group(MenuGroup {
             id,
             section_menu_id: section_menu.id.clone(),
-            item: ElementWrapper::new(li.clone()),
+            item: ElementWrapper::new(li),
             sub_ul,
             sub_li,
             child_groups: Arc::new(Mutex::new(Vec::new())),
@@ -110,7 +110,7 @@ impl MenuGroup {
     fn create_id() -> String {
         static mut ID: u8 = 0;
         format!("{}", unsafe {
-            ID = ID + 1;
+            ID += 1;
             ID
         })
     }

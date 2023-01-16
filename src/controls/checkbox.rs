@@ -49,7 +49,7 @@ impl Checkbox {
                 *value.lock().unwrap() = new_value;
 
                 if let Some(cb) = cb_opt.lock().unwrap().as_mut() {
-                    return Ok(cb()?);
+                    return cb();
                 }
 
                 Ok(())

@@ -125,7 +125,7 @@ where
 
         let pane_inner = layout
             .inner()
-            .ok_or(JsValue::from("unable to mut lock pane inner"))?;
+            .ok_or_else(|| JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
 
         let mut control = Select {
@@ -166,7 +166,7 @@ where
     pub fn set_value<T: Into<String>>(&self, value: T) -> Result<()> {
         let value = value.into();
         FieldHelper::set_attr(&self.element_wrapper.element, "selected", &value)?;
-        *self.value.lock().unwrap() = value.clone();
+        *self.value.lock().unwrap() = value;
 
         //if let Some(cb) = &mut*self.on_change_cb.borrow_mut(){
         //cb(value)?;

@@ -3,7 +3,7 @@ use crate::{find_el, icon::Icon, prelude::*, result::Result};
 use workflow_wasm::prelude::*;
 
 pub fn create_item<T: Into<String>, I: Into<Icon>>(text: T, icon: I) -> Result<BottomMenuItem> {
-    Ok(BottomMenuItem::new(text.into(), icon)?)
+    BottomMenuItem::new(text.into(), icon)
 }
 pub fn new_item<T: Into<String>, I: Into<Icon>, F>(text: T, icon: I, t: F) -> Result<BottomMenuItem>
 where
@@ -30,11 +30,11 @@ impl BottomMenuItem {
     fn new<I: Into<Icon>>(text: String, icon: I) -> Result<Self> {
         let icon_: Icon = icon.into();
 
-        let path_el = SvgElement::new("path")
+        let path_el = SvgElement::try_new("path")
             .expect("BottomMenuItem: Unable to create path")
             .set_cls("slider");
         path_el.set_attribute("d", "M -56 1 l 36 0 c 10 0, 20 0, 20 0 a0 0 0 0 0 0 0 c 0 0 10 0 20 0 l 41 0 l 0 -1 l -117 0 z")?;
-        let circle_el = SvgElement::new("circle")
+        let circle_el = SvgElement::try_new("circle")
             .expect("BottomMenuItem: Unable to create circle")
             .set_radius("30")
             .set_cpos("0", "38");
@@ -47,14 +47,14 @@ impl BottomMenuItem {
             .set_size("30", "30")
             .set_aspect_ratio("xMidYMid meet");
 
-        let text: String = text.into();
-        let text_el = SvgElement::new("text")
+        // let text: String = text.into();
+        let text_el = SvgElement::try_new("text")
             .expect("BottomMenuItem: Unable to create text")
             .set_html(&text)
             .set_text_anchor("middle")
             .set_pos("0", "57");
 
-        let element = SvgElement::new("g")
+        let element = SvgElement::try_new("g")
             .expect("BottomMenuItem: Unable to create root")
             .set_cls("menu")
             .add_child(&path_el)
@@ -86,7 +86,7 @@ impl BottomMenuItem {
     fn get_id() -> u8 {
         static mut ID: u8 = 0;
         unsafe {
-            ID = ID + 1;
+            ID += 1;
             ID
         }
     }
@@ -125,7 +125,7 @@ impl BottomMenu {
     ) -> Result<Arc<Mutex<BottomMenu>>> {
         let pane_inner = layout
             .inner()
-            .ok_or(JsValue::from("unable to mut lock pane inner"))?;
+            .ok_or_else(|| JsValue::from("unable to mut lock pane inner"))?;
         let menu = Self::create_in(&pane_inner.element, Some(attributes), None)?;
         Ok(menu)
     }
@@ -157,13 +157,13 @@ impl BottomMenu {
         element.set_attribute("class", "bottom-nav")?;
         element.set_attribute("hide", "true")?;
         let view_box = format!("0,0,{width},{height}");
-        let svg = SvgElement::new("svg")?
+        let svg = SvgElement::try_new("svg")?
             .set_view_box(&view_box)
             .set_size("100%", &format!("{}", height - 4.0))
             .set_aspect_ratio("xMidYMid meet");
         element.append_child(&svg)?;
 
-        let top_line_el = SvgElement::new("line")?
+        let top_line_el = SvgElement::try_new("line")?
             .set_cls("slider-top-line")
             .set_pos1("-250", "0")
             .set_pos2(&format!("{}", width + 250.0), "0");
@@ -214,13 +214,13 @@ impl BottomMenu {
             item.set_position(x, 1.0)?;
             //log_trace!("BottomMenu: item.text:{}", item.text);
             self.svg.append_child(&item.element)?;
-            index = index + 1.0;
+            index += 1.0;
             if add_home_item && index >= half_index {
                 add_home_item = false;
                 self.svg.append_child(&self.home_item.element)?;
                 let x = offset + index * size;
                 self.home_item.set_position(x, 1.0)?;
-                index = index + 1.0;
+                index += 1.0;
             }
         }
 

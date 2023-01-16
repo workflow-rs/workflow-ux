@@ -8,9 +8,10 @@ use workflow_ux::error::Error;
 use workflow_ux::result::Result;
 
 pub fn document() -> Document {
-    let window = web_sys::window().expect("no global `window` exists");
-    let document = window.document().expect("unable to get `document` node");
-    document
+    web_sys::window()
+        .expect("no global `window` exists")
+        .document()
+        .expect("unable to get `document` node")
 }
 
 pub fn window() -> Window {
@@ -48,8 +49,8 @@ pub fn create_el(tag: &str, attrs: Vec<(&str, &str)>, html: Option<&str>) -> Res
     let doc = document();
     let mut tag_name = tag;
     let mut classes: Option<js_sys::Array> = None;
-    if tag_name.contains(".") {
-        let mut parts = tag_name.split(".");
+    if tag_name.contains('.') {
+        let mut parts = tag_name.split('.');
         let tag = parts.next().unwrap();
         let array = js_sys::Array::new();
         for a in parts {

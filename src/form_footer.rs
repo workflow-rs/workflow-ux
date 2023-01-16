@@ -48,7 +48,7 @@ impl FormFooter {
 
         let pane_inner = layout
             .inner()
-            .ok_or(JsValue::from("unable to mut lock pane inner"))?;
+            .ok_or_else(|| JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.class_list().add_1("with-form-footer")?;
         let mut control = Self {
             layout: layout.clone(),
@@ -79,7 +79,7 @@ impl FormFooter {
                 .expect("Unable to lock submit_click_cb")
                 .as_mut()
             {
-                return Ok(cb("submit".to_string())?);
+                return cb("submit".to_string());
             }
             Ok(())
         })?;
@@ -99,10 +99,12 @@ impl FormFooter {
         let locked = {
             layout
                 .lock()
-                .expect(&format!(
-                    "Unable to lock form {} for footer submit action.",
-                    &struct_name
-                ))
+                .unwrap_or_else(|_| {
+                    panic!(
+                        "Unable to lock form {} for footer submit action.",
+                        &struct_name
+                    )
+                })
                 .clone()
         };
 

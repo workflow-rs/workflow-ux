@@ -24,7 +24,7 @@ impl FormControl {
     }
 
     pub fn new() -> Result<FormControl> {
-        Ok(FormControl::new_with_id(&Id::new().to_string())?)
+        FormControl::new_with_id(&Id::new().to_string())
     }
 
     pub fn new_with_id(self_id: &str) -> Result<FormControl> {
@@ -32,7 +32,7 @@ impl FormControl {
         element.set_id(self_id);
 
         //element.set_attribute("focusable", "true")?;
-        Ok(FormControl { element: element })
+        Ok(FormControl { element })
     }
 
     pub fn set_title(&self, title: &str) -> Result<()> {
@@ -61,8 +61,8 @@ impl FormControl {
     }
 }
 
-impl Into<Element> for FormControl {
-    fn into(self) -> Element {
-        self.element()
+impl From<FormControl> for Element {
+    fn from(control: FormControl) -> Element {
+        control.element
     }
 }

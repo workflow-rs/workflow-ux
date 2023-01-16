@@ -3,7 +3,7 @@ use wasm_bindgen::JsCast;
 use web_sys::{Node, SvgElement};
 
 pub trait SvgNode {
-    fn new(name: &str) -> Result<SvgElement>;
+    fn try_new(name: &str) -> Result<SvgElement>;
     fn set_svg_attribute(&self, name: &str, value: &str) -> Result<()>;
     fn set_svg_html(&self, html: &str) -> Result<()>;
     fn append_svg_child(&self, child: &Node) -> Result<()>;
@@ -152,11 +152,11 @@ pub trait SvgNode {
 }
 
 impl SvgNode for SvgElement {
-    fn new(name: &str) -> Result<SvgElement> {
+    fn try_new(name: &str) -> Result<SvgElement> {
         let el = document()
             .create_element_ns(Some("http://www.w3.org/2000/svg"), name)?
             .dyn_into::<SvgElement>()
-            .expect(&format!("SvgElement::new(): unable to create {name}"));
+            .unwrap_or_else(|_| panic!("SvgElement::new(): unable to create {name}"));
         Ok(el)
     }
     fn set_svg_attribute(&self, name: &str, value: &str) -> Result<()> {

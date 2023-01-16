@@ -64,7 +64,7 @@ impl Module {
         Module {
             name: name.to_string(),
             container_types: container_types.to_vec(),
-            iface: iface,
+            iface,
             // iface : Arc::new(iface),
         }
     }
@@ -142,19 +142,16 @@ pub async fn seal() -> Result<()> {
             }
         }
     }
-    unsafe { DATA_TYPES_TO_MODULES = Some(data_types_to_modules.clone()) }
+    unsafe { DATA_TYPES_TO_MODULES = Some(data_types_to_modules) }
     Ok(())
 }
 
 pub fn get_module(name: &str) -> Option<Arc<Module>> {
-    match registry()
+    registry()
         .read()
-        .expect(&format!("Unable to locate module {}", name))
+        .unwrap_or_else(|_| panic!("Unable to locate module {} (registry rwlock failure)", name))
         .get(name)
-    {
-        Some(module) => Some(module.clone()),
-        None => None,
-    }
+        .cloned()
 }
 
 pub fn get_interface<T>(name: &str) -> Option<Arc<T>>
@@ -178,11 +175,11 @@ where
                 .iface
                 .clone()
                 .downcast_arc::<T>()
-                .expect(&format!("Unable to downcast module to T: {}", name));
+                .unwrap_or_else(|_| panic!("Unable to downcast module to T: {}", name));
             // .downcast_arc::<T>()
             // .map_err(|err|error!("Unable to downcast module {} {}", name,err))?;
 
-            Some(iface.clone())
+            Some(iface)
         }
         None => {
             log_trace!("MODULE ***NOT*** FOUND!");
@@ -194,10 +191,10 @@ where
 pub fn get_from_container_type(container_type: &u32) -> Result<Option<Arc<Module>>> {
     let data_types_to_modules = data_types_to_modules()?;
 
-    let module = match data_types_to_modules.borrow().get(&container_type) {
-        Some(module) => Some(module.clone()),
-        None => None,
-    };
+    let module = data_types_to_modules
+        .borrow()
+        .get(container_type)
+        .cloned();
 
     Ok(module)
 }

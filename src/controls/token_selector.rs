@@ -20,7 +20,7 @@ impl TokenSelector {
     }
 
     pub fn focus(&self) -> Result<()> {
-        Ok(self.element().focus_form_control()?)
+        self.element().focus_form_control()
     }
 
     pub fn new(
@@ -52,7 +52,7 @@ impl TokenSelector {
 
         let pane_inner = layout
             .inner()
-            .ok_or(JsValue::from("unable to mut lock pane inner"))?;
+            .ok_or_else(|| JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
 
         let mut control = TokenSelector {

@@ -120,7 +120,7 @@ impl SectionMenu {
         let doc = document();
         let id = Self::create_id();
         let li = doc.create_element("li")?;
-        li.set_attribute("class", &format!("menu-item skip-drawer-event"))?;
+        li.set_attribute("class", "menu-item skip-drawer-event")?;
         li.set_attribute("data-id", &format!("section_menu_{}", id))?;
         let icon: Icon = icon.into();
         let icon_el = match icon {
@@ -180,7 +180,7 @@ impl SectionMenu {
             .class_list()
             .add_1("has-child")?;
         let child_el = &child.item.element;
-        self.sub_ul.append_child(&child_el)?;
+        self.sub_ul.append_child(child_el)?;
         self.sub_ul.append_child(&child.sub_li)?;
 
         self.child_groups
@@ -219,7 +219,7 @@ impl SectionMenu {
     fn create_id() -> String {
         static mut ID: u8 = 0;
         format!("{}", unsafe {
-            ID = ID + 1;
+            ID += 1;
             ID
         })
     }

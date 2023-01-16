@@ -91,7 +91,7 @@ impl Avatar {
         img_box.append_child(&img_el)?;
 
         //form
-        let radio_name = format!("avatar-{}", Id::new().to_string());
+        let radio_name = format!("avatar-{}", Id::new());
         let mut provider_attr = attr.clone();
         provider_attr.insert("value".to_string(), "Gravatar".to_string());
         provider_attr.insert("label".to_string(), i18n("Provider"));
@@ -180,7 +180,7 @@ impl Avatar {
         )?;
         let radio = create_el(
             "flow-radio",
-            vec![("name", &radio_name), ("data-set-hash-type", hash_type)],
+            vec![("name", radio_name), ("data-set-hash-type", hash_type)],
             None,
         )?;
         let field = create_el(
@@ -224,7 +224,7 @@ impl Avatar {
         let this = self.clone();
         self.hash_containers.on_click(move |e| -> Result<()> {
             if let Some(et) = e.target() {
-                let el = et.dyn_into::<Element>().expect(&format!(
+                let el = et.dyn_into::<Element>().unwrap_or_else(|_| panic!(
                     "Avatar: Could not cast EventTarget to Element: {:?}",
                     e
                 ));
@@ -391,7 +391,7 @@ impl Avatar {
     fn deserialize_value(&self, value: Option<AvatarValue>) -> Result<Option<AvatarValue>> {
         let set_provider = |provider: AvatarProvider| -> Result<()> {
             self.provider_select.set_value(provider.as_str())?;
-            self.set_provider(provider.clone())?;
+            self.set_provider(provider)?;
             Ok(())
         };
 
@@ -400,13 +400,13 @@ impl Avatar {
             self.text_field.set_value("".to_string())?;
             self.set_hash_input_value("md5", "".to_string())?;
             self.set_hash_input_value("sha256", "".to_string())?;
-            let hash_type = if text_value.len() == 32 || text_value.len() == 0 {
+            let hash_type = if text_value.len() == 32 || text_value.is_empty() {
                 "md5"
             } else {
                 "sha256"
             };
             self.set_hash_input_value(hash_type, text_value)?;
-            self.set_hash_type(&hash_type)?;
+            self.set_hash_type(hash_type)?;
             Ok(())
         };
 
@@ -425,7 +425,7 @@ impl Avatar {
                 set_provider(AvatarProvider::Robohash)?;
                 self.text_field.set_value("".to_string())?;
                 let text = hex::encode(hash);
-                let mut parts = text.split("|");
+                let mut parts = text.split('|');
                 let text_value = parts.next().unwrap_or("").to_string();
 
                 let set = parts.next().unwrap_or("set2");
@@ -438,7 +438,7 @@ impl Avatar {
             }
         }
 
-        Ok(self.serialize_value()?)
+        self.serialize_value()
     }
 
     fn serialize_value(&self) -> Result<Option<AvatarValue>> {
@@ -452,14 +452,14 @@ impl Avatar {
         //let hash_type = if hash.len()==32{"0"}else{"1"};
         let value = match locked.provider {
             AvatarProvider::Gravatar => {
-                if hash.len() == 0 {
+                if hash.is_empty() {
                     return Ok(None);
                 }
                 //format!("Gravatar|{hash}")
                 AvatarValue::Gravatar(hex::decode(hash)?)
             }
             AvatarProvider::Libravatar => {
-                if hash.len() == 0 {
+                if hash.is_empty() {
                     return Ok(None);
                 }
                 //format!("Robohash|{hash}")
@@ -471,7 +471,7 @@ impl Avatar {
                     None => "set2".to_string(),
                 };
                 let text = match params.get("text") {
-                    Some(s) => Self::clean_str(s)?.replace("|", ""),
+                    Some(s) => Self::clean_str(s)?.replace('|', ""),
                     None => return Ok(None),
                 };
                 //format!("Robohash|{text}|{set}")
@@ -591,14 +591,14 @@ impl Avatar {
     }
 
     fn build_md5_hash(content: String) -> Result<String> {
-        if content.len() == 0 {
+        if content.is_empty() {
             return Ok("".to_string());
         }
         Ok(format!("{:x}", md5::compute(content)))
     }
 
     fn build_sha256_hash(content: String) -> Result<String> {
-        if content.len() == 0 {
+        if content.is_empty() {
             return Ok("".to_string());
         }
         let mut hasher = Sha256::new();
@@ -609,7 +609,7 @@ impl Avatar {
 
     fn update_hashes(&self, email: String) -> Result<()> {
         let md5 = Self::build_md5_hash(email.clone())?;
-        let sha256 = Self::build_sha256_hash(email.clone())?;
+        let sha256 = Self::build_sha256_hash(email)?;
         self.set_hash_input_value("md5", md5.clone())?;
         self.set_hash_input_value("sha256", sha256.clone())?;
 
@@ -656,7 +656,7 @@ impl Avatar {
     }
 
     fn set_hash_input_value(&self, hash_type: &str, value: String) -> Result<()> {
-        if let Some(input) = self.get_input_field(&hash_type)? {
+        if let Some(input) = self.get_input_field(hash_type)? {
             //log_trace!("set_hash_input_value value: {} ", value);
             FieldHelper::set_value_attr(&input, &value)?;
         }
@@ -679,13 +679,13 @@ impl Avatar {
         };
         let url = match locked.provider {
             AvatarProvider::Gravatar => {
-                if hash.len() == 0 {
+                if hash.is_empty() {
                     return Ok(locked.fallback.clone());
                 }
                 format!("https://s.gravatar.com/avatar/{hash}?s={size}&d=404")
             }
             AvatarProvider::Libravatar => {
-                if hash.len() == 0 {
+                if hash.is_empty() {
                     return Ok(locked.fallback.clone());
                 }
                 format!("https://libravatar.org/avatar/{hash}?s={size}&d=404")
@@ -716,6 +716,6 @@ impl Avatar {
 
     fn clean_str<T: Into<String>>(str: T) -> Result<String> {
         let text: String = str.into();
-        Ok(FieldHelper::clean_value_for_attr(&text)?)
+        FieldHelper::clean_value_for_attr(&text)
     }
 }

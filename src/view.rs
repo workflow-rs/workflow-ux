@@ -38,9 +38,9 @@ impl ContainerStack {
     }
 }
 
-impl Into<Element> for ContainerStack {
-    fn into(self) -> Element {
-        self.element.clone()
+impl From<ContainerStack> for Element {
+    fn from(container_stack: ContainerStack) -> Element {
+        container_stack.element
     }
 }
 
@@ -184,9 +184,9 @@ impl Container {
     }
 }
 
-impl Into<Element> for Container {
-    fn into(self) -> Element {
-        self.element.clone()
+impl From<Container> for Element {
+    fn from(container: Container) -> Self {
+        container.element
     }
 }
 

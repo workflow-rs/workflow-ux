@@ -14,11 +14,15 @@ pub struct FieldHelper {}
 
 impl FieldHelper {
     pub async fn get_categories() -> Result<Vec<(String, String)>> {
-        let mut list = Vec::new();
-        list.push(("Category 1".to_string(), "cat-1".to_string()));
-        list.push(("Category 2".to_string(), "cat-2".to_string()));
-        list.push(("Category 3".to_string(), "cat-3".to_string()));
-        Ok(list)
+        // let mut list = Vec::new();
+        // list.push(("Category 1".to_string(), "cat-1".to_string()));
+        // list.push(("Category 2".to_string(), "cat-2".to_string()));
+        // list.push(("Category 3".to_string(), "cat-3".to_string()));
+        Ok(vec![
+            ("Category 1".to_string(), "cat-1".to_string()),
+            ("Category 2".to_string(), "cat-2".to_string()),
+            ("Category 3".to_string(), "cat-3".to_string()),
+        ])
     }
     pub async fn get_subcategories<T: Into<String>>(parent: T) -> Result<Vec<(String, String)>> {
         let mut list = Vec::new();
@@ -34,15 +38,15 @@ impl FieldHelper {
     }
 
     pub fn set_value_attr(el: &Element, value: &str) -> Result<String> {
-        Ok(Self::set_attr(el, "value", value)?)
+        Self::set_attr(el, "value", value)
     }
 
     pub fn set_attr(el: &Element, name: &str, value: &str) -> Result<String> {
-        let v = value.replace("\"", "&quot;");
+        let v = value.replace('\"', "&quot;");
         el.set_attribute(name, &v)?;
         Ok(v)
     }
     pub fn clean_value_for_attr(value: &str) -> Result<String> {
-        Ok(value.replace("\"", "&quot;").replace("'", "&quot;"))
+        Ok(value.replace(['\"','\''], "&quot;"))
     }
 }

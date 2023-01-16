@@ -58,7 +58,8 @@ impl AppMenu {
 
             if let Some(items) = menus {
                 update_size = items.len().min(default_len);
-                for item in items[0..update_size].to_vec() {
+                // for item in items[0..update_size].to_vec() {
+                for item in items[0..update_size].iter().cloned() {
                     update_list.push(item);
                 }
             }

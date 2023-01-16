@@ -20,7 +20,7 @@ impl Eq for Progress {}
 
 impl PartialEq for Progress {
     fn eq(&self, other: &Self) -> bool {
-        &self.id == &other.id
+        self.id == other.id
     }
 }
 
@@ -70,13 +70,7 @@ impl Progress {
 
         let current = Progress::from_view(&current);
         let ok = match current {
-            Some(progress) if progress.id == self.id => {
-                if progress.aborted.load(Ordering::SeqCst) {
-                    false
-                } else {
-                    true
-                }
-            }
+            Some(progress) if progress.id == self.id => !progress.aborted.load(Ordering::SeqCst),
             _ => false,
         };
 

@@ -4,7 +4,7 @@ use crate::result::Result;
 use workflow_html::{html, Html, Render};
 use workflow_wasm::prelude::callback;
 
-pub static CSS: &'static str = include_str!("mnemonic.css");
+pub static CSS: &str = include_str!("mnemonic.css");
 
 #[derive(Clone)]
 pub struct Mnemonic {
@@ -48,13 +48,13 @@ impl Mnemonic {
         //let pane_inner = layout.inner().ok_or(JsValue::from("unable to mut lock pane inner"))?;
         //pane_inner.element.append_child(&element)?;
 
-        Ok(Self::create(
+        Self::create(
             element,
             layout.clone(),
             attributes,
             docs,
             String::from(""),
-        )?)
+        )
     }
 
     fn create(
@@ -138,16 +138,13 @@ impl Mnemonic {
         (*self.value.lock().unwrap()).clone()
     }
 
-    fn apply_value(&self, value: &String) -> Result<Vec<String>> {
+    fn apply_value(&self, value: &str) -> Result<Vec<String>> {
         let words: Vec<String> = value
-            .replace("\t", " ")
-            .replace("\n", " ")
-            .replace("\r", " ")
-            .replace("'", "")
-            .replace("\"", "")
-            .split(" ")
+            .replace(['\t','\n','\r'], " ")
+            .replace(['\'','\"'], "")
+            .split(' ')
             .map(|word| word.trim().to_string())
-            .filter(|word| word.len() > 0)
+            .filter(|word| !word.is_empty())
             .collect();
 
         //log_trace!("words: {:?}", words);
@@ -234,12 +231,10 @@ impl Mnemonic {
         }
 
         input_value = input_value
-            .replace("\t", " ")
-            .replace("\n", " ")
-            .replace("\r", " ");
+            .replace(['\t','\n','\r'], " ");
 
-        if remove_space && input_value.contains(" ") {
-            input.set_value(input_value.split(" ").next().unwrap())
+        if remove_space && input_value.contains(' ') {
+            input.set_value(input_value.split(' ').next().unwrap())
         }
 
         let mut values = vec![];
@@ -253,7 +248,7 @@ impl Mnemonic {
         *value = new_value.clone();
 
         if let Some(cb) = self.on_change_cb.lock().unwrap().as_mut() {
-            return Ok(cb(new_value)?);
+            return cb(new_value);
         }
 
         Ok(())
@@ -268,12 +263,12 @@ impl<'refs> TryFrom<ElementBindingContext<'refs>> for Mnemonic {
     type Error = Error;
 
     fn try_from(ctx: ElementBindingContext<'refs>) -> Result<Self> {
-        Ok(Self::create(
+        Self::create(
             ctx.element.clone(),
             ctx.layout.clone(),
-            &ctx.attributes,
-            &ctx.docs,
+            ctx.attributes,
+            ctx.docs,
             String::new(),
-        )?)
+        )
     }
 }

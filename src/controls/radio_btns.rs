@@ -63,7 +63,7 @@ where
 
         let pane_inner = layout
             .inner()
-            .ok_or(JsValue::from("unable to mut lock pane inner"))?;
+            .ok_or_else(|| JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
 
         let mut btns = RadioBtns::<E> {
@@ -98,7 +98,7 @@ where
                     *value = new_value;
 
                     if let Some(cb) = cb_opt.lock().unwrap().as_mut() {
-                        return Ok(cb(variant)?);
+                        return cb(variant);
                     }
                 }
                 Ok(())

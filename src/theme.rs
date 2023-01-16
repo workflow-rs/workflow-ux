@@ -79,7 +79,7 @@ pub fn set_logo(_logo: &str) -> Result<()> {
 }
 
 pub fn init_theme(theme: Theme) -> Result<()> {
-    Ok(set_theme(theme)?)
+    set_theme(theme)
 }
 /*
 fn build_theme_file_path(theme: &Theme)->String{
@@ -168,7 +168,7 @@ pub fn set_theme(theme: Theme) -> Result<()> {
         Some(el) => el.dyn_into::<SvgElement>()?,
         None => {
             if let Some(body) = doc.query_selector("body")? {
-                let svg = SvgElement::new("svg")?;
+                let svg = SvgElement::try_new("svg")?;
                 svg.set_attribute("display", "none")?;
                 body.append_child(&svg)?;
                 svg
@@ -240,7 +240,7 @@ fn refresh_theme() -> Result<()> {
 
 pub fn current_theme() -> Theme {
     unsafe {
-        (&CURRENT_THEME)
+        CURRENT_THEME
             .as_ref()
             .expect("Application theme is not initialized")
             .clone()

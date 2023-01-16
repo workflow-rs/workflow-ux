@@ -2,7 +2,7 @@ use crate::prelude::*;
 use crate::result::Result;
 mod types;
 
-pub static CSS: &'static str = include_str!("menu.css");
+pub static CSS: &str = include_str!("menu.css");
 
 pub mod caption;
 pub mod group;

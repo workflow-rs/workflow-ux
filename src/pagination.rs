@@ -7,7 +7,7 @@ use web_sys::Element;
 use workflow_html::{html, ElementResult, Hooks, Html, Render, Renderables};
 use workflow_log::log_error;
 
-pub static CSS: &'static str = include_str!("pagination.css");
+pub static CSS: &str = include_str!("pagination.css");
 
 #[derive(Debug)]
 pub struct PaginationPage {
@@ -117,7 +117,7 @@ impl Pagination {
                 skip: (page - 1) * limit,
                 active: active_page == page,
             });
-            page = page + 1;
+            page += 1;
         }
         Self {
             name: None,
@@ -178,9 +178,9 @@ impl Pagination {
         let next_skip = self.next_skip;
         //let total_pages = self.total_pages;
         let last_skip = self.last_skip;
-        let name = self.name.clone().unwrap_or("workflow".to_string());
+        let name = self.name.clone().unwrap_or_else(|| "workflow".to_string());
 
-        let options = self.options.clone().unwrap_or(PaginationOptions::new());
+        let options = self.options.clone().unwrap_or_default();
         let first_text = options.first;
         let last_text = options.last;
         let prev_text = options.prev;

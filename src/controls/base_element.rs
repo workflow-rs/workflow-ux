@@ -58,7 +58,7 @@ impl BaseElement {
         Ok(())
     }
     pub fn closest_form_control(&self) -> Result<Option<FormControlBase>> {
-        self._closest_form_control("flow-form-control".into())
+        self._closest_form_control("flow-form-control")
     }
 
     pub fn focus_form_control(&self) -> Result<()> {

@@ -11,13 +11,15 @@ pub enum Kind {
     External,
 }
 
+pub type OnClickClosure = Closure<dyn FnMut(web_sys::MouseEvent)>;
+
 #[derive(Debug, Clone)]
 pub struct Link {
     pub element: Element,
     pub kind: Kind,
     pub text: String,
     pub href: Option<String>,
-    pub _onclick: Arc<Mutex<Option<Closure<dyn FnMut(web_sys::MouseEvent)>>>>,
+    pub _onclick: Arc<Mutex<Option<OnClickClosure>>>,
 }
 
 impl std::default::Default for Link {
@@ -55,7 +57,7 @@ impl Link {
         // if cls.len() > 0 {
         //     element.set_attribute("class", cls)?;
         // }
-        element.set_inner_html(&text);
+        element.set_inner_html(text);
 
         Ok(Link {
             kind: Kind::Module,

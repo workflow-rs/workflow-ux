@@ -27,7 +27,8 @@ impl Application {
         workflow_ux::theme::init_theme(crate::theme::Theme::default())?;
         let el_selector = el_selector.unwrap_or("workflow-app");
         let collection = document().query_selector(el_selector)?;
-        let element = collection.expect(&format!("unable to locate '{el_selector}' element"));
+        let element =
+            collection.unwrap_or_else(|| panic!("unable to locate '{el_selector}' element"));
 
         let app = Application {
             element: Arc::new(element),
@@ -67,10 +68,10 @@ impl Application {
         module_load_fn_name: &JsValue,
     ) -> Result<JsValue> {
         log_trace!("loading {}", name);
-        let fn_jsv = js_sys::Reflect::get(&pkg, module_load_fn_name)?;
+        let fn_jsv = js_sys::Reflect::get(pkg, module_load_fn_name)?;
         let args = js_sys::Array::new();
         // log_trace!("fn_jsv:{:#?}, {:#?}", fn_jsv, args);
-        Ok(js_sys::Reflect::apply(&fn_jsv.into(), &pkg, &args.into())?)
+        Ok(js_sys::Reflect::apply(&fn_jsv.into(), pkg, &args)?)
     }
 
     // TODO - replace with internal global registry
@@ -85,8 +86,8 @@ impl Application {
         let mut modules = AHashMap::<String, (JsValue, Option<String>)>::new(); //Vec::new();
         let keys = js_sys::Reflect::own_keys(&pkg)?;
         let keys_vec = keys.to_vec();
-        for idx in 0..keys_vec.len() {
-            let name: String = keys_vec[idx].as_string().unwrap_or("".into());
+        for key in &keys_vec {
+            let name: String = key.as_string().unwrap_or_else(|| "".into());
             if name.starts_with("module_register_") {
                 log_trace!("PROCESSING MODULE FN: {}", name);
                 let clean_name = name.replace("module_register_", "");
@@ -94,14 +95,14 @@ impl Application {
                 let name = names.next().unwrap();
                 let mut depends_on = None;
                 if let Some(a) = names.next() {
-                    let d = a.replace("_", "");
-                    if d.len() > 0 {
+                    let d = a.replace('_', "");
+                    if !d.is_empty() {
                         log_trace!("PROCESSING MODULE {} WHICH DEPENDS ON: {}", name, d);
                         depends_on = Some(d);
                     }
                 }
 
-                modules.insert(name.to_string(), (keys_vec[idx].clone(), depends_on));
+                modules.insert(name.to_string(), (key.clone(), depends_on));
                 // modules.push((name, keys_vec[idx].clone()));
             }
         }
@@ -116,31 +117,7 @@ impl Application {
             if let Some((module_load_fn_name, depends_on)) = modules.remove(*name) {
                 if module_disable_list.contains(name) {
                     log_warning!("skipping disable module {}", name);
-                } else {
-                    if let Some(deps) = depends_on {
-                        if module_disable_list.contains(&deps.as_str()) {
-                            log_warning!(
-                                "skipping module '{}' beacuse it depends on disabled module '{}'",
-                                name,
-                                deps
-                            );
-                        } else {
-                            self.load_module(&pkg, name, &module_load_fn_name)?;
-                        }
-                    } else {
-                        self.load_module(&pkg, name, &module_load_fn_name)?;
-                    }
-                }
-            } else {
-                log_error!("Unable to load module: {}", name);
-            }
-        }
-
-        for (name, (module_load_fn_name, depends_on)) in modules.iter() {
-            if module_disable_list.contains(&name.as_str()) {
-                log_warning!("skipping disable module {}", name);
-            } else {
-                if let Some(deps) = depends_on {
+                } else if let Some(deps) = depends_on {
                     if module_disable_list.contains(&deps.as_str()) {
                         log_warning!(
                             "skipping module '{}' beacuse it depends on disabled module '{}'",
@@ -153,6 +130,26 @@ impl Application {
                 } else {
                     self.load_module(&pkg, name, &module_load_fn_name)?;
                 }
+            } else {
+                log_error!("Unable to load module: {}", name);
+            }
+        }
+
+        for (name, (module_load_fn_name, depends_on)) in modules.iter() {
+            if module_disable_list.contains(&name.as_str()) {
+                log_warning!("skipping disable module {}", name);
+            } else if let Some(deps) = depends_on {
+                if module_disable_list.contains(&deps.as_str()) {
+                    log_warning!(
+                        "skipping module '{}' beacuse it depends on disabled module '{}'",
+                        name,
+                        deps
+                    );
+                } else {
+                    self.load_module(&pkg, name, module_load_fn_name)?;
+                }
+            } else {
+                self.load_module(&pkg, name, module_load_fn_name)?;
             }
         }
 
@@ -164,7 +161,7 @@ impl Application {
 
 pub fn global() -> Result<Application> {
     let clone = unsafe {
-        (&APPLICATION)
+        APPLICATION
             .as_ref()
             .ok_or(Error::ApplicationGlobalNotInitialized)?
             .clone()

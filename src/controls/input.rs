@@ -64,16 +64,16 @@ impl Input {
 
         let pane_inner = layout
             .inner()
-            .ok_or(JsValue::from("unable to mut lock pane inner"))?;
+            .ok_or_else(|| JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
 
-        Ok(Self::create(
+        Self::create(
             element,
             layout.clone(),
             attributes,
             docs,
             String::from(""),
-        )?)
+        )
     }
     fn create(
         element: Element,
@@ -141,14 +141,14 @@ impl Input {
 
                     *value = new_value.clone();
                     if let Some(cb) = &mut *cb_opt.lock().unwrap() {
-                        return Ok(cb(new_value)?);
+                        return cb(new_value);
                     }
 
                     Ok(())
                 })?;
         }
         {
-            let el = element.clone();
+            let el = element;//.clone();
             let value = self.value.clone();
             let cb_opt = self.on_change_cb.clone();
             let callback = callback!(move |_event: web_sys::CustomEvent| -> Result<()> {
@@ -159,7 +159,7 @@ impl Input {
 
                 *value = new_value.clone();
                 if let Some(cb) = &mut *cb_opt.lock().unwrap() {
-                    return Ok(cb(new_value)?);
+                    return cb(new_value);
                 }
                 Ok(())
             });
@@ -184,12 +184,12 @@ impl<'refs> TryFrom<ElementBindingContext<'refs>> for Input {
     type Error = Error;
 
     fn try_from(ctx: ElementBindingContext<'refs>) -> Result<Self> {
-        Ok(Self::create(
+        Self::create(
             ctx.element.clone(),
             ctx.layout.clone(),
-            &ctx.attributes,
-            &ctx.docs,
+            ctx.attributes,
+            ctx.docs,
             String::new(),
-        )?)
+        )
     }
 }

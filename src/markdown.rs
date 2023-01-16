@@ -7,7 +7,7 @@ use pulldown_cmark::{
 pub fn markdown_to_html(str: &str) -> String {
     let mut options = Options::empty();
     options.insert(Options::ENABLE_STRIKETHROUGH);
-    let parser = Parser::new_ext(&str, options);
+    let parser = Parser::new_ext(str, options);
 
     let parser = parser.map(|event| match event {
         //Event::Text(text) => Event::Text(text.replace("abbr", "abbreviation").into()),
@@ -21,8 +21,8 @@ pub fn markdown_to_html(str: &str) -> String {
                     }
 
                     let mut href = String::new();
-                    let mut dest_str = dest.into_string();
-                    let _ = escape_href(&mut href, &mut dest_str);
+                    let dest_str = dest.into_string();
+                    let _ = escape_href(&mut href, &dest_str);
                     let href = CowStr::from(href);
                     if title.is_empty() {
                         return Event::Html(CowStr::from(format!(
@@ -32,8 +32,8 @@ pub fn markdown_to_html(str: &str) -> String {
                         )));
                     } else {
                         let mut title_ = String::new();
-                        let mut title_str = title.into_string();
-                        let _ = escape_html(&mut title_, &mut title_str);
+                        let title_str = title.into_string();
+                        let _ = escape_html(&mut title_, &title_str);
                         let title = CowStr::from(title_);
                         return Event::Html(CowStr::from(format!(
                             "<a target=\"_blank\" href=\"{}{}\" title=\"{}\">",

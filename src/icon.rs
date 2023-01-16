@@ -32,14 +32,14 @@ static mut ICONS: Option<Arc<Mutex<IconInfoMap>>> = None;
 
 pub fn icon_root() -> String {
     unsafe {
-        (&ICON_ROOT_URL)
+        ICON_ROOT_URL
             .as_ref()
             .expect("Icon root is not initialized")
             .clone()
     }
 }
 pub fn get_icons() -> Arc<Mutex<IconInfoMap>> {
-    match unsafe { (&ICONS).as_ref() } {
+    match unsafe { ICONS.as_ref() } {
         Some(icons) => icons.clone(),
         None => {
             let icons = Arc::new(Mutex::new(BTreeMap::new()));
@@ -54,11 +54,12 @@ pub fn track_icon<T: Into<String>>(id: T, icon: IconInfo) {
     let id_str: String = id.into();
     let icons = get_icons();
     {
-        let mut locked = icons.lock().expect(&format!(
+        let mut locked = icons.lock().unwrap_or_else(|_| panic!(
             "unable to lock icons list for tracking `{id_str}`"
         ));
         if let Some(icon) = locked.get_mut(&id_str) {
             if !icon.is_svg {
+                // FIXME
                 icon.is_svg = icon.is_svg;
             }
         } else {
@@ -71,18 +72,18 @@ pub fn track_icon<T: Into<String>>(id: T, icon: IconInfo) {
 
 // #[wasm_bindgen]
 pub fn init_icon_root(icon_root: &str) -> Result<()> {
-    let icon_root = icon_root.to_string();
-    if icon_root.ends_with("/") {
-        icon_root.to_string().pop(); //.push('/');
+    let mut icon_root = icon_root.to_string();
+    if icon_root.ends_with('/') {
+        icon_root.pop();
     }
     unsafe {
-        ICON_ROOT_URL = Some(icon_root.to_string());
+        ICON_ROOT_URL = Some(icon_root);
     }
     Ok(())
 }
 
 pub fn icon_folder() -> String {
-    format!("{}/{}", icon_root(), current_theme_folder()).to_string()
+    format!("{}/{}", icon_root(), current_theme_folder())
 }
 
 pub enum Icon {
@@ -134,7 +135,7 @@ impl Icon {
     }
 
     pub fn svg_element(&self) -> Result<SvgElement> {
-        let el = SvgElement::new("use")?;
+        let el = SvgElement::try_new("use")?;
         let (file_name, id) = self.get_file_name_and_id();
         track_icon(&id, IconInfo::new_svg(file_name));
         Ok(el.set_href(&format!("#svg-icon-{}", id)))
@@ -143,7 +144,7 @@ impl Icon {
         let el = match self {
             Icon::Css(name) => {
                 let icon_el = document().create_element("div")?;
-                icon_el.set_attribute("icon", &name)?;
+                icon_el.set_attribute("icon", name)?;
                 icon_el.set_attribute("class", "icon")?;
                 icon_el
             }
@@ -160,19 +161,19 @@ impl Icon {
 }
 
 fn custom(name: &str) -> String {
-    format!("{}/{}", icon_folder(), name.to_lowercase()).to_string()
+    format!("{}/{}", icon_folder(), name.to_lowercase())
 }
 
 fn svg(name: &str) -> String {
-    format!("{}/{}.svg#icon", icon_folder(), name.to_lowercase()).to_string()
+    format!("{}/{}.svg#icon", icon_folder(), name.to_lowercase())
 }
 
 impl ToString for Icon {
     fn to_string(&self) -> String {
         match self {
             Icon::Url(url) => url.clone(),
-            Icon::IconRootCustom(name) => custom(&name),
-            Icon::IconRootSVG(name) => svg(&name),
+            Icon::IconRootCustom(name) => custom(name),
+            Icon::IconRootSVG(name) => svg(name),
             Icon::Css(name) => name.clone(),
         }
     }
@@ -195,7 +196,7 @@ pub fn update_theme() -> Result<()> {
         if let Some(src) = src {
             if src.starts_with(&icon_root) {
                 let src = &src[icon_root.len() + 1..src.len()];
-                let idx = src.find("/").expect("Unable to locate theme path ending");
+                let idx = src.find('/').expect("Unable to locate theme path ending");
                 let src = format!("{}/{}", icon_folder, &src[idx + 1..]);
                 el.set_attribute("src", &src)?;
             }

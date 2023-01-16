@@ -111,15 +111,10 @@ impl FormData {
     }
 
     pub fn get_object<D: BorshDeserialize>(&self, name: &str) -> Result<Option<D>> {
-        if let Some(value) = self.values.get(name) {
-            match value {
-                FormDataValue::Object(list) => {
-                    let data = &mut &list.clone()[0..];
-                    let obj = D::deserialize(data)?;
-                    return Ok(Some(obj));
-                }
-                _ => {}
-            }
+        if let Some(FormDataValue::Object(list)) = self.values.get(name) {
+            let data = &mut &list.clone()[0..];
+            let obj = D::deserialize(data)?;
+            return Ok(Some(obj));
         }
 
         Ok(None)

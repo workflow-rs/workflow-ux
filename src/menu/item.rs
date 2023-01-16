@@ -39,10 +39,10 @@ impl MenuItem {
 
         let subtitle_el = document().create_element("div")?;
         subtitle_el.set_attribute("class", "sub-title")?;
-        if caption.subtitle.len() > 0 {
+        if !caption.subtitle.is_empty() {
             subtitle_el.set_inner_html(&caption.subtitle);
         }
-        if caption.tooltip.len() > 0 {
+        if !caption.tooltip.is_empty() {
             element.set_attribute("title", &caption.tooltip)?;
         }
         text_box_el.append_child(&subtitle_el)?;

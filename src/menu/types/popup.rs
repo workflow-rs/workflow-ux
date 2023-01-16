@@ -34,7 +34,7 @@ impl PopupMenuItem {
     ) -> Result<Self> {
         let icon_: Icon = icon.into();
 
-        let circle_el = SvgElement::new("circle")
+        let circle_el = SvgElement::try_new("circle")
             .expect("PopupMenuItem: Unable to create circle")
             .set_radius("42")
             .set_cpos("0", "0");
@@ -48,13 +48,13 @@ impl PopupMenuItem {
             .set_aspect_ratio("xMidYMid meet");
 
         let text: String = caption.title;
-        let text_el = SvgElement::new("text")
+        let text_el = SvgElement::try_new("text")
             .expect("PopupMenuItem: Unable to create text")
             .set_html(&text)
             .set_text_anchor("middle")
             .set_pos("0", "22");
 
-        let element = SvgElement::new("g")
+        let element = SvgElement::try_new("g")
             .expect("PopupMenuItem: Unable to create root")
             .set_cls("menu")
             .add_child(&circle_el)
@@ -93,7 +93,7 @@ impl PopupMenuItem {
     fn get_id() -> u8 {
         static mut ID: u8 = 0;
         unsafe {
-            ID = ID + 1;
+            ID += 1;
             ID
         }
     }
@@ -188,13 +188,13 @@ impl PopupMenu {
         element.set_attribute("class", "workflow-popup-menu")?;
         element.set_attribute("hide", "true")?;
         let view_box = format!("0,0,{width},{height}");
-        let svg = SvgElement::new("svg")?
+        let svg = SvgElement::try_new("svg")?
             .set_view_box(&view_box)
             .set_size("100%", "100%")
             .set_aspect_ratio("xMidYMid meet");
         element.append_child(&svg)?;
 
-        let circle_el = SvgElement::new("path")?
+        let circle_el = SvgElement::try_new("path")?
             .dyn_into::<SvgPathElement>()
             .expect("Unable to cast element to SvgPathElement");
 
@@ -204,7 +204,7 @@ impl PopupMenu {
         circle_el.set_attribute("class", "close-btn")?;
         svg.append_child(&circle_el)?;
 
-        let circle_proxy_el = SvgElement::new("circle")?
+        let circle_proxy_el = SvgElement::try_new("circle")?
             .set_cls("proxy")
             .set_cpos("0", "-1000")
             .set_radius("10");
@@ -221,7 +221,7 @@ impl PopupMenu {
         let root = PopupMenuItem {
             id: PopupMenuItem::get_id(),
             text: "root".to_string(),
-            element: SvgElement::new("g").expect("PopupMenuItem: Unable to create root"),
+            element: SvgElement::try_new("g").expect("PopupMenuItem: Unable to create root"),
             click_listener: Arc::new(Mutex::new(None)),
             items: Arc::new(Mutex::new(BTreeMap::new())),
         };
@@ -261,7 +261,7 @@ impl PopupMenu {
             dim / 2,
             dim / 2,
             dim / 2,
-            dim * -1
+            -dim
         )
     }
 
@@ -296,13 +296,13 @@ impl PopupMenu {
             //if item.element.parent_element().is_none(){
             //    self.svg.append_child(&item.element)?;
             //}
-            let position = section_length * index + section_length / (2 as f32);
+            let position = section_length * index + section_length / 2f32;
             let p = self
                 .circle_el
                 .get_point_at_length(circumference - position)?;
             //log_trace!("p.y(): {}", p.y());
             item.set_position(p.x(), p.y())?;
-            index = index + (1 as f32);
+            index += 1f32;
         }
         let cx = match self.circle_proxy_el.get_attribute("cx") {
             Some(d) => {
@@ -447,6 +447,6 @@ impl PopupMenu {
             inner.callbacks.retain(callback)?;
         }
 
-        Ok(this.clone())
+        Ok(this)
     }
 }

@@ -41,7 +41,7 @@ impl<'refs> TryFrom<ElementBindingContext<'refs>> for Markdown {
     type Error = Error;
 
     fn try_from(ctx: ElementBindingContext<'refs>) -> Result<Self> {
-        if ctx.docs.len() != 0 {
+        if !ctx.docs.is_empty() {
             let content = ctx.docs.join("\n");
             let html: String = markdown_to_html(&content);
             ctx.element.set_inner_html(&html);

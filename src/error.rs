@@ -155,7 +155,7 @@ impl From<Error> for JsValue {
 
 impl<T> From<PoisonError<T>> for Error {
     fn from(err: PoisonError<T>) -> Self {
-        Self::PoisonError(format!("{:?}", err).to_string())
+        Self::PoisonError(format!("{:?}", err))
     }
 }
 

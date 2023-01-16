@@ -52,7 +52,7 @@ impl Terminal {
         let value = Arc::new(Mutex::new(init_value));
         let pane_inner = layout
             .inner()
-            .ok_or(JsValue::from("unable to mut lock pane inner"))?;
+            .ok_or_else(|| JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
         let mut terminal = Terminal {
             element_wrapper: ElementWrapper::new(element),

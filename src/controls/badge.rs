@@ -69,7 +69,7 @@ impl Badge {
             }
         }
 
-        element.set_attribute("title", &title)?;
+        element.set_attribute("title", title)?;
 
         Ok(Self { element, options })
     }
@@ -182,19 +182,19 @@ impl From<Options> for Attributes {
     fn from(options: Options) -> Attributes {
         let mut attributes = Attributes::new();
         if let Some(sampler) = options.sampler {
-            attributes.insert("sampler".to_string(), sampler.to_string());
+            attributes.insert("sampler".to_string(), sampler);
         }
         //if let Some(title) = options.title{
         //    attributes.insert("title".to_string(), title.to_string());
         //}
         if let Some(suffix) = options.suffix {
-            attributes.insert("suffix".to_string(), suffix.to_string());
+            attributes.insert("suffix".to_string(), suffix);
         }
         if let Some(align) = options.align {
-            attributes.insert("align".to_string(), align.to_string());
+            attributes.insert("align".to_string(), align);
         }
         if let Some(style) = options.style {
-            attributes.insert("style".to_string(), style.to_string());
+            attributes.insert("style".to_string(), style);
         }
         if options.colon {
             attributes.insert("has_colon".to_string(), "true".to_string());

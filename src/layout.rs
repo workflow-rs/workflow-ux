@@ -106,8 +106,8 @@ impl ElementLayout {
         let root = inner
             .element
             .parent_element()
-            .ok_or(Error::ParentNotFound(inner.element.clone()))?;
-        Ok(root.clone())
+            .ok_or_else(|| Error::ParentNotFound(inner.element.clone()))?;
+        Ok(root)
     }
 
     pub fn try_new_for_html() -> Result<ElementLayout> {
@@ -141,10 +141,10 @@ impl ElementLayout {
         parent.append_child(&element)?;
 
         let layout = ElementLayout(Arc::new(Mutex::new(ElementLayoutInner {
-            id: id.into(),
+            id, //: id.into(),
             // parent_id : String::from(parent_id),
             layout_style,
-            attributes: attributes.clone(),
+            attributes, //: attributes.clone(),
             element,
         })));
         Ok(layout)
@@ -171,7 +171,7 @@ impl ElementLayout {
         element.set_class_name(&format!("{}-container", layout_style.get_type()));
         parent.element.append_child(&element)?;
         let layout = ElementLayout(Arc::new(Mutex::new(ElementLayoutInner {
-            id: id.into(),
+            id, //: id.into(),
             // parent_id: parent.id.clone(),
             layout_style,
             attributes: attributes.clone(),
@@ -226,7 +226,7 @@ impl ElementLayout {
                     form_control.set_info(&markdown)?;
                 }
 
-                Some(form_control.element.clone())
+                Some(form_control.element)
             }
             ElementLayoutStyle::Pane => None,
             ElementLayoutStyle::Panel => None,
@@ -266,13 +266,13 @@ impl ElementLayout {
     }
 
     pub fn update_footer(&self, _attributes: &Attributes) -> Result<()> {
-        let layout = self
-            .inner()
-            .ok_or("ElementLayout::update_footer() - failure to lock parent layout inner")?;
-        match &layout.layout_style {
-            ElementLayoutStyle::Stage => {}
-            _ => {}
-        };
+        // let layout = self
+        //     .inner()
+        //     .ok_or("ElementLayout::update_footer() - failure to lock parent layout inner")?;
+        // match &layout.layout_style {
+        //     ElementLayoutStyle::Stage => {}
+        //     _ => {}
+        // };
 
         Ok(())
     }
@@ -295,6 +295,6 @@ impl ElementLayout {
                 return Err(err.into());
             }
         };
-        return Ok(footer);
+        Ok(footer)
     }
 }

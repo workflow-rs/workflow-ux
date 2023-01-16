@@ -55,7 +55,7 @@ impl MainMenu {
         }
         let default = Section::new(&element, "default", sub_menu_el.clone())?;
         let actions = Section::new(&element, "actions", sub_menu_el.clone())?;
-        let settings = Section::new(&element, "settings", sub_menu_el.clone())?;
+        let settings = Section::new(&element, "settings", sub_menu_el)?;
         if let Some(attributes) = attributes {
             for (k, v) in attributes.iter() {
                 element.set_attribute(k, v)?;
