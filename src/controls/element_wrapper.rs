@@ -51,7 +51,7 @@ impl ElementWrapper {
         let callback = callback!(t);
         self.element
             .add_event_listener_with_callback(name, callback.as_ref())?;
-        self.callbacks.insert(callback)?;
+        self.callbacks.retain(callback)?;
         Ok(())
     }
 
@@ -62,7 +62,7 @@ impl ElementWrapper {
         let callback = callback!(t);
         self.element
             .add_event_listener_with_callback("click", callback.as_ref())?;
-        self.callbacks.insert(callback)?;
+        self.callbacks.retain(callback)?;
         Ok(())
     }
 }

@@ -431,7 +431,7 @@ impl PopupMenu {
                 .circle_proxy_el
                 .add_event_listener_with_callback("transitionend", callback.as_ref())?;
             let inner = self_.inner()?;
-            inner.callbacks.insert(callback)?;
+            inner.callbacks.retain(callback)?;
         }
         {
             let _this = this.clone();
@@ -444,7 +444,7 @@ impl PopupMenu {
                 .circle_el
                 .add_event_listener_with_callback("click", callback.as_ref())?;
             let inner = self_.inner()?;
-            inner.callbacks.insert(callback)?;
+            inner.callbacks.retain(callback)?;
         }
 
         Ok(this.clone())

@@ -195,7 +195,7 @@ impl Mnemonic {
             self.words_el
                 .element
                 .add_event_listener_with_callback("keydown", callback.as_ref())?;
-            self.words_el.callbacks.insert(callback)?;
+            self.words_el.callbacks.retain(callback)?;
         }
 
         Ok(())

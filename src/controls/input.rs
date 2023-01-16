@@ -169,7 +169,7 @@ impl Input {
             self.element_wrapper
                 .element
                 .add_event_listener_with_callback("keydown", callback.as_ref())?;
-            self.element_wrapper.callbacks.insert(callback)?;
+            self.element_wrapper.callbacks.retain(callback)?;
         }
 
         Ok(())
