@@ -9,7 +9,7 @@ use crate::task::FunctionDebounce;
 use hex;
 use md5;
 use sha2::{Digest, Sha256};
-use workflow_core::describe_enum;
+use workflow_core::enums::Describe;
 
 use super::input::FlowInputBase;
 
@@ -21,8 +21,7 @@ pub enum AvatarValue {
     Url(String),
 }
 
-#[derive(Clone)]
-#[describe_enum]
+#[derive(Clone, Describe)]
 pub enum AvatarProvider {
     Gravatar,
     Libravatar,
