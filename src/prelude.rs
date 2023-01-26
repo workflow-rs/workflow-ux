@@ -54,7 +54,7 @@ pub use web_sys::{
 };
 pub use workflow_core::enums::EnumTrait;
 pub use workflow_core::id::Id;
-pub use workflow_core::{
+pub use crate::{
     async_trait, async_trait_with_send, async_trait_without_send, workflow_async_trait,
 };
 
