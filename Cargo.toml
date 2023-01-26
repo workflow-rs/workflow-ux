@@ -18,14 +18,14 @@ crate-type = ["cdylib", "lib"]
 # workflow-core = "0.1.0"
 # workflow-i18n = "0.1.0"
 # workflow-log = "0.1.0"
-# workflow-html = { path = "../workflow-html" }
+# workflow-html = { path = "../workflow-rs/html" }
 # workflow-wasm = "0.1.0"
-workflow-core = { path = "../workflow-core", features = ["wasm"] }
-workflow-i18n = { path = "../workflow-i18n" }
-workflow-log = { path = "../workflow-log" }
-workflow-html = { path = "../workflow-html" }
-workflow-wasm = { path = "../workflow-wasm" }
-workflow-dom = { path = "../workflow-dom" }
+workflow-core = { path = "../workflow-rs/core"}
+workflow-i18n = { path = "../workflow-rs/i18n" }
+workflow-log = { path = "../workflow-rs/log" }
+workflow-html = { path = "../workflow-rs/html" }
+workflow-wasm = { path = "../workflow-rs/wasm" }
+workflow-dom = { path = "../workflow-rs/dom" }
 qrcodegen = "1.8.0"
 
 workflow-ux-macros = { path = "macros" }

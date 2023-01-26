@@ -13,7 +13,7 @@ pub use std::rc::Rc;
 pub use wasm_bindgen::prelude::*;
 pub use wasm_bindgen::JsCast;
 pub use workflow_i18n::{dict as i18n_dict, i18n};
-pub use workflow_log::{log_error, log_trace, log_warning};
+pub use workflow_log::{log_error, log_debug, log_trace, log_warning};
 
 // TODO review and namespace all controls
 pub use crate::controls::*;

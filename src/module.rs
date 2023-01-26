@@ -161,7 +161,7 @@ where
 {
     // let name = stringify!(T);
 
-    log_trace!("SEARCHING FOR MODULE: {}", name);
+    log_debug!("SEARCHING FOR MODULE: {}", name);
 
     match registry()
         .read()
@@ -169,7 +169,7 @@ where
         .get(name)
     {
         Some(module) => {
-            log_trace!("MODULE FOUND!");
+            log_debug!("MODULE FOUND!");
 
             let iface = module
                 .iface

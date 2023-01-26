@@ -103,7 +103,7 @@ impl PopupMenuItem {
     ) -> Result<Self> {
         let self_ = self.clone();
         let callback_ = callback!(move |event: web_sys::MouseEvent| -> Result<()> {
-            log_trace!("PopupMenuItem::with_callback called");
+            log_debug!("PopupMenuItem::with_callback called");
             event.stop_immediate_propagation();
 
             match callback(&self_) {

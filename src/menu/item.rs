@@ -105,7 +105,7 @@ impl MenuItem {
     pub fn with_callback(mut self, callback: Box<dyn Fn(&MenuItem) -> Result<()>>) -> Result<Self> {
         let self_ = self.clone();
         self.element_wrapper.on_click(move |event| -> Result<()> {
-            log_trace!("MenuItem::with_callback called");
+            log_debug!("MenuItem::with_callback called");
             event.stop_immediate_propagation();
 
             match callback(&self_) {
