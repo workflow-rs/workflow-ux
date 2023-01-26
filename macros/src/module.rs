@@ -193,7 +193,8 @@ fn module_impl(
         mod wasm {
             #[wasm_bindgen::prelude::wasm_bindgen]
             pub async fn #module_register_() -> workflow_ux::result::Result<()> {
-                Ok(super::#module_struct::register_module().await?)
+                super::#module_struct::register_module().await?;
+                Ok(())
             }
         }
 
