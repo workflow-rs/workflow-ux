@@ -40,7 +40,7 @@ pub mod qrcode;
 pub mod style;
 pub mod task;
 pub mod user_agent;
-pub use workflow_core::{
+pub use workflow_async_trait::{
     async_trait, async_trait_with_send, async_trait_without_send, workflow_async_trait,
 };
 
