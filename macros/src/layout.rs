@@ -705,7 +705,8 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
                     if self._stage_index == 0{
                         Ok(false)
                     }else{
-                        Ok(self.set_stage_index(self._stage_index - 1)?)
+                        let index = self.set_stage_index(self._stage_index - 1)?;
+                        Ok(index)
                     }
                 }
                 pub fn show_next_stage(&mut self) -> workflow_ux::result::Result<bool>{
@@ -889,7 +890,8 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
             pub async fn try_create_layout_view(
                 module : Option<std::sync::Arc<dyn workflow_ux::module::ModuleInterface>>
             ) -> workflow_ux::result::Result<std::sync::Arc<workflow_ux::view::Layout<Self, ()>>> {
-                Ok(Self::try_create_layout_view_with_data(module, Option::<()>::None).await?)
+                let result = Self::try_create_layout_view_with_data(module, Option::<()>::None).await?;
+                Ok(result)
             }
 
             pub async fn try_create_layout_view_with_data<D:Send + 'static>(
@@ -914,7 +916,8 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
                 let attributes = Attributes::new();
                 let docs = Docs::new();
 
-                Ok(#struct_name::new(&root, &attributes, &docs)?)
+                let l = #struct_name::new(&root, &attributes, &docs)?;
+                Ok(l)
             }
 
             pub fn new(parent_layout : &ElementLayout, attributes: &Attributes, docs : &Docs) -> workflow_ux::result::Result<#struct_name #struct_params> {

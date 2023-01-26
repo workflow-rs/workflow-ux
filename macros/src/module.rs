@@ -172,7 +172,8 @@ fn module_impl(
                         )
                     )?;
                     // .expect(format!("Failure registering module {}", #module_name));
-                Ok(workflow_ux::module::register(#module_name, std::sync::Arc::new(module),&#container_types).await?)
+                workflow_ux::module::register(#module_name, std::sync::Arc::new(module),&#container_types).await?;
+                Ok(())
             }
 
             pub fn get() -> Option<std::sync::Arc<#module_struct>> {
