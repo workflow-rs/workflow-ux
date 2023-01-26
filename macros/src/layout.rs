@@ -389,6 +389,20 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
             .iter()
             .map(|item| item.1.to_string())
             .collect();
+    
+        let mut append_field_element = quote!{
+            let child = #field_name.element();
+            _layout.append_child(&child, &layout_attributes, &docs)?;
+        };
+
+        if let Some(Some(skip)) = ctl_args.get("skip"){
+            let skip = skip.to_token_stream().to_string().replace('"', "");
+            if skip.eq("true"){
+                append_field_element = quote!{};
+            }
+        }
+
+
 
         //println!("ctl: {}, ctl_attrs_k:{:#?}, ctl_attrs_v:{:#?}", field.type_name_str_lower_case, ctl_attrs_k, ctl_attrs_v);
 
@@ -445,8 +459,7 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
                         // println!("********* ATTRIBUTE MAP: {:#?}",attributes);
                         let docs : Vec<&str> = vec![#( #docs ), *];
                         let #field_name = #type_name::new(&_layout, &ctl_attributes, &docs)?;  // pane-ctl
-                        let child = #field_name.element();
-                        _layout.append_child(&child, &layout_attributes, &docs)?;
+                        #append_field_element
                         #field_name
                     };
                 });
