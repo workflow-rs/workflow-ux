@@ -4,7 +4,7 @@
 use ahash::AHashMap;
 use derivative::Derivative;
 use std::sync::RwLock;
-use workflow_core::async_trait_without_send;
+use workflow_async_trait::async_trait_without_send;
 use workflow_ux::error::Error;
 use workflow_ux::prelude::*;
 use workflow_ux::result::Result;
