@@ -1,22 +1,30 @@
-use crate::async_trait_without_send;
-use crate::result::Result;
-use borsh::de::BorshDeserialize;
-use borsh::ser::BorshSerialize;
+use borsh::{
+    BorshDeserialize,
+    BorshSerialize,
+    ser::BorshSerialize as BorshSerializeTrait,
+    de::BorshDeserialize as BorshDeserializeTrait
+};
+use downcast::{downcast_sync, AnySync};
 use paste::paste;
+//use workflow_log::log_trace;
 use std::{
     collections::BTreeMap,
-    sync::Arc,
+    sync::{Arc, Mutex},
     str
 };
 use web_sys::Element;
 use crate::{
-    layout::{DefaultFunctions, Elemental, ElementLayout, ElementLayoutStyle},
+    layout::{Elemental, ElementLayout, ElementLayoutStyle},
     attributes::Attributes,
     docs::Docs,
     form_footer::FormFooter,
-    view::Layout,
-    document,
-    module::ModuleInterface
+    prelude::i18n,
+    async_trait_without_send,
+    error,
+    result::Result,
+    //view::Layout,
+    //document,
+    //module::ModuleInterface
 };
 
 pub struct Category {
@@ -42,7 +50,7 @@ where
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
 pub enum FormDataValue {
     String(String),
     Bool(bool),
@@ -85,7 +93,7 @@ macro_rules! define_fields {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, BorshSerialize, BorshDeserialize)]
 pub struct FormData {
     pub id: Option<String>,
     pub values: BTreeMap<String, FormDataValue>,
@@ -115,7 +123,7 @@ impl FormData {
             .insert(name.to_string(), FormDataValue::List(list));
     }
 
-    pub fn add_object(&mut self, name: &str, obj: impl BorshSerialize) -> Result<()> {
+    pub fn add_object(&mut self, name: &str, obj: impl BorshSerializeTrait) -> Result<()> {
         let mut data = Vec::new();
         obj.serialize(&mut data)?;
         self.values
@@ -123,7 +131,7 @@ impl FormData {
         Ok(())
     }
 
-    pub fn get_object<D: BorshDeserialize>(&self, name: &str) -> Result<Option<D>> {
+    pub fn get_object<D: BorshDeserializeTrait>(&self, name: &str) -> Result<Option<D>> {
         if let Some(FormDataValue::Object(list)) = self.values.get(name) {
             let data = &mut &list.clone()[0..];
             let obj = D::deserialize(data)?;
@@ -166,13 +174,22 @@ pub trait FormHandler {
     async fn submit(&self) -> Result<()>;
 }
 
+#[async_trait_without_send]
+pub trait FormStage : Elemental + AnySync{
+    async fn serialize(&self)->Result<FormData>;
+    async fn activate(&self)->Result<()>;
+    async fn deactivate(&self)->Result<()>;
+}
 
+downcast_sync!(dyn FormStage);
+
+#[derive(Clone)]
 pub struct FormStages {
     layout: ElementLayout,
-    footer: workflow_ux::form_footer::FormFooter,
-    index: u8,
-    pub stages: Vec<Arc<dyn FormHandler>>,
-    pub data: Vec<FormData>
+    index: Arc<Mutex<u8>>,
+    pub stages: Arc<Mutex<Vec<Arc<dyn FormStage>>>>,
+    pub data: Arc<Mutex<FormData>>,
+    pub title: Arc<Mutex<String>>,
 }
 
 unsafe impl Send for FormStages {}
@@ -180,115 +197,27 @@ unsafe impl Sync for FormStages {}
 
 impl FormStages {
 
-    pub async fn try_create_layout_view(
-        module: Option<std::sync::Arc<dyn ModuleInterface>>,
-    ) -> Result<std::sync::Arc<Layout<Arc<Self>, ()>>> {
-        let result = Self::try_create_layout_view_with_data(module, Option::<()>::None).await?;
-        Ok(result)
-    }
-
-    pub async fn try_create_layout_view_with_data<D: Send + 'static>(
-        module: Option<std::sync::Arc<dyn ModuleInterface>>,
-        data: Option<D>,
-    ) -> Result<std::sync::Arc<Layout<Arc<Self>, D>>> {
-        let el = document().create_element("div")?;
-        let layout = Arc::new(Self::try_inject(&el)?);
-        layout.bind_footer()?;
-        //layout.load().await?;
-        let view = Layout::try_new(module, layout, data)?;
-        
-        /*{
-            let layout_clone = view.layout();
-            let mut locked = layout_clone.lock().expect("Unable to lock FormStages for footer binding.");
-            //locked.footer.bind_form_stages_layout(view.clone())?;
-            locked.footer.on_submit_click(Box::new(|_value|{
-
-                Ok(())
-            }));
-        }
-        */
-        Ok(view)
-    }
-
-    pub fn try_new() -> Result<Self> {
-        let el = workflow_ux::document().create_element("div")?;
-        let layout = Self::try_inject(&el)?;
-        Ok(layout)
-    }
-
-    pub fn try_inject(parent: &web_sys::Element) -> Result<Self> {
-        let root =
-            ElementLayout::try_inject(parent, ElementLayoutStyle::Form)?;
-        let attributes = Attributes::new();
-        let docs = Docs::new();
-        let l = Self::new(&root, &attributes, &docs)?;
-        Ok(l)
-    }
-
     pub fn new(
         parent_layout: &ElementLayout,
         attributes: &Attributes,
         _docs: &Docs,
     ) -> Result<Self> {
-        let attr_list = vec![("title".to_string(), "Form Stages".to_string())];
-
-        let mut attributes = attributes.clone();
-        for (k, v) in attr_list.iter() {
-            attributes.insert(k.to_string(), v.clone());
-        }
-
         let layout_style = ElementLayoutStyle::Form;
         let layout = ElementLayout::new(parent_layout, layout_style, &attributes)?;
-
-        /*
-        let stage1 = {
-            let mut ctl_attributes = Attributes::new();
-            let ctl_attr_list: Vec<(String, String)> = vec![];
-            for (k, v) in ctl_attr_list.iter() {
-                ctl_attributes.insert(k.to_string(), v.clone());
-            }
-            let mut layout_attributes = Attributes::new();
-            let layout_attr_list: Vec<(String, String)> = vec![];
-            for (k, v) in layout_attr_list.iter() {
-                layout_attributes.insert(k.to_string(), v.clone());
-            }
-            let docs: Vec<&str> = vec![];
-            let stage1 = FormStage1::new(&layout, &ctl_attributes, &docs)?;
-            let child = stage1.element();
-            layout.append_child(&child, &layout_attributes, &docs)?;
-            stage1
-        };
-        */
-
-        let footer = {
-            let layout_attributes = Attributes::new();
-            let ctl_attributes = Attributes::new();
-            let docs: Vec<&str> = vec![];
-            let footer = FormFooter::new(&layout, &ctl_attributes, &docs)?;
-            let child = footer.element();
-            layout.append_child(&child, &layout_attributes, &docs)?;
-            footer
-        };
-
+        let title = attributes.get("title").unwrap_or(&"Step [INDEX]".to_string()).clone();
         let layout = FormStages {
             layout,
-            footer,
-            index: 0,
-            stages: Vec::new(),
-            data: Vec::new()
+            title: Arc::new(Mutex::new(title)),
+            index: Arc::new(Mutex::new(0)),
+            stages: Arc::new(Mutex::new(Vec::new())),
+            data: Arc::new(Mutex::new(FormData::new(None)))
         };
-
-        layout.init()?;
 
         Ok(layout)
     }
 
-    pub fn bind_footer(self: &Arc<Self>) -> Result<()>{
-        self.footer.on_submit_click(Box::new(|_value|{
-            //self.activate_stage(0)?;
-            Ok(())
-        }))?;
-    
+    pub fn add_stage(&self, stage: Arc<dyn FormStage>)-> Result<()>{
+        self.stages.lock()?.push(stage);
         Ok(())
     }
 
@@ -301,69 +230,141 @@ impl FormStages {
         }
     }
 
+    pub fn load(&self, _data: FormData)-> Result<()>{
+
+        Ok(())
+    }
+
     pub fn layout(&self) -> ElementLayout {
         self.layout.clone()
     }
 
-    pub fn set_submit_btn_text<T: Into<String>>(&self, text: T) -> Result<()> {
-        self.footer.set_submit_btn_text(text)?;
+    pub fn is_finished(&self)->Result<bool>{
+        let index = (self.index()? + 1) as usize;
+        let length = self.len()?;
+        Ok(index >= length)
+    }
+
+    pub fn is_first(&self)->Result<bool>{
+        Ok(self.index()? == 0)
+    }
+
+    pub fn is_last(&self)->Result<bool>{
+        let index = (self.index()? + 1) as usize;
+        Ok(self.stages()?.len() == index)
+    }
+
+    pub fn len(&self)->Result<usize>{
+        Ok(self.stages()?.len())
+    }
+
+    pub fn stages(&self)->Result<Vec<Arc<dyn FormStage>>>{
+        Ok(self.stages.lock()?.clone())
+    }
+
+    pub fn data(&self)->Result<FormData>{
+        Ok(self.data.lock()?.clone())
+    }
+
+    pub fn index(&self)->Result<u8>{
+        Ok(self.index.lock()?.clone())
+    }
+    pub fn title(&self)->Result<String>{
+        Ok(self.title.lock()?.clone())
+    }
+
+    pub async fn serialize_stage(&self)->Result<FormData>{
+        let stage = self.stage()?;
+        let data = stage.serialize().await?;
+        self.set_stage_data(self.index()?, data.clone())?;
+        Ok(data)
+    }
+
+    fn set_stage_data(&self, index:u8, data: FormData)->Result<()>{
+        let mut complete_data = self.data.lock()?;
+        complete_data.add_object(&format!("stage_{index}"), data)?;
         Ok(())
     }
 
-    pub fn activate_stage(&self, index: u8)->Result<()>{
-        self.set_stage_index(index)?;
+    pub fn stage(&self)->Result<Arc<dyn FormStage>>{
+        let index = self.index()?;
+
+        if let Some(stage) = self.stages.lock()?.get(index as usize){
+            Ok(stage.clone())
+        }else{
+            Err(error!("Invalid stage index"))
+        }
+    }
+
+    pub fn stage_downcast_arc<T>(&self)->Result<Arc<T>>
+    where T: AnySync{
+        let stage = self.stage()?;
+        let stage = stage.downcast_arc::<T>()?;
+
+        Ok(stage)
+    }
+
+    pub async fn activate_stage(&self, index: u8, footer: Option<&FormFooter>)->Result<()>{
+        self.set_index(index, footer).await?;
         Ok(())
     }
 
-    fn set_stage_index(&self, _index: u8)->Result<()>{
-        /*
-        match index{
-            1=>{
-                self.stage1.show(true)?;
-                self.stage2.show(false)?;
-                self.stage3.show(false)?;
-                self.set_submit_btn_text(i18n("Next"))?;
-                self.stage_index.set_value(1)?;
-            }
-            2=>{
-                self.stage1.show(false)?;
-                self.stage2.show(true)?;
-                self.stage3.show(false)?;
-                self.set_submit_btn_text(i18n("Next"))?;
-                self.stage_index.set_value(2)?;
-            }
-            _=>{
-                self.stage1.show(false)?;
-                self.stage2.show(false)?;
-                self.stage3.show(true)?;
-                self.set_submit_btn_text(i18n("Submit"))?;
-                self.stage_index.set_value(3)?;
+    pub async fn next(&self, footer: Option<&FormFooter>)->Result<bool>{
+        if self.is_finished()?{
+            return Ok(false)
+        }
+
+        self.set_index(self.index()?+1, footer).await?;
+
+        Ok(true)
+    }
+
+    async fn set_index(&self, mut index: u8, footer: Option<&FormFooter>)->Result<()>{
+
+        let stages = self.stages()?;
+        for (i, stage) in stages.iter().enumerate(){
+            if i == index as usize{
+                self.element().append_child(&stage.element())?;
+                stage.activate().await?;
+            }else{
+                stage.deactivate().await?;
             }
         }
-        */
+
+        if let Some(footer) = footer{
+            let last = stages.len()-1;
+            if (index as usize) < last{
+                footer.set_submit_btn_text(i18n("Next"))?;
+            }else{
+                footer.set_submit_btn_text(i18n("Submit"))?;
+                index = last as u8;
+            }
+        }
+
+        *self.index.lock()? = index;
+        self.update_title()?;
         
         Ok(())
     }
 
+    pub fn update_title(&self) ->Result<()>{
+        self.render_title(self.title()?)?;
+        Ok(())
+    }
+
+    pub fn render_title<T: AsRef<str>>(&self, title: T)->Result<()>{
+        if let Some(el) = self.layout.element().query_selector(".layout-title")?{
+            let title = title.as_ref().replace("[INDEX]", &format!("{}", self.index()?+1));
+            el.set_inner_html(&title)
+        }
+        Ok(())
+    }
+
 }
 
-impl DefaultFunctions for FormStages {}
-
-impl Elemental for Arc<FormStages> {
+impl Elemental for FormStages {
     fn element(&self) -> web_sys::Element {
         self.layout.element()
-    }
-}
-
-impl Clone for FormStages {
-    fn clone(&self) -> FormStages {
-        FormStages {
-            layout: self.layout.clone(),
-            index: self.index,
-            footer: self.footer.clone(),
-            stages: self.stages.clone(),
-            data: self.data.clone()
-        }
     }
 }
 
@@ -372,18 +373,3 @@ impl From<FormStages> for Element {
         form.layout.element()
     }
 }
-
-/*
-
-#[async_trait_without_send]
-impl FormHandler for FormStages {
-    async fn load(&self) -> Result<()> {
-        self.activate_stage(0)?;
-        Ok(())
-    }
-
-    async fn submit(&self) -> Result<()> {
-        Ok(())
-    }
-}
-*/

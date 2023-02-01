@@ -451,10 +451,7 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
                             ctl_attributes.insert(k.to_string(),v.clone());
                         }
                         let mut layout_attributes = Attributes::new();
-                        let layout_attr_list : Vec<(String,String)> = vec![#(( #layout_attrs_k.to_string(),#layout_attrs_v.to_string() ) ), *];
-                        for (k,v) in layout_attr_list.iter() {
-                            layout_attributes.insert(k.to_string(),v.clone());
-                        }
+                        #(layout_attributes.insert(#layout_attrs_k.to_string(), #layout_attrs_v.to_string()))*
                         // println!("********* ATTRIBUTE LIST: {:#?}",attr_list);
                         // println!("********* ATTRIBUTE MAP: {:#?}",attributes);
                         let docs : Vec<&str> = vec![#( #docs ), *];
@@ -617,6 +614,10 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
                 pub fn set_submit_btn_text<T:Into<String>>(&self, text:T)->workflow_ux::result::Result<()>{
                     self._footer.set_submit_btn_text(text)?;
                     Ok(())
+                }
+
+                pub fn footer(&self)->&workflow_ux::form_footer::FormFooter{
+                    &self._footer
                 }
             };
 

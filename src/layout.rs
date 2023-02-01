@@ -12,7 +12,7 @@ use crate::markdown::markdown_to_html;
 
 use web_sys::Element;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub enum ElementLayoutStyle {
     Form,
     Stage,
