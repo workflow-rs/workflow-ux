@@ -1,5 +1,23 @@
-import {BaseElement, html, css, ScrollbarStyle, FlowDataBadgeGraph} from '[FLOW-UX-PATH]';
+import{
+	BaseElement, html, css, ScrollbarStyle,
+	FlowInput,
+	FlowDataBadgeGraph,
+	FlowFormControl,
+	FlowMenu,
+	FlowRadioBtns,
+	FlowRadios,
+	FlowSelector,
+	FlowTextArea
+} from '[FLOW-UX-PATH]';
+
+window.FlowInput = FlowInput;
 window.FlowDataBadgeGraph = FlowDataBadgeGraph;
+window.FlowFormControl = FlowFormControl;
+window.FlowMenu = FlowMenu;
+window.FlowRadioBtns = FlowRadioBtns;
+window.FlowRadios = FlowRadios;
+window.FlowSelector = FlowSelector;
+window.FlowTextarea = FlowTextArea;
 
 let isTouchCapable = 'ontouchstart' in window ||
 	window.DocumentTouch && document instanceof window.DocumentTouch;/* ||

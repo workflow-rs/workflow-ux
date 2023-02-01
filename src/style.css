@@ -36,6 +36,9 @@ layout-root{height:100%;box-sizing:border-box;}
 layout-root{display:flex;flex-direction:column;}
 [hide],
 [hidden]{display:none;}
+workflow-layout workflow-layout>.layout-title{
+    font-weight: normal;
+}
 
 .form-container.with-form-footer{
     display:block;

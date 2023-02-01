@@ -1,3 +1,4 @@
+//use crate::form::FormStages;
 use crate::prelude::*;
 //use crate::layout::ElementLayout;
 //use crate::controls::element_wrapper::ElementWrapper;
@@ -63,7 +64,7 @@ impl FormFooter {
     }
 
     pub fn element(&self) -> Element {
-        self.element_wrapper.element.clone() //.dyn_into::<FormFooterBase>().expect("Unable to cast element to FormFooterBase")
+        self.element_wrapper.element.clone()
     }
 
     pub fn set_submit_btn_text<T: Into<String>>(&self, text: T) -> Result<()> {
@@ -96,7 +97,7 @@ impl FormFooter {
     where
         F: FormHandler + Elemental + Clone + 'static,
     {
-        let locked = {
+        let form_handler = {
             layout
                 .lock()
                 .unwrap_or_else(|_| {
@@ -109,7 +110,7 @@ impl FormFooter {
         };
 
         workflow_core::task::wasm::spawn(async move {
-            let action = locked.submit();
+            let action = form_handler.submit();
             action.await
         })
     }
@@ -130,4 +131,14 @@ impl FormFooter {
 
         Ok(())
     }
+
+    /*
+    pub fn bind_form_stages_layout<D>(&mut self, view: Arc<Layout<FormStages, D>>) -> Result<()>
+    where 
+    D: Send + 'static,
+    {
+
+        Ok(())
+    }
+    */
 }
