@@ -103,8 +103,7 @@ impl Pagination {
         let next = total_pages.min(active_page + 1);
         let mut page = 1;
         println!(
-            "active_page: {}, half:{}, max_pages:{}, total_pages:{}",
-            active_page, half, max_pages, total_pages
+            "active_page: {active_page}, half:{half}, max_pages:{max_pages}, total_pages:{total_pages}"
         );
         if active_page > half {
             page = active_page + half.min(total_pages - active_page) + 1 - max_pages;

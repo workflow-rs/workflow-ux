@@ -113,8 +113,7 @@ pub async fn register(
         .is_some()
     {
         panic!(
-            "Error: multiple registrations for module {}.  Modules are singletons.",
-            name
+            "Error: multiple registrations for module {name}.  Modules are singletons."
         );
     }
     log_trace!("* * * * * * * * * registering module: {}", name);
@@ -149,7 +148,7 @@ pub async fn seal() -> Result<()> {
 pub fn get_module(name: &str) -> Option<Arc<Module>> {
     registry()
         .read()
-        .unwrap_or_else(|_| panic!("Unable to locate module {} (registry rwlock failure)", name))
+        .unwrap_or_else(|_| panic!("Unable to locate module {name} (registry rwlock failure)"))
         .get(name)
         .cloned()
 }
@@ -175,7 +174,7 @@ where
                 .iface
                 .clone()
                 .downcast_arc::<T>()
-                .unwrap_or_else(|_| panic!("Unable to downcast module to T: {}", name));
+                .unwrap_or_else(|_| panic!("Unable to downcast module to T: {name}"));
             // .downcast_arc::<T>()
             // .map_err(|err|error!("Unable to downcast module {} {}", name,err))?;
 

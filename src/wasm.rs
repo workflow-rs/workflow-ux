@@ -12,7 +12,7 @@ pub fn init_ux(workflow: &JsValue, modules: &JsValue) -> Result<()> {
 
 #[wasm_bindgen(js_name = "loadComponents")]
 pub fn load_components(flow_ux_path: &str) -> Result<()> {
-    println!("flow_ux_path:{:?}", flow_ux_path);
+    println!("flow_ux_path:{flow_ux_path:?}");
 
     crate::app::layout::AppLayout::load_js(flow_ux_path)?;
     Ok(())

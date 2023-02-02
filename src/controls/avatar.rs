@@ -224,7 +224,7 @@ impl Avatar {
         self.hash_containers.on_click(move |e| -> Result<()> {
             if let Some(et) = e.target() {
                 let el = et.dyn_into::<Element>().unwrap_or_else(|_| {
-                    panic!("Avatar: Could not cast EventTarget to Element: {:?}", e)
+                    panic!("Avatar: Could not cast EventTarget to Element: {e:?}")
                 });
                 if let Some(el) = el.closest("[data-set-hash-type]")? {
                     let hash_type = el.get_attribute("data-set-hash-type").unwrap();
@@ -533,7 +533,7 @@ impl Avatar {
         let search_el = self
             .hash_containers
             .element
-            .query_selector(&format!("[data-hash-type=\"{}\"] flow-input", hash_type))?;
+            .query_selector(&format!("[data-hash-type=\"{hash_type}\"] flow-input"))?;
         if let Some(el) = search_el {
             match el.dyn_into::<FlowInputBase>() {
                 Ok(input) => return Ok(Some(input)),
@@ -602,7 +602,7 @@ impl Avatar {
         let mut hasher = Sha256::new();
         hasher.update(content);
         let result = hasher.finalize();
-        Ok(format!("{:x}", result))
+        Ok(format!("{result:x}"))
     }
 
     fn update_hashes(&self, email: String) -> Result<()> {

@@ -51,7 +51,7 @@ impl MenuGroup {
         let doc = document();
         let id = Self::create_id();
         let li = doc.create_element("li")?;
-        li.set_attribute("data-id", &format!("menu_group_{}", id))?;
+        li.set_attribute("data-id", &format!("menu_group_{id}"))?;
         li.set_attribute("class", "menu-item menu-group skip-drawer-event")?;
 
         let text_box_el = doc.create_element("div")?;

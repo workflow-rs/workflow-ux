@@ -26,9 +26,7 @@ pub fn markdown_to_html(str: &str) -> String {
                     let href = CowStr::from(href);
                     if title.is_empty() {
                         return Event::Html(CowStr::from(format!(
-                            "<a target=\"_blank\" href=\"{}{}\">",
-                            CowStr::from(prefix),
-                            href
+                            "<a target=\"_blank\" href=\"{prefix}{href}\">"
                         )));
                     } else {
                         let mut title_ = String::new();
@@ -36,8 +34,7 @@ pub fn markdown_to_html(str: &str) -> String {
                         let _ = escape_html(&mut title_, &title_str);
                         let title = CowStr::from(title_);
                         return Event::Html(CowStr::from(format!(
-                            "<a target=\"_blank\" href=\"{}{}\" title=\"{}\">",
-                            prefix, href, title
+                            "<a target=\"_blank\" href=\"{prefix}{href}\" title=\"{title}\">"
                         )));
                     }
                 }

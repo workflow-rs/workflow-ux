@@ -9,7 +9,7 @@ pub struct Section {
 
 impl Section {
     pub fn new(parent: &Element, name: &str, sub_menu_container: Option<Element>) -> Result<Self> {
-        let element = match parent.query_selector(&format!(".section[section='{}']", name))? {
+        let element = match parent.query_selector(&format!(".section[section='{name}']"))? {
             Some(el) => el,
             None => {
                 let el = create_el("ul", vec![("class", "section"), ("section", name)], None)?;
@@ -52,21 +52,21 @@ pub struct SectionMenu {
 
 impl SectionMenu {
     pub fn select_by_id(id: &str) -> Result<()> {
-        match document().query_selector(&format!("[data-id=\"section_menu_{}\"]", id)) {
+        match document().query_selector(&format!("[data-id=\"section_menu_{id}\"]")) {
             Ok(el_opt) => {
                 if let Some(el) = el_opt {
                     select(&el)?;
                 }
             }
-            Err(e) => {
-                log_trace!("unable to get section_menu_{}: error:{:?}", id, e);
+            Err(err) => {
+                log_trace!("unable to get section_menu_{id}: error:{err:?}");
             }
         }
 
         match document().query_selector("[data-id=\"sub_menus\"]") {
             Ok(el_opt) => {
                 if let Some(sub_menus_container) = el_opt {
-                    let sub_menu_id = format!("section_menu_sub_{}", id);
+                    let sub_menu_id = format!("section_menu_sub_{id}");
                     let els = sub_menus_container.query_selector_all(".section-menu-sub")?;
                     for idx in 0..els.length() {
                         let sub_menu = els.item(idx).unwrap().dyn_into::<Element>().unwrap();
@@ -121,7 +121,7 @@ impl SectionMenu {
         let id = Self::create_id();
         let li = doc.create_element("li")?;
         li.set_attribute("class", "menu-item skip-drawer-event")?;
-        li.set_attribute("data-id", &format!("section_menu_{}", id))?;
+        li.set_attribute("data-id", &format!("section_menu_{id}"))?;
         let icon: Icon = icon.into();
         let icon_el = match icon {
             Icon::Css(name) => {
@@ -157,7 +157,7 @@ impl SectionMenu {
 
         let sub_li = doc.create_element("li")?;
         sub_li.set_attribute("class", "sub section-menu-sub")?;
-        sub_li.set_attribute("data-id", &format!("section_menu_sub_{}", id))?;
+        sub_li.set_attribute("data-id", &format!("section_menu_sub_{id}"))?;
         let sub_ul = doc.create_element("ul")?;
         sub_li.append_child(&sub_ul)?;
 

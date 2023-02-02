@@ -138,7 +138,7 @@ impl Icon {
         let el = SvgElement::try_new("use")?;
         let (file_name, id) = self.get_file_name_and_id();
         track_icon(&id, IconInfo::new_svg(file_name));
-        Ok(el.set_href(&format!("#svg-icon-{}", id)))
+        Ok(el.set_href(&format!("#svg-icon-{id}")))
     }
     pub fn element(&self) -> Result<Element> {
         let el = match self {

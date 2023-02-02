@@ -200,7 +200,7 @@ impl FormStages {
         _docs: &Docs,
     ) -> Result<Self> {
         let layout_style = ElementLayoutStyle::Form;
-        let layout = ElementLayout::new(parent_layout, layout_style, &attributes)?;
+        let layout = ElementLayout::new(parent_layout, layout_style, attributes)?;
         let title = attributes
             .get("title")
             .unwrap_or(&"Step [INDEX]".to_string())
@@ -256,6 +256,10 @@ impl FormStages {
     pub fn len(&self) -> Result<usize> {
         Ok(self.stages()?.len())
     }
+    
+    pub fn is_empty(&self) -> Result<bool> {
+        Ok(self.stages()?.is_empty())
+    }
 
     pub fn stages(&self) -> Result<Vec<Arc<dyn FormStage>>> {
         Ok(self.stages.lock()?.clone())
@@ -266,7 +270,7 @@ impl FormStages {
     }
 
     pub fn index(&self) -> Result<u8> {
-        Ok(self.index.lock()?.clone())
+        Ok(*self.index.lock()?)
     }
     pub fn title(&self) -> Result<String> {
         Ok(self.title.lock()?.clone())

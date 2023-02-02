@@ -82,9 +82,9 @@ impl Terminal {
 
     pub async fn sink(&self, cmd: String) -> std::result::Result<JsValue, JsValue> {
         if cmd.eq("hello") {
-            Ok(JsValue::from_str(&format!("success:{}", cmd)))
+            Ok(JsValue::from_str(&format!("success:{cmd}")))
         } else {
-            Err(JsValue::from_str(&format!("error:{}", cmd)))
+            Err(JsValue::from_str(&format!("error:{cmd}")))
         }
     }
 

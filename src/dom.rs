@@ -81,14 +81,14 @@ impl Dom {
         });
 
         let observer = MutationObserver::new(callback.as_ref())
-            .map_err(|e| Error::JsError(format!("{:?}", e)))?;
+            .map_err(|err| Error::JsError(format!("{err:?}")))?;
         self.dom_listener = Some(callback);
         let mut options = MutationObserverInit::new();
         options.child_list(true);
         options.subtree(true);
         observer
             .observe_with_options(&body, &options)
-            .map_err(|e| Error::JsError(format!("{:?}", e)))?;
+            .map_err(|e| Error::JsError(format!("{e:?}")))?;
 
         Ok(())
     }

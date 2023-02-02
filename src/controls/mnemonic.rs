@@ -71,7 +71,7 @@ impl Mnemonic {
                     list.push(html!{
                         <div class="cell">
                             <input class="seed word"
-                                data-index={format!("{}", index)} />
+                                data-index={format!("{index}")} />
                         </div>
                     }?);
                 }

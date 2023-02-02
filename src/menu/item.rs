@@ -96,8 +96,8 @@ impl MenuItem {
             }
         };
 
-        badge.set_inner_html(&format!("{}", num));
-        badge.set_attribute("data-badge", &format!("{}", num))?;
+        badge.set_inner_html(&format!("{num}"));
+        badge.set_attribute("data-badge", &format!("{num}"))?;
 
         Ok(())
     }

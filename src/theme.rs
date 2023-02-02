@@ -101,12 +101,11 @@ fn build_theme_content(theme: &str, icons: Arc<Mutex<IconInfoMap>>) -> ThemeCont
     let root = icon_root();
     for (id, icon) in locked.iter() {
         var_list.push(format!(
-            "--svg-icon-{}:url(\"{}/{}/{}\");",
-            id, root, theme, icon.file_name
+            "--svg-icon-{id}:url(\"{root}/{theme}/{}\");",
+            icon.file_name
         ));
         icons_list.push(format!(
-            ".icon[icon=\"{}\"]{{background-image:var(--svg-icon-{})}}",
-            id, id
+            ".icon[icon=\"{id}\"]{{background-image:var(--svg-icon-{id})}}"
         ));
         svg_list.push(format!(
             "<symbol id=\"svg-icon-{}\" viewBox=\"0 0 50 50\"><image href=\"{}/{}/{}\"></image></symbol>",

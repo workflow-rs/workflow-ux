@@ -143,7 +143,7 @@ impl From<SerdeError> for Error {
 
 impl From<Error> for JsValue {
     fn from(error: Error) -> JsValue {
-        JsValue::from(format!("{:?}", error))
+        JsValue::from(format!("{error:?}"))
     }
 }
 
@@ -155,7 +155,7 @@ impl From<Error> for JsValue {
 
 impl<T> From<PoisonError<T>> for Error {
     fn from(err: PoisonError<T>) -> Self {
-        Self::PoisonError(format!("{:?}", err))
+        Self::PoisonError(format!("{err:?}"))
     }
 }
 
@@ -179,7 +179,7 @@ impl From<web_sys::Element> for Error {
 
 impl<T> From<SendError<T>> for Error {
     fn from(error: SendError<T>) -> Error {
-        Error::ChannelSendError(format!("{:?}", error))
+        Error::ChannelSendError(format!("{error:?}"))
     }
 }
 
@@ -191,13 +191,13 @@ impl<T> From<TrySendError<T>> for Error {
 
 impl From<RecvError> for Error {
     fn from(error: RecvError) -> Error {
-        Error::ChannelReceiveError(format!("{:?}", error))
+        Error::ChannelReceiveError(format!("{error:?}"))
     }
 }
 
 impl<T> From<DowncastError<T>> for Error {
     fn from(error: DowncastError<T>) -> Error {
-        Error::Downcast(format!("{:?}", error))
+        Error::Downcast(format!("{error:?}"))
     }
 }
 
