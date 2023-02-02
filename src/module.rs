@@ -112,9 +112,7 @@ pub async fn register(
         .insert(name.to_string(), module.clone())
         .is_some()
     {
-        panic!(
-            "Error: multiple registrations for module {name}.  Modules are singletons."
-        );
+        panic!("Error: multiple registrations for module {name}.  Modules are singletons.");
     }
     log_trace!("* * * * * * * * * registering module: {}", name);
     // let mut iface = iface.clone().write().await;

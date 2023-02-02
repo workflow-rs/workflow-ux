@@ -256,7 +256,7 @@ impl FormStages {
     pub fn len(&self) -> Result<usize> {
         Ok(self.stages()?.len())
     }
-    
+
     pub fn is_empty(&self) -> Result<bool> {
         Ok(self.stages()?.is_empty())
     }
