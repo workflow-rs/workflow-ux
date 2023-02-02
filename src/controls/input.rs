@@ -67,13 +67,7 @@ impl Input {
             .ok_or_else(|| JsValue::from("unable to mut lock pane inner"))?;
         pane_inner.element.append_child(&element)?;
 
-        Self::create(
-            element,
-            layout.clone(),
-            attributes,
-            docs,
-            String::from(""),
-        )
+        Self::create(element, layout.clone(), attributes, docs, String::from(""))
     }
     fn create(
         element: Element,
@@ -148,7 +142,7 @@ impl Input {
                 })?;
         }
         {
-            let el = element;//.clone();
+            let el = element; //.clone();
             let value = self.value.clone();
             let cb_opt = self.on_change_cb.clone();
             let callback = callback!(move |_event: web_sys::CustomEvent| -> Result<()> {

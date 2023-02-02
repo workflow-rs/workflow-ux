@@ -134,7 +134,7 @@ impl FormFooter {
 
     /*
     pub fn bind_form_stages_layout<D>(&mut self, view: Arc<Layout<FormStages, D>>) -> Result<()>
-    where 
+    where
     D: Send + 'static,
     {
 

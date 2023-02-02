@@ -54,9 +54,9 @@ pub fn track_icon<T: Into<String>>(id: T, icon: IconInfo) {
     let id_str: String = id.into();
     let icons = get_icons();
     {
-        let mut locked = icons.lock().unwrap_or_else(|_| panic!(
-            "unable to lock icons list for tracking `{id_str}`"
-        ));
+        let mut locked = icons
+            .lock()
+            .unwrap_or_else(|_| panic!("unable to lock icons list for tracking `{id_str}`"));
         if let Some(icon) = locked.get_mut(&id_str) {
             if !icon.is_svg {
                 // FIXME

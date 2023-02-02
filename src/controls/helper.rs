@@ -47,6 +47,6 @@ impl FieldHelper {
         Ok(v)
     }
     pub fn clean_value_for_attr(value: &str) -> Result<String> {
-        Ok(value.replace(['\"','\''], "&quot;"))
+        Ok(value.replace(['\"', '\''], "&quot;"))
     }
 }

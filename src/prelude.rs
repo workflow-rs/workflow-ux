@@ -13,7 +13,7 @@ pub use std::rc::Rc;
 pub use wasm_bindgen::prelude::*;
 pub use wasm_bindgen::JsCast;
 pub use workflow_i18n::{dict as i18n_dict, i18n};
-pub use workflow_log::{log_error, log_debug, log_trace, log_warning};
+pub use workflow_log::{log_debug, log_error, log_trace, log_warning};
 
 // TODO review and namespace all controls
 pub use crate::controls::*;
@@ -47,6 +47,9 @@ pub use crate::qrcode;
 pub use crate::view;
 pub use crate::view::{Container, ContainerStack, Evict};
 pub use crate::workspace;
+pub use crate::{
+    async_trait, async_trait_with_send, async_trait_without_send, workflow_async_trait,
+};
 pub use web_sys::{
     CustomEvent, Document, Element, EventTarget, HtmlElement, HtmlHrElement, HtmlImageElement,
     HtmlInputElement, HtmlLinkElement, MutationObserver, MutationObserverInit, MutationRecord,
@@ -54,9 +57,6 @@ pub use web_sys::{
 };
 pub use workflow_core::enums::EnumTrait;
 pub use workflow_core::id::Id;
-pub use crate::{
-    async_trait, async_trait_with_send, async_trait_without_send, workflow_async_trait,
-};
 
 pub use crate::application::global as application;
 

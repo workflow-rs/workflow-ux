@@ -223,10 +223,9 @@ impl Avatar {
         let this = self.clone();
         self.hash_containers.on_click(move |e| -> Result<()> {
             if let Some(et) = e.target() {
-                let el = et.dyn_into::<Element>().unwrap_or_else(|_| panic!(
-                    "Avatar: Could not cast EventTarget to Element: {:?}",
-                    e
-                ));
+                let el = et.dyn_into::<Element>().unwrap_or_else(|_| {
+                    panic!("Avatar: Could not cast EventTarget to Element: {:?}", e)
+                });
                 if let Some(el) = el.closest("[data-set-hash-type]")? {
                     let hash_type = el.get_attribute("data-set-hash-type").unwrap();
                     this.on_hash_type_change(hash_type)?;

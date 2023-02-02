@@ -191,10 +191,7 @@ where
 pub fn get_from_container_type(container_type: &u32) -> Result<Option<Arc<Module>>> {
     let data_types_to_modules = data_types_to_modules()?;
 
-    let module = data_types_to_modules
-        .borrow()
-        .get(container_type)
-        .cloned();
+    let module = data_types_to_modules.borrow().get(container_type).cloned();
 
     Ok(module)
 }

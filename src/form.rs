@@ -1,31 +1,29 @@
 use borsh::{
-    BorshDeserialize,
-    BorshSerialize,
-    ser::BorshSerialize as BorshSerializeTrait,
-    de::BorshDeserialize as BorshDeserializeTrait
+    de::BorshDeserialize as BorshDeserializeTrait, ser::BorshSerialize as BorshSerializeTrait,
+    BorshDeserialize, BorshSerialize,
 };
 use downcast::{downcast_sync, AnySync};
 use paste::paste;
 //use workflow_log::log_trace;
-use std::{
-    collections::BTreeMap,
-    sync::{Arc, Mutex},
-    str
-};
-use web_sys::Element;
 use crate::{
-    layout::{Elemental, ElementLayout, ElementLayoutStyle},
+    async_trait_without_send,
     attributes::Attributes,
     docs::Docs,
-    form_footer::FormFooter,
-    prelude::i18n,
-    async_trait_without_send,
     error,
+    form_footer::FormFooter,
+    layout::{ElementLayout, ElementLayoutStyle, Elemental},
+    prelude::i18n,
     result::Result,
     //view::Layout,
     //document,
     //module::ModuleInterface
 };
+use std::{
+    collections::BTreeMap,
+    str,
+    sync::{Arc, Mutex},
+};
+use web_sys::Element;
 
 pub struct Category {
     pub key: String,
@@ -175,10 +173,10 @@ pub trait FormHandler {
 }
 
 #[async_trait_without_send]
-pub trait FormStage : Elemental + AnySync{
-    async fn serialize(&self)->Result<FormData>;
-    async fn activate(&self)->Result<()>;
-    async fn deactivate(&self)->Result<()>;
+pub trait FormStage: Elemental + AnySync {
+    async fn serialize(&self) -> Result<FormData>;
+    async fn activate(&self) -> Result<()>;
+    async fn deactivate(&self) -> Result<()>;
 }
 
 downcast_sync!(dyn FormStage);
@@ -196,7 +194,6 @@ unsafe impl Send for FormStages {}
 unsafe impl Sync for FormStages {}
 
 impl FormStages {
-
     pub fn new(
         parent_layout: &ElementLayout,
         attributes: &Attributes,
@@ -204,19 +201,22 @@ impl FormStages {
     ) -> Result<Self> {
         let layout_style = ElementLayoutStyle::Form;
         let layout = ElementLayout::new(parent_layout, layout_style, &attributes)?;
-        let title = attributes.get("title").unwrap_or(&"Step [INDEX]".to_string()).clone();
+        let title = attributes
+            .get("title")
+            .unwrap_or(&"Step [INDEX]".to_string())
+            .clone();
         let layout = FormStages {
             layout,
             title: Arc::new(Mutex::new(title)),
             index: Arc::new(Mutex::new(0)),
             stages: Arc::new(Mutex::new(Vec::new())),
-            data: Arc::new(Mutex::new(FormData::new(None)))
+            data: Arc::new(Mutex::new(FormData::new(None))),
         };
 
         Ok(layout)
     }
 
-    pub fn add_stage(&self, stage: Arc<dyn FormStage>)-> Result<()>{
+    pub fn add_stage(&self, stage: Arc<dyn FormStage>) -> Result<()> {
         self.stages.lock()?.push(stage);
         Ok(())
     }
@@ -230,8 +230,7 @@ impl FormStages {
         }
     }
 
-    pub fn load(&self, _data: FormData)-> Result<()>{
-
+    pub fn load(&self, _data: FormData) -> Result<()> {
         Ok(())
     }
 
@@ -239,103 +238,104 @@ impl FormStages {
         self.layout.clone()
     }
 
-    pub fn is_finished(&self)->Result<bool>{
+    pub fn is_finished(&self) -> Result<bool> {
         let index = (self.index()? + 1) as usize;
         let length = self.len()?;
         Ok(index >= length)
     }
 
-    pub fn is_first(&self)->Result<bool>{
+    pub fn is_first(&self) -> Result<bool> {
         Ok(self.index()? == 0)
     }
 
-    pub fn is_last(&self)->Result<bool>{
+    pub fn is_last(&self) -> Result<bool> {
         let index = (self.index()? + 1) as usize;
         Ok(self.stages()?.len() == index)
     }
 
-    pub fn len(&self)->Result<usize>{
+    pub fn len(&self) -> Result<usize> {
         Ok(self.stages()?.len())
     }
 
-    pub fn stages(&self)->Result<Vec<Arc<dyn FormStage>>>{
+    pub fn stages(&self) -> Result<Vec<Arc<dyn FormStage>>> {
         Ok(self.stages.lock()?.clone())
     }
 
-    pub fn data(&self)->Result<FormData>{
+    pub fn data(&self) -> Result<FormData> {
         Ok(self.data.lock()?.clone())
     }
 
-    pub fn index(&self)->Result<u8>{
+    pub fn index(&self) -> Result<u8> {
         Ok(self.index.lock()?.clone())
     }
-    pub fn title(&self)->Result<String>{
+    pub fn title(&self) -> Result<String> {
         Ok(self.title.lock()?.clone())
     }
 
-    pub async fn serialize_stage(&self)->Result<FormData>{
+    pub async fn serialize_stage(&self) -> Result<FormData> {
         let stage = self.stage()?;
         let data = stage.serialize().await?;
         self.set_stage_data(self.index()?, data.clone())?;
         Ok(data)
     }
 
-    fn set_stage_data(&self, index:u8, data: FormData)->Result<()>{
+    fn set_stage_data(&self, index: u8, data: FormData) -> Result<()> {
         let mut complete_data = self.data.lock()?;
         complete_data.add_object(&format!("stage_{index}"), data)?;
         Ok(())
     }
 
-    pub fn stage(&self)->Result<Arc<dyn FormStage>>{
+    pub fn stage(&self) -> Result<Arc<dyn FormStage>> {
         let index = self.index()?;
 
-        if let Some(stage) = self.stages.lock()?.get(index as usize){
+        if let Some(stage) = self.stages.lock()?.get(index as usize) {
             Ok(stage.clone())
-        }else{
+        } else {
             Err(error!("Invalid stage index"))
         }
     }
 
-    pub fn stage_downcast_arc<T>(&self)->Result<Arc<T>>
-    where T: AnySync{
+    pub fn stage_downcast_arc<T>(&self) -> Result<Arc<T>>
+    where
+        T: AnySync,
+    {
         let stage = self.stage()?;
         let stage = stage.downcast_arc::<T>()?;
 
         Ok(stage)
     }
 
-    pub async fn activate_stage(&self, index: u8, footer: Option<&FormFooter>)->Result<()>{
+    pub async fn activate_stage(&self, index: u8, footer: Option<&FormFooter>) -> Result<()> {
         self.set_index(index, footer).await?;
         Ok(())
     }
 
-    pub async fn next(&self, footer: Option<&FormFooter>)->Result<bool>{
-        if self.is_finished()?{
-            return Ok(false)
+    pub async fn next(&self, footer: Option<&FormFooter>) -> Result<bool> {
+        if self.is_finished()? {
+            return Ok(false);
         }
 
-        self.set_index(self.index()?+1, footer).await?;
+        self.set_index(self.index()? + 1, footer).await?;
 
         Ok(true)
     }
 
-    async fn set_index(&self, mut index: u8, footer: Option<&FormFooter>)->Result<()>{
-
+    async fn set_index(&self, mut index: u8, footer: Option<&FormFooter>) -> Result<()> {
         let stages = self.stages()?;
-        for (i, stage) in stages.iter().enumerate(){
-            if i == index as usize{
+        for (i, stage) in stages.iter().enumerate() {
+            if i == index as usize {
                 self.element().append_child(&stage.element())?;
                 stage.activate().await?;
-            }else{
+            } else {
                 stage.deactivate().await?;
             }
         }
 
-        if let Some(footer) = footer{
-            let last = stages.len()-1;
-            if (index as usize) < last{
+        if let Some(footer) = footer {
+            let last = stages.len() - 1;
+            if (index as usize) < last {
                 footer.set_submit_btn_text(i18n("Next"))?;
-            }else{
+            } else {
                 footer.set_submit_btn_text(i18n("Submit"))?;
                 index = last as u8;
             }
@@ -343,23 +343,24 @@ impl FormStages {
 
         *self.index.lock()? = index;
         self.update_title()?;
-        
+
         Ok(())
     }
 
-    pub fn update_title(&self) ->Result<()>{
+    pub fn update_title(&self) -> Result<()> {
         self.render_title(self.title()?)?;
         Ok(())
     }
 
-    pub fn render_title<T: AsRef<str>>(&self, title: T)->Result<()>{
-        if let Some(el) = self.layout.element().query_selector(".layout-title")?{
-            let title = title.as_ref().replace("[INDEX]", &format!("{}", self.index()?+1));
+    pub fn render_title<T: AsRef<str>>(&self, title: T) -> Result<()> {
+        if let Some(el) = self.layout.element().query_selector(".layout-title")? {
+            let title = title
+                .as_ref()
+                .replace("[INDEX]", &format!("{}", self.index()? + 1));
             el.set_inner_html(&title)
         }
         Ok(())
     }
-
 }
 
 impl Elemental for FormStages {

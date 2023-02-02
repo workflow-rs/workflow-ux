@@ -48,13 +48,7 @@ impl Mnemonic {
         //let pane_inner = layout.inner().ok_or(JsValue::from("unable to mut lock pane inner"))?;
         //pane_inner.element.append_child(&element)?;
 
-        Self::create(
-            element,
-            layout.clone(),
-            attributes,
-            docs,
-            String::from(""),
-        )
+        Self::create(element, layout.clone(), attributes, docs, String::from(""))
     }
 
     fn create(
@@ -140,8 +134,8 @@ impl Mnemonic {
 
     fn apply_value(&self, value: &str) -> Result<Vec<String>> {
         let words: Vec<String> = value
-            .replace(['\t','\n','\r'], " ")
-            .replace(['\'','\"'], "")
+            .replace(['\t', '\n', '\r'], " ")
+            .replace(['\'', '\"'], "")
             .split(' ')
             .map(|word| word.trim().to_string())
             .filter(|word| !word.is_empty())
@@ -230,8 +224,7 @@ impl Mnemonic {
             remove_space = words.len() != 24;
         }
 
-        input_value = input_value
-            .replace(['\t','\n','\r'], " ");
+        input_value = input_value.replace(['\t', '\n', '\r'], " ");
 
         if remove_space && input_value.contains(' ') {
             input.set_value(input_value.split(' ').next().unwrap())

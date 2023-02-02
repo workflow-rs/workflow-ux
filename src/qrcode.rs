@@ -196,7 +196,12 @@ pub fn qr_svg_path_data(qr: &QrCode, border: u16, logo_size: Option<u8>) -> Resu
                     finder += " ";
                 }
                 finder += &format!("M{},{}h1v1h-1z", x + border, y + border);
-            } else if with_logo && y >= logo_start && y <= logo_end && x >= logo_start && x <= logo_end {
+            } else if with_logo
+                && y >= logo_start
+                && y <= logo_end
+                && x >= logo_start
+                && x <= logo_end
+            {
                 //
                 //log_trace!("x:{x}, y:{y}");
             } else {
