@@ -444,12 +444,11 @@ pub fn macro_handler(layout: Layout, attr: TokenStream, item: TokenStream) -> To
                 field_initializers.push(quote!{
                     let #field_name = {
                         let mut ctl_attributes = Attributes::new();
-                        let ctl_attr_list : Vec<(String,String)> = vec![#(( #ctl_attrs_k.to_string(),#ctl_attrs_v.to_string() ) ), *];
-                        for (k,v) in ctl_attr_list.iter() {
-                            ctl_attributes.insert(k.to_string(),v.clone());
-                        }
+                        #(ctl_attributes.insert(#ctl_attrs_k.to_string(), #ctl_attrs_v.to_string());)*
+
                         let mut layout_attributes = Attributes::new();
-                        #(layout_attributes.insert(#layout_attrs_k.to_string(), #layout_attrs_v.to_string()))*
+                        #(layout_attributes.insert(#layout_attrs_k.to_string(), #layout_attrs_v.to_string());)*
+
                         // println!("********* ATTRIBUTE LIST: {:#?}",attr_list);
                         // println!("********* ATTRIBUTE MAP: {:#?}",attributes);
                         let docs : Vec<&str> = vec![#( #docs ), *];
