@@ -10,14 +10,14 @@ use crate::{
     attributes::Attributes,
     docs::Docs,
     error,
-    form_footer::FormFooter,
-    layout::{ElementLayout, ElementLayoutStyle, Elemental},
-    prelude::{i18n, CallbackFn},
-    result::Result,
     error::Error,
     //view::Layout,
     //document,
     //module::ModuleInterface
+    form_footer::FormFooter,
+    layout::{ElementLayout, ElementLayoutStyle, Elemental},
+    prelude::{i18n, CallbackFn},
+    result::Result,
 };
 use std::{
     collections::BTreeMap,
@@ -374,7 +374,7 @@ impl FormStages {
         *self.error_cb.lock().unwrap() = Some(callback);
     }
 
-    pub fn show_error(&self, error: Error)-> Result<()> {
+    pub fn show_error(&self, error: Error) -> Result<()> {
         if let Some(cb) = self.error_cb.lock()?.as_mut() {
             cb(error)?;
         }
