@@ -22,4 +22,5 @@ pub use crate::controls::{
     token_selector::TokenSelector,
 };
 pub use crate::form::{FormData, FormDataValue, FormHandler};
+pub use crate::DataField;
 pub type UXResult<T> = workflow_ux::result::Result<T>;

@@ -41,6 +41,8 @@ pub mod style;
 pub mod task;
 pub mod user_agent;
 pub use workflow_async_trait::{async_trait, async_trait_with_send, async_trait_without_send};
+pub mod data_field;
+pub use data_field::DataField;
 
 /// dynamically configured re-export of async_trait as workflow_async_trait
 /// that imposes `Send` restriction in native (non-WASM) and removes `Send`

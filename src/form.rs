@@ -12,8 +12,9 @@ use crate::{
     error,
     form_footer::FormFooter,
     layout::{ElementLayout, ElementLayoutStyle, Elemental},
-    prelude::i18n,
+    prelude::{i18n, CallbackFn},
     result::Result,
+    error::Error,
     //view::Layout,
     //document,
     //module::ModuleInterface
@@ -188,6 +189,7 @@ pub struct FormStages {
     pub stages: Arc<Mutex<Vec<Arc<dyn FormStage>>>>,
     pub data: Arc<Mutex<FormData>>,
     pub title: Arc<Mutex<String>>,
+    error_cb: Arc<Mutex<Option<CallbackFn<Error>>>>,
 }
 
 unsafe impl Send for FormStages {}
@@ -203,7 +205,7 @@ impl FormStages {
         let layout = ElementLayout::new(parent_layout, layout_style, attributes)?;
         let title = attributes
             .get("title")
-            .unwrap_or(&"Step [INDEX]".to_string())
+            .unwrap_or(&"Step [INDEX]/[STEPS]".to_string())
             .clone();
         let layout = FormStages {
             layout,
@@ -211,6 +213,7 @@ impl FormStages {
             index: Arc::new(Mutex::new(0)),
             stages: Arc::new(Mutex::new(Vec::new())),
             data: Arc::new(Mutex::new(FormData::new(None))),
+            error_cb: Arc::new(Mutex::new(None)),
         };
 
         Ok(layout)
@@ -360,9 +363,22 @@ impl FormStages {
         if let Some(el) = self.layout.element().query_selector(".layout-title")? {
             let title = title
                 .as_ref()
-                .replace("[INDEX]", &format!("{}", self.index()? + 1));
+                .replace("[INDEX]", &format!("{}", self.index()? + 1))
+                .replace("[STEPS]", &format!("{}", self.len()?));
             el.set_inner_html(&title)
         }
+        Ok(())
+    }
+
+    pub fn on_error(&self, callback: CallbackFn<Error>) {
+        *self.error_cb.lock().unwrap() = Some(callback);
+    }
+
+    pub fn show_error(&self, error: Error)-> Result<()> {
+        if let Some(cb) = self.error_cb.lock()?.as_mut() {
+            cb(error)?;
+        }
+
         Ok(())
     }
 }
