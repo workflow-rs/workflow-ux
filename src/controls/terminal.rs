@@ -68,7 +68,7 @@ impl Terminal {
             log_trace!("received terminal event: {:#?}", event);
             let detail = event.detail();
 
-            let cmd = utils::try_get_string(&detail, "cmd")?;
+            let cmd = utils::try_get_string_from_prop(&detail, "cmd")?;
             log_trace!("cmd: {:#?}", cmd);
             let _this = this.clone();
             let pr = future_to_promise(async move { _this.sink(cmd).await });

@@ -15,7 +15,7 @@ pub use crate::controls::{
     select::*,
     selector::Selector,
     stage_footer::StageFooter,
-    terminal::Terminal,
+    //terminal::Terminal,
     text::Text,
     textarea::Textarea,
     token_select::TokenSelect,

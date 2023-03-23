@@ -26,7 +26,7 @@ pub mod select;
 pub mod selector;
 pub mod stage_footer;
 pub mod svg;
-pub mod terminal;
+//pub mod terminal;
 pub mod text;
 pub mod textarea;
 pub mod token_select;
