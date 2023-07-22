@@ -2,7 +2,7 @@ use core::future::Future;
 use core::pin::Pin;
 use workflow_core::{
     channel::{Receiver, Sender},
-    task::spawn,
+    task::dispatch,
 };
 use workflow_ux::error::error;
 use workflow_ux::prelude::*;
@@ -72,7 +72,7 @@ where
 
         self.set_active(true);
 
-        spawn(async move {
+        dispatch(async move {
             loop {
                 let listener_ = self.listener.clone();
                 match receiver.recv().await {
@@ -121,7 +121,7 @@ where
     U: Fn() + Send + 'static,
     C: Fn(E) -> CallbackResult + Send + 'static,
 {
-    spawn(async move {
+    dispatch(async move {
         loop {
             match receiver.recv().await {
                 Ok(event) => {

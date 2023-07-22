@@ -60,7 +60,7 @@ pub fn track_icon<T: Into<String>>(id: T, icon: IconInfo) {
         if let Some(icon) = locked.get_mut(&id_str) {
             if !icon.is_svg {
                 // FIXME
-                icon.is_svg = icon.is_svg;
+                // icon.is_svg = icon.is_svg;
             }
         } else {
             locked.insert(id_str, icon);

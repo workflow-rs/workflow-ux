@@ -200,7 +200,7 @@ pub fn popup_menu(input: TokenStream) -> TokenStream {
                     popup_menu.close().map_err(|e| { log_error!("unable to close popup menu: {}", e); }).ok();
                 }
                 let target = target.clone();
-                workflow_core::task::wasm::spawn(async move {
+                workflow_core::task::wasm::dispatch(async move {
                     #module_type::get().unwrap().#module_handler_fn()
                     .await.map_err(|e| {
                         log_error!("{}",e);
@@ -236,7 +236,7 @@ pub fn popup_menu_link(input: TokenStream) -> TokenStream {
                     }).ok();
                 }
                 let target = target.clone();
-                workflow_core::task::wasm::spawn(async move {
+                workflow_core::task::wasm::dispatch(async move {
                     #module_type::get().unwrap().menu.#menu.activate()
                     .map_err(|e| {
                         log_error!("{}",e);
@@ -280,7 +280,7 @@ fn menu_with_callback(
             workflow_ux::menu::#menu_type::new(&#parent,#title.into(),#icon)?
             .with_callback(Box::new(move |target|{
                 let target = target.clone();
-                workflow_core::task::wasm::spawn(async move {
+                workflow_core::task::wasm::dispatch(async move {
                     match #module_type::get().unwrap().#module_handler_fn().await{
                         Ok(v)=>{
                             //workflow_log::log_trace!("selecting target element: {:?}", target);

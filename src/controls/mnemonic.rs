@@ -146,6 +146,7 @@ impl Mnemonic {
         if words.len() < 24 {
             return Ok(words);
         }
+
         for index in 0..24 {
             if let Some(input) = self.inputs.get(index) {
                 input.set_value(&words[index])

@@ -15,18 +15,14 @@ pub struct CustomTheme {
     pub contents: ThemeContents,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Default,Debug, Clone)]
 pub enum Theme {
+    #[default]
     Light,
     Dark,
     Custom(CustomTheme),
 }
 
-impl Default for Theme {
-    fn default() -> Self {
-        Theme::Light
-    }
-}
 #[derive(Debug, Clone)]
 pub struct ThemeContents {
     css: String,

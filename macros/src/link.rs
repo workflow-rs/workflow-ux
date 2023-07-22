@@ -127,7 +127,7 @@ pub fn link_with_callback(input: TokenStream) -> TokenStream {
             .with_callback(Box::new(move ||{
                 #transforms
                 // let target = target.clone();
-                workflow_core::task::wasm::spawn(async move {
+                workflow_core::task::wasm::dispatch(async move {
                     #module_type::get().unwrap().#module_handler_fn(#args).await.map_err(|e| { log_error!("{}",e); }).ok();
                     // log_trace!("callback for link element: {:?}", target);
                     // target.select().ok();
@@ -152,7 +152,7 @@ pub fn menu_link_with_callback(input: TokenStream) -> TokenStream {
             workflow_ux::link::Link::new_for_callback(#text)?
             .with_callback(Box::new(move ||{
                 // let target = target.clone();
-                //workflow_core::task::wasm::spawn(async move {
+                //workflow_core::task::wasm::dispatch(async move {
                     #module_type::get().unwrap().menu.#menu.activate()
                     .map_err(|e| {
                         log_error!("menu activate: {}",e);

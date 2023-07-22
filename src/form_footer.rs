@@ -109,7 +109,7 @@ impl FormFooter {
                 .clone()
         };
 
-        workflow_core::task::wasm::spawn(async move {
+        workflow_core::task::wasm::dispatch(async move {
             let action = form_handler.submit();
             action.await
         })

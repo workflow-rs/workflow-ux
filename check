@@ -1,0 +1,2 @@
+cargo fmt --all
+cargo clippy --target wasm32-unknown-unknown
