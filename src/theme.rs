@@ -15,7 +15,7 @@ pub struct CustomTheme {
     pub contents: ThemeContents,
 }
 
-#[derive(Default,Debug, Clone)]
+#[derive(Default, Debug, Clone)]
 pub enum Theme {
     #[default]
     Light,
