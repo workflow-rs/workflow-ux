@@ -72,8 +72,8 @@ pub enum Error {
     #[error("Unable to obtain document body")]
     UnableToGetBody,
 
-    #[error("Timer error: {0}")]
-    TimerError(#[from] workflow_wasm::timers::Error),
+    // #[error("Timer error: {0}")]
+    // TimerError(#[from] workflow_wasm::timers::Error),
 
     #[error("Dialog error: {0}")]
     DialogError(String),
