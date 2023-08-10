@@ -168,16 +168,17 @@ fn svg(name: &str) -> String {
     format!("{}/{}.svg#icon", icon_folder(), name.to_lowercase())
 }
 
-impl ToString for Icon {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for Icon {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Icon::Url(url) => url.clone(),
-            Icon::IconRootCustom(name) => custom(name),
-            Icon::IconRootSVG(name) => svg(name),
-            Icon::Css(name) => name.clone(),
+            Icon::Url(url) => write!(f, "{}", url),
+            Icon::IconRootCustom(name) => write!(f, "{}", custom(name)),
+            Icon::IconRootSVG(name) => write!(f, "{}", svg(name)),
+            Icon::Css(name) => write!(f, "{}", name),
         }
     }
 }
+
 impl From<Icon> for String {
     fn from(icon: Icon) -> Self {
         icon.to_string()

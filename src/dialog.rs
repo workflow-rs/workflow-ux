@@ -26,16 +26,15 @@ pub enum ButtonClass {
     Info,
 }
 
-impl ToString for ButtonClass {
-    fn to_string(&self) -> String {
+impl std::fmt::Display for ButtonClass {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Primary => "Primary",
-            Self::Secondary => "Secondary",
-            Self::Success => "Success",
-            Self::Warning => "Warning",
-            Self::Info => "Info",
+            Self::Primary => write!(f, "Primary"),
+            Self::Secondary => write!(f, "Secondary"),
+            Self::Success => write!(f, "Success"),
+            Self::Warning => write!(f, "Warning"),
+            Self::Info => write!(f, "Info"),
         }
-        .to_string()
     }
 }
 
